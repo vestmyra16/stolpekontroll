@@ -5,13 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stolpekontroll</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:15px;}
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
 input, select, button { width:100%; padding:10px; margin:5px 0;}
-button { background:#2e7d32; color:white; border:none; font-weight:bold;}
+button { background:#2e7d32; color:white; border:none;}
 </style>
 </head>
 
@@ -19,6 +17,7 @@ button { background:#2e7d32; color:white; border:none; font-weight:bold;}
 
 <h1>Stolpekontroll</h1>
 
+<!-- GRUNNLAGSDATA -->
 <div class="card">
 <h2>Grunnlagsdata</h2>
 
@@ -51,6 +50,7 @@ button { background:#2e7d32; color:white; border:none; font-weight:bold;}
 
 </div>
 
+<!-- FUKT -->
 <div class="card">
 <h2>Fukt</h2>
 
@@ -64,13 +64,14 @@ button { background:#2e7d32; color:white; border:none; font-weight:bold;}
 
 </div>
 
+<!-- SKADE -->
 <div class="card">
 <h2>Skader</h2>
 
 <select id="type" onchange="visFelter()">
+<option>Softråte</option>
 <option>Innvendig råte</option>
 <option>Sirkulær råte</option>
-<option>Softråte</option>
 <option>Sprekk</option>
 <option>Spettsmie</option>
 <option>Hakkespetthull med reirhull</option>
@@ -88,29 +89,28 @@ button { background:#2e7d32; color:white; border:none; font-weight:bold;}
 
 </div>
 
+<!-- BEREGNING -->
 <div class="card">
 <button onclick="beregn()">Kjør beregning</button>
 </div>
 
+<!-- RESULTAT -->
 <div class="card">
 <h2>Resultat</h2>
-<div id="resultat"></div>
-</div>
-
-<div class="card">
-<button onclick="lagPDF()">Last ned PDF</button>
-<button onclick="lagCSV()">Last ned Excel</button>
+<div id="resultat">Ingen beregning</div>
 </div>
 
 <script>
 
 let skader=[];
 
+// Fukt toggle
 document.getElementById("fuktToggle").addEventListener("change",()=>{
  document.getElementById("fuktfelt").style.display =
  document.getElementById("fuktToggle").checked ? "block":"none";
 });
 
+// Vis riktige felt
 function visFelter(){
 
  let t=document.getElementById("type").value;
@@ -137,11 +137,11 @@ function visFelter(){
  }
 
  if(t==="Hakkespetthull med reirhull"){
-  html="HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'> HL<input id='HL'> SK1<input id='SK1'>";
+  html="HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'> HL<input id='HL'>";
  }
 
  if(t==="Annen skade"){
-  html="Merknad<input id='tekst'>";
+  html="Beskrivelse<input id='tekst'>";
  }
 
  document.getElementById("felter").innerHTML=html;
@@ -149,10 +149,10 @@ function visFelter(){
 
 function val(id){
  let el=document.getElementById(id);
- if(!el) return 0;
- return parseFloat(el.value)||0;
+ return el ? parseFloat(el.value)||0 : 0;
 }
 
+// Legg til skade
 function leggTil(){
 
  let t=document.getElementById("type").value;
@@ -160,8 +160,6 @@ function leggTil(){
  skader.push({
   type:t,
   A:val("A"), B:val("B"), C:val("C"), D:val("D"), E:val("E"),
-  HB:val("HB"), HH:val("HH"), HDY:val("HDY"), HL:val("HL"),
-  SK1:document.getElementById("SK1")?.value || "",
   retning:document.getElementById("retning").value,
   h:val("hoydeskade")
  });
@@ -170,90 +168,45 @@ function leggTil(){
  skader.map(s=>s.type+" ("+s.h+" mm)").join("<br>");
 }
 
+// Beregning (REN-prinsipp)
 function beregn(){
 
- let D=parseFloat(document.getElementById("diameter").value);
- if(!D) return resultat.innerHTML="Mangler diameter";
+ try{
 
- let worstRest=100;
+ let D=parseFloat(document.getElementById("diameter").value);
+ if(!D){
+  resultat.innerHTML="Mangler diameter";
+  return;
+ }
+
+ let worst=100;
 
  skader.forEach(s=>{
 
-  let r = Math.max(s.A,s.B,s.C,s.D);
+  let r=Math.max(s.A,s.B,s.C,s.D);
 
   if(r>0){
-
-   let Deff = D - 2*r;
-
-   if(Deff <= 0){
-    worstRest = 0;
-    return;
-   }
-
-   let rest = Math.pow(Deff/D,2)*100;
-
-   if(rest < worstRest){
-    worstRest = rest;
-   }
-
+   let Deff=D-2*r;
+   let rest = Deff<=0 ? 0 : Math.pow(Deff/D,2)*100;
+   if(rest<worst) worst=rest;
   }
 
   if(s.E>0){
-   let rest = (s.E/D)*100;
-   if(rest < worstRest){
-    worstRest = rest;
-   }
+   let restE=(s.E/D)*100;
+   if(restE<worst) worst=restE;
   }
 
  });
 
- let status = worstRest>=75 ? "Godkjent" : "Tiltak nødvendig";
+ let status = worst>=75 ? "Godkjent" : "Tiltak nødvendig";
 
- let levetid="";
- if(worstRest>=75 && skader.length>0){
-  if(worstRest>90) levetid="20–30 år";
-  else if(worstRest>80) levetid="10–20 år";
-  else levetid="5–10 år";
+ resultat.innerHTML =
+ `Restkapasitet: ${worst.toFixed(1)} %<br>Status: ${status}`;
+
+ } catch(e){
+  resultat.innerHTML="Feil: "+e.message;
  }
 
- document.getElementById("resultat").innerHTML =
- `Restkapasitet: ${worstRest.toFixed(1)} %<br>
- Status: ${status}<br>
- ${levetid ? "Restlevetid: "+levetid+"<br>" : ""}
- Merknad: Beregnet etter diameterreduksjon (D² modell)`;
-
-}
-
-function lagPDF(){
-
- const {jsPDF}=window.jspdf;
- let doc=new jsPDF();
-
- doc.text("STOLPERAPPORT",10,10);
-
- doc.text("Netteier: "+netteier.value,10,20);
- doc.text("Linje: "+linje.value,10,30);
- doc.text("Mast: "+mast.value,10,40);
- doc.text("Stolpe: "+stolpe.value,10,50);
-
- doc.text(document.getElementById("resultat").innerText,10,70);
-
- doc.save("rapport.pdf");
-}
-
-function lagCSV(){
-
- let csv="Type,A,B,C,D,E,HB,HH,HDY,HL,SK1,Retning,Høyde(mm)\n";
-
- skader.forEach(s=>{
-  csv+=`${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.HB},${s.HH},${s.HDY},${s.HL},${s.SK1},${s.retning},${s.h}\n`;
- });
-
- let blob=new Blob([csv]);
- let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="rapport.csv";
- a.click();
 }
 
 visFelter();
