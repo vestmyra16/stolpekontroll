@@ -5,15 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stolpekontroll</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:15px;}
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
 input, select, button { width:100%; padding:10px; margin:5px 0;}
-button { background:#2e7d32; color:white; border:none; font-weight:bold;}
-table { width:100%; border-collapse:collapse;}
-td,th { border:1px solid #ccc; padding:5px; text-align:center;}
+button { background:#2e7d32; color:white; border:none;}
 </style>
 </head>
 
@@ -23,22 +19,7 @@ td,th { border:1px solid #ccc; padding:5px; text-align:center;}
 
 <div class="card">
 <h2>Grunnlagsdata</h2>
-<input id="stolpenr" placeholder="Stolpenr">
 <input id="diameter" placeholder="Diameter (mm)">
-<select id="fiber">
-<option value="30">30 N/mm²</option>
-<option value="40">40 N/mm²</option>
-</select>
-</div>
-
-<div class="card">
-<h2>Fukt</h2>
-<label><input type="checkbox" id="fuktToggle"> Aktiver fukt</label>
-<div id="fuktfelt" style="display:none;">
-<input id="fytre" placeholder="Ytre fukt (%)">
-<input id="relfukt" placeholder="Relativ fukt (%)">
-<input id="temp" placeholder="Temperatur (°C)">
-</div>
 </div>
 
 <div class="card">
@@ -47,11 +28,7 @@ td,th { border:1px solid #ccc; padding:5px; text-align:center;}
 <select id="type" onchange="visFelter()">
 <option>Innvendig råte</option>
 <option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Sprekk</option>
-<option>Spettsmie</option>
 <option>Hakkespetthull med reirhull</option>
-<option>Annen skade</option>
 </select>
 
 <div id="felter"></div>
@@ -70,64 +47,33 @@ td,th { border:1px solid #ccc; padding:5px; text-align:center;}
 <div id="resultat"></div>
 </div>
 
-<div class="card">
-<button onclick="lagPDF()">Last ned PDF</button>
-<button onclick="lagCSV()">Last ned Excel</button>
-</div>
-
 <script>
 
 let skader=[];
 
-document.getElementById("fuktToggle").addEventListener("change", ()=>{
- document.getElementById("fuktfelt").style.display =
- document.getElementById("fuktToggle").checked ? "block":"none";
-});
-
 function visFelter(){
-
  let t = document.getElementById("type").value;
  let html="";
 
  if(t==="Innvendig råte"){
-  html=`A<input id="A"> B<input id="B"> E<input id="E">`;
+  html="A<input id='A'> B<input id='B'> E<input id='E'>";
  }
 
  if(t==="Sirkulær råte"){
-  html=`A<input id="A"> B<input id="B"> C<input id="C"> D<input id="D2">`;
- }
-
- if(t==="Softråte"){
-  html=`A<input id="A">`;
- }
-
- if(t==="Sprekk"){
-  html=`A<input id="A"> B<input id="B">`;
- }
-
- if(t==="Spettsmie"){
-  html=`A<input id="A"> B<input id="B">`;
+  html="A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
  }
 
  if(t==="Hakkespetthull med reirhull"){
-  html=`
-  HB<input id="HB">
-  HH<input id="HH">
-  HDY<input id="HDY">
-  HL<input id="HL">
-  SK1<input id="SK1">
-  `;
- }
-
- if(t==="Annen skade"){
-  html=`Merknad<input id="tekst">`;
+  html="HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'>";
  }
 
  document.getElementById("felter").innerHTML=html;
 }
 
-function val(id){
- return parseFloat(document.getElementById(id)?.value)||0;
+function getVal(id){
+ let el = document.getElementById(id);
+ if(!el) return 0;
+ return parseFloat(el.value) || 0;
 }
 
 function leggTil(){
@@ -136,9 +82,12 @@ function leggTil(){
 
  skader.push({
   type:t,
-  A:val("A"), B:val("B"), C:val("C"), D:val("D2"), E:val("E"),
-  HB:val("HB"), HH:val("HH"), HDY:val("HDY"), HL:val("HL"),
-  SK1:document.getElementById("SK1")?.value || ""
+  A:getVal("A"),
+  B:getVal("B"),
+  C:getVal("C"),
+  D:getVal("D"),
+  E:getVal("E"),
+  HB:getVal("HB")
  });
 
  document.getElementById("liste").innerHTML =
@@ -147,62 +96,27 @@ function leggTil(){
 
 function beregn(){
 
- let D=parseFloat(document.getElementById("diameter").value);
- if(!D) return resultat.innerHTML="Mangler diameter";
-
- let rest=100;
-
- skader.forEach(s=>{
-  if(s.A) rest -= s.A*0.5;
-  if(s.E) rest = Math.min(rest,s.E);
- });
-
- let status = rest>=75 ? "Godkjent" : "Tiltak nødvendig";
-
- let levetid="";
- if(rest>=75 && skader.length>0){
-  if(rest>90) levetid="20–30 år";
-  else if(rest>80) levetid="10–20 år";
-  else levetid="5–10 år";
+ let D = parseFloat(document.getElementById("diameter").value);
+ if(!D){
+  resultat.innerHTML="Mangler diameter";
+  return;
  }
 
- resultat.innerHTML =
- `Restkapasitet: ${rest.toFixed(1)} %<br>
- Status: ${status}<br>
- ${levetid ? "Restlevetid: "+levetid+"<br>" : ""}
- Merknad: Basert på registrert skade og fukt`;
-}
-
-function lagPDF(){
- const {jsPDF}=window.jspdf;
- let doc=new jsPDF();
-
- doc.text("STOLPERAPPORT",10,10);
-
- let y=20;
-
- doc.text("Stolpenr: "+document.getElementById("stolpenr").value,10,y);
- y+=10;
-
- doc.text(document.getElementById("resultat").innerText,10,y);
-
- doc.save("rapport.pdf");
-}
-
-function lagCSV(){
-
- let csv="Type,A,B,C,D,E,HB,HH,HDY,HL,SK1\n";
+ let rest = 100;
 
  skader.forEach(s=>{
-  csv+=`${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.HB},${s.HH},${s.HDY},${s.HL},${s.SK1}\n`;
+  if(s.A) rest -= s.A * 0.5;
+  if(s.E) rest = Math.min(rest, s.E);
  });
 
- let blob=new Blob([csv]);
- let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="rapport.csv";
- a.click();
+ let status = rest >= 75 ? "Godkjent" : "Tiltak nødvendig";
+
+ resultat.innerHTML =
+ "Restkapasitet: " + rest.toFixed(1) + "%<br>" +
+ "Status: " + status;
 }
+
+visFelter();
 
 </script>
 
