@@ -12,7 +12,6 @@ body { font-family: Arial; background:#f4f4f4; padding:15px;}
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
 input, select, button { width:100%; padding:10px; margin:5px 0;}
 button { background:#2e7d32; color:white; border:none; font-weight:bold;}
-h2 { margin-top:0;}
 </style>
 </head>
 
@@ -81,7 +80,7 @@ h2 { margin-top:0;}
 <div id="felter"></div>
 
 <input id="retning" placeholder="Retning">
-<input id="hoydeskade" placeholder="Skadehøyde (m)">
+<input id="hoydeskade" placeholder="Skadehøyde (mm)">
 
 <button onclick="leggTil()">Legg til skade</button>
 
@@ -114,7 +113,7 @@ document.getElementById("fuktToggle").addEventListener("change",()=>{
 
 function visFelter(){
 
- let t = document.getElementById("type").value;
+ let t=document.getElementById("type").value;
  let html="";
 
  if(t==="Innvendig råte"){
@@ -126,7 +125,7 @@ function visFelter(){
  }
 
  if(t==="Softråte"){
-  html="A<input id='A'>";
+  html="A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
  }
 
  if(t==="Sprekk"){
@@ -164,11 +163,11 @@ function leggTil(){
   HB:val("HB"), HH:val("HH"), HDY:val("HDY"), HL:val("HL"),
   SK1:document.getElementById("SK1")?.value || "",
   retning:document.getElementById("retning").value,
-  h:document.getElementById("hoydeskade").value
+  h:val("hoydeskade")
  });
 
  document.getElementById("liste").innerHTML =
- skader.map(s=>s.type + " ("+s.h+" m)").join("<br>");
+ skader.map(s=>s.type+" ("+s.h+" mm)").join("<br>");
 }
 
 function beregn(){
@@ -176,31 +175,57 @@ function beregn(){
  let D=parseFloat(document.getElementById("diameter").value);
  if(!D) return resultat.innerHTML="Mangler diameter";
 
- let rest=100;
+ let worstRest=100;
 
  skader.forEach(s=>{
-  if(s.A) rest -= s.A*0.5;
-  if(s.E) rest = Math.min(rest,s.E);
+
+  let r = Math.max(s.A,s.B,s.C,s.D);
+
+  if(r>0){
+
+   let Deff = D - 2*r;
+
+   if(Deff <= 0){
+    worstRest = 0;
+    return;
+   }
+
+   let rest = Math.pow(Deff/D,2)*100;
+
+   if(rest < worstRest){
+    worstRest = rest;
+   }
+
+  }
+
+  if(s.E>0){
+   let rest = (s.E/D)*100;
+   if(rest < worstRest){
+    worstRest = rest;
+   }
+  }
+
  });
 
- let status = rest>=75 ? "Godkjent" : "Tiltak nødvendig";
+ let status = worstRest>=75 ? "Godkjent" : "Tiltak nødvendig";
 
  let levetid="";
- if(rest>=75 && skader.length>0){
-  if(rest>90) levetid="20–30 år";
-  else if(rest>80) levetid="10–20 år";
+ if(worstRest>=75 && skader.length>0){
+  if(worstRest>90) levetid="20–30 år";
+  else if(worstRest>80) levetid="10–20 år";
   else levetid="5–10 år";
  }
 
- resultat.innerHTML =
- `Restkapasitet: ${rest.toFixed(1)} %<br>
+ document.getElementById("resultat").innerHTML =
+ `Restkapasitet: ${worstRest.toFixed(1)} %<br>
  Status: ${status}<br>
  ${levetid ? "Restlevetid: "+levetid+"<br>" : ""}
- Merknad: Basert på skade, fukt og miljø`;
+ Merknad: Beregnet etter diameterreduksjon (D² modell)`;
 
 }
 
 function lagPDF(){
+
  const {jsPDF}=window.jspdf;
  let doc=new jsPDF();
 
@@ -211,14 +236,14 @@ function lagPDF(){
  doc.text("Mast: "+mast.value,10,40);
  doc.text("Stolpe: "+stolpe.value,10,50);
 
- doc.text(resultat.innerText,10,70);
+ doc.text(document.getElementById("resultat").innerText,10,70);
 
  doc.save("rapport.pdf");
 }
 
 function lagCSV(){
 
- let csv="Type,A,B,C,D,E,HB,HH,HDY,HL,SK1,Retning,Høyde\n";
+ let csv="Type,A,B,C,D,E,HB,HH,HDY,HL,SK1,Retning,Høyde(mm)\n";
 
  skader.forEach(s=>{
   csv+=`${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.HB},${s.HH},${s.HDY},${s.HL},${s.SK1},${s.retning},${s.h}\n`;
