@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stolpekontroll</title>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:15px;}
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
 input, select, button { width:100%; padding:10px; margin:5px 0;}
-button { background:#2e7d32; color:white; border:none;}
+button { background:#2e7d32; color:white; border:none; font-weight:bold;}
+h2 { margin-top:0;}
 </style>
 </head>
 
@@ -19,23 +22,71 @@ button { background:#2e7d32; color:white; border:none;}
 
 <div class="card">
 <h2>Grunnlagsdata</h2>
-<input id="diameter" placeholder="Diameter (mm)">
+
+<input id="netteier" placeholder="Netteier">
+<input id="linje" placeholder="Linjeidentifikasjon">
+<input id="mast" placeholder="Mast nr">
+<input id="stolpe" placeholder="Stolpenr">
+
+<input id="hoyde" placeholder="Stolpehøyde (m)">
+<input id="nedgrav" placeholder="Nedgravingsdybde (m)">
+<input id="jordband" placeholder="Diameter ved jordband (mm)">
+<input id="diameter" placeholder="Diameter på skadested (mm)">
+
+<select id="miljo">
+<option>Kyst</option>
+<option>Innland</option>
+<option>Fjellklima</option>
+</select>
+
+<select id="jordtype">
+<option>Innmark</option>
+<option>Skogsmark</option>
+<option>Fjell</option>
+</select>
+
+<select id="fiber">
+<option value="30">30 N/mm²</option>
+<option value="40">40 N/mm²</option>
+</select>
+
 </div>
 
 <div class="card">
-<h2>Skade</h2>
+<h2>Fukt</h2>
+
+<label><input type="checkbox" id="fuktToggle"> Aktiver fukt</label>
+
+<div id="fuktfelt" style="display:none;">
+<input id="relfukt" placeholder="Relativ luftfuktighet (%)">
+<input id="temp" placeholder="Temperatur (°C)">
+<input id="ytrefukt" placeholder="Fukt i ytterskall (%)">
+</div>
+
+</div>
+
+<div class="card">
+<h2>Skader</h2>
 
 <select id="type" onchange="visFelter()">
 <option>Innvendig råte</option>
 <option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Sprekk</option>
+<option>Spettsmie</option>
 <option>Hakkespetthull med reirhull</option>
+<option>Annen skade</option>
 </select>
 
 <div id="felter"></div>
 
+<input id="retning" placeholder="Retning">
+<input id="hoydeskade" placeholder="Skadehøyde (m)">
+
 <button onclick="leggTil()">Legg til skade</button>
 
 <div id="liste"></div>
+
 </div>
 
 <div class="card">
@@ -47,11 +98,22 @@ button { background:#2e7d32; color:white; border:none;}
 <div id="resultat"></div>
 </div>
 
+<div class="card">
+<button onclick="lagPDF()">Last ned PDF</button>
+<button onclick="lagCSV()">Last ned Excel</button>
+</div>
+
 <script>
 
 let skader=[];
 
+document.getElementById("fuktToggle").addEventListener("change",()=>{
+ document.getElementById("fuktfelt").style.display =
+ document.getElementById("fuktToggle").checked ? "block":"none";
+});
+
 function visFelter(){
+
  let t = document.getElementById("type").value;
  let html="";
 
@@ -63,57 +125,110 @@ function visFelter(){
   html="A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
  }
 
+ if(t==="Softråte"){
+  html="A<input id='A'>";
+ }
+
+ if(t==="Sprekk"){
+  html="A<input id='A'> B<input id='B'>";
+ }
+
+ if(t==="Spettsmie"){
+  html="A<input id='A'> B<input id='B'>";
+ }
+
  if(t==="Hakkespetthull med reirhull"){
-  html="HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'>";
+  html="HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'> HL<input id='HL'> SK1<input id='SK1'>";
+ }
+
+ if(t==="Annen skade"){
+  html="Merknad<input id='tekst'>";
  }
 
  document.getElementById("felter").innerHTML=html;
 }
 
-function getVal(id){
- let el = document.getElementById(id);
+function val(id){
+ let el=document.getElementById(id);
  if(!el) return 0;
- return parseFloat(el.value) || 0;
+ return parseFloat(el.value)||0;
 }
 
 function leggTil(){
 
- let t = document.getElementById("type").value;
+ let t=document.getElementById("type").value;
 
  skader.push({
   type:t,
-  A:getVal("A"),
-  B:getVal("B"),
-  C:getVal("C"),
-  D:getVal("D"),
-  E:getVal("E"),
-  HB:getVal("HB")
+  A:val("A"), B:val("B"), C:val("C"), D:val("D"), E:val("E"),
+  HB:val("HB"), HH:val("HH"), HDY:val("HDY"), HL:val("HL"),
+  SK1:document.getElementById("SK1")?.value || "",
+  retning:document.getElementById("retning").value,
+  h:document.getElementById("hoydeskade").value
  });
 
  document.getElementById("liste").innerHTML =
- skader.map(s=>s.type).join("<br>");
+ skader.map(s=>s.type + " ("+s.h+" m)").join("<br>");
 }
 
 function beregn(){
 
- let D = parseFloat(document.getElementById("diameter").value);
- if(!D){
-  resultat.innerHTML="Mangler diameter";
-  return;
- }
+ let D=parseFloat(document.getElementById("diameter").value);
+ if(!D) return resultat.innerHTML="Mangler diameter";
 
- let rest = 100;
+ let rest=100;
 
  skader.forEach(s=>{
-  if(s.A) rest -= s.A * 0.5;
-  if(s.E) rest = Math.min(rest, s.E);
+  if(s.A) rest -= s.A*0.5;
+  if(s.E) rest = Math.min(rest,s.E);
  });
 
- let status = rest >= 75 ? "Godkjent" : "Tiltak nødvendig";
+ let status = rest>=75 ? "Godkjent" : "Tiltak nødvendig";
+
+ let levetid="";
+ if(rest>=75 && skader.length>0){
+  if(rest>90) levetid="20–30 år";
+  else if(rest>80) levetid="10–20 år";
+  else levetid="5–10 år";
+ }
 
  resultat.innerHTML =
- "Restkapasitet: " + rest.toFixed(1) + "%<br>" +
- "Status: " + status;
+ `Restkapasitet: ${rest.toFixed(1)} %<br>
+ Status: ${status}<br>
+ ${levetid ? "Restlevetid: "+levetid+"<br>" : ""}
+ Merknad: Basert på skade, fukt og miljø`;
+
+}
+
+function lagPDF(){
+ const {jsPDF}=window.jspdf;
+ let doc=new jsPDF();
+
+ doc.text("STOLPERAPPORT",10,10);
+
+ doc.text("Netteier: "+netteier.value,10,20);
+ doc.text("Linje: "+linje.value,10,30);
+ doc.text("Mast: "+mast.value,10,40);
+ doc.text("Stolpe: "+stolpe.value,10,50);
+
+ doc.text(resultat.innerText,10,70);
+
+ doc.save("rapport.pdf");
+}
+
+function lagCSV(){
+
+ let csv="Type,A,B,C,D,E,HB,HH,HDY,HL,SK1,Retning,Høyde\n";
+
+ skader.forEach(s=>{
+  csv+=`${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.HB},${s.HH},${s.HDY},${s.HL},${s.SK1},${s.retning},${s.h}\n`;
+ });
+
+ let blob=new Blob([csv]);
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="rapport.csv";
+ a.click();
 }
 
 visFelter();
