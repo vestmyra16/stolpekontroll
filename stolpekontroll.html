@@ -3,61 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Stolpekontroll</title>
-
-<link rel="apple-touch-icon" href="data:image/svg+xml,
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>
-<defs>
-<linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-<stop offset='0%' stop-color='%23dcdcdc'/>
-<stop offset='100%' stop-color='%236fbf4b'/>
-</linearGradient>
-</defs>
-<rect width='512' height='512' rx='80' fill='url(%23g)'/>
-<text x='50%' y='55%' font-size='260' text-anchor='middle' fill='%238B4513' font-family='Arial' dy='.3em'>S</text>
-</svg>">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body { font-family: Arial; padding:15px; background:#f4f4f4; }
-.card { background:white; padding:15px; margin-bottom:15px; border-radius:12px; }
-input, select, button {
- width:100%; padding:12px; margin:6px 0;
- border-radius:8px; border:1px solid #ccc;
-}
-.btn { background:#2e7d32; color:white; border:none; }
-.logo {
- width:120px;height:120px;margin:20px auto;
- border-radius:25px;
- background:linear-gradient(135deg,#dcdcdc,#6fbf4b);
- display:flex;align-items:center;justify-content:center;
- font-size:70px;font-weight:bold;color:#8B4513;
-}
+body { font-family: Arial; background:#f4f4f4; padding:15px;}
+.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
+input, select, button { width:100%; padding:10px; margin:5px 0;}
+button { background:#2e7d32; color:white; border:none; font-weight:bold;}
+table { width:100%; border-collapse:collapse;}
+td,th { border:1px solid #ccc; padding:5px; text-align:center;}
 </style>
 </head>
 
 <body>
 
-<div class="logo">S</div>
 <h1>Stolpekontroll</h1>
 
 <div class="card">
 <h2>Grunnlagsdata</h2>
-<input id="linje" placeholder="Linje">
-<input id="mastnr" placeholder="Mastnr">
 <input id="stolpenr" placeholder="Stolpenr">
-<input id="hoyde" placeholder="Stolpehøyde (m)">
-<input id="jordband" placeholder="Jordbandsdiameter (mm)">
-<input id="D" placeholder="Diameter på skadested (mm)">
-
-<select id="miljo">
-<option>Kyst</option>
-<option>Innland</option>
-<option>Fjell</option>
-</select>
-
+<input id="diameter" placeholder="Diameter (mm)">
 <select id="fiber">
 <option value="30">30 N/mm²</option>
 <option value="40">40 N/mm²</option>
@@ -66,14 +33,9 @@ input, select, button {
 
 <div class="card">
 <h2>Fukt</h2>
-<label>
-<input type="checkbox" id="fuktcheck" onclick="toggleFukt()">
-Aktiver fukt
-</label>
-
+<label><input type="checkbox" id="fuktToggle"> Aktiver fukt</label>
 <div id="fuktfelt" style="display:none;">
 <input id="fytre" placeholder="Ytre fukt (%)">
-<input id="findre" placeholder="Indre fukt (%)">
 <input id="relfukt" placeholder="Relativ fukt (%)">
 <input id="temp" placeholder="Temperatur (°C)">
 </div>
@@ -83,24 +45,24 @@ Aktiver fukt
 <h2>Skade</h2>
 
 <select id="type" onchange="visFelter()">
-<option></option>
 <option>Innvendig råte</option>
 <option>Sirkulær råte</option>
 <option>Softråte</option>
 <option>Sprekk</option>
 <option>Spettsmie</option>
-<option>Hakkespetthull med reir</option>
+<option>Hakkespetthull med reirhull</option>
 <option>Annen skade</option>
 </select>
 
 <div id="felter"></div>
 
-<input id="retning" placeholder="Retning">
-<input id="h" placeholder="Skadehøyde (m fra bakken)">
-
-<button class="btn" onclick="leggTil()">+ Legg til skade</button>
+<button onclick="leggTil()">Legg til skade</button>
 
 <div id="liste"></div>
+</div>
+
+<div class="card">
+<button onclick="beregn()">Kjør beregning</button>
 </div>
 
 <div class="card">
@@ -109,154 +71,132 @@ Aktiver fukt
 </div>
 
 <div class="card">
-<button class="btn" onclick="lagPDF()">PDF</button>
-<button class="btn" onclick="lagCSV()">Excel</button>
+<button onclick="lagPDF()">Last ned PDF</button>
+<button onclick="lagCSV()">Last ned Excel</button>
 </div>
 
 <script>
 
 let skader=[];
 
-// 🔥 STABIL iPhone-løsning
-function toggleFukt(){
- const check = document.getElementById("fuktcheck");
- const felt = document.getElementById("fuktfelt");
-
- if(check.checked){
-   felt.style.display = "block";
- } else {
-   felt.style.display = "none";
- }
-}
+document.getElementById("fuktToggle").addEventListener("change", ()=>{
+ document.getElementById("fuktfelt").style.display =
+ document.getElementById("fuktToggle").checked ? "block":"none";
+});
 
 function visFelter(){
- let t=type.value;
- let h="";
+
+ let t = document.getElementById("type").value;
+ let html="";
 
  if(t==="Innvendig råte"){
-  h=`A<input id="A">B<input id="B">E<input id="E">`;
- }
- if(t==="Sirkulær råte"){
-  h=`A<input id="A">B<input id="B">C<input id="C">D<input id="D2">`;
- }
- if(t==="Softråte"){
-  h=`A<input id="A">B<input id="B">C<input id="C">D<input id="D2">`;
- }
- if(t==="Sprekk"){
-  h=`A<input id="A">B<input id="B">`;
- }
- if(t==="Spettsmie"){
-  h=`A<input id="A">B<input id="B">`;
- }
- if(t==="Hakkespetthull med reir"){
-  h=`HB<input id="HB">HH<input id="HH">HDY<input id="HDY">HL<input id="HL">SK1<input id="SK1">`;
- }
- if(t==="Annen skade"){
-  h=`Merknad<input id="tekst">`;
+  html=`A<input id="A"> B<input id="B"> E<input id="E">`;
  }
 
- felter.innerHTML=h;
+ if(t==="Sirkulær råte"){
+  html=`A<input id="A"> B<input id="B"> C<input id="C"> D<input id="D2">`;
+ }
+
+ if(t==="Softråte"){
+  html=`A<input id="A">`;
+ }
+
+ if(t==="Sprekk"){
+  html=`A<input id="A"> B<input id="B">`;
+ }
+
+ if(t==="Spettsmie"){
+  html=`A<input id="A"> B<input id="B">`;
+ }
+
+ if(t==="Hakkespetthull med reirhull"){
+  html=`
+  HB<input id="HB">
+  HH<input id="HH">
+  HDY<input id="HDY">
+  HL<input id="HL">
+  SK1<input id="SK1">
+  `;
+ }
+
+ if(t==="Annen skade"){
+  html=`Merknad<input id="tekst">`;
+ }
+
+ document.getElementById("felter").innerHTML=html;
 }
 
 function val(id){
- return parseFloat(document.getElementById(id)?.value);
+ return parseFloat(document.getElementById(id)?.value)||0;
 }
 
 function leggTil(){
- skader.push({
-  type:type.value,
-  retning:retning.value,
-  h:parseFloat(h.value),
-  A:val("A"),B:val("B"),C:val("C"),D:val("D2"),E:val("E")
- });
- visListe();
- beregn();
-}
 
-function visListe(){
- liste.innerHTML = skader.map(s => `${s.type} (${s.h} m)`).join("<br>");
+ let t = document.getElementById("type").value;
+
+ skader.push({
+  type:t,
+  A:val("A"), B:val("B"), C:val("C"), D:val("D2"), E:val("E"),
+  HB:val("HB"), HH:val("HH"), HDY:val("HDY"), HL:val("HL"),
+  SK1:document.getElementById("SK1")?.value || ""
+ });
+
+ document.getElementById("liste").innerHTML =
+ skader.map(s=>s.type).join("<br>");
 }
 
 function beregn(){
 
- let D = parseFloat(document.getElementById("D").value);
- let fiberstyrke = parseFloat(document.getElementById("fiber").value);
- let fukt = parseFloat(document.getElementById("relfukt").value) || 20;
+ let D=parseFloat(document.getElementById("diameter").value);
+ if(!D) return resultat.innerHTML="Mangler diameter";
 
- if(!D || skader.length === 0) return;
-
- let snitt = {};
+ let rest=100;
 
  skader.forEach(s=>{
-  if(!snitt[s.h]) snitt[s.h]=[];
-  snitt[s.h].push(s);
+  if(s.A) rest -= s.A*0.5;
+  if(s.E) rest = Math.min(rest,s.E);
  });
 
- let kapListe=[];
+ let status = rest>=75 ? "Godkjent" : "Tiltak nødvendig";
 
- Object.values(snitt).forEach(arr=>{
-  let dEff=D;
-
-  arr.forEach(s=>{
-   if(s.A) dEff=Math.min(dEff,D-s.A);
-   if(s.E) dEff=Math.min(dEff,s.E*2);
-  });
-
-  let kap=Math.pow(dEff/D,3)*100;
-  kap*=fiberstyrke/30;
-
-  if(fukt>20){
-    kap*=1-(fukt-20)/100;
-  }
-
-  kapListe.push(kap);
- });
-
- let restkap=Math.min(...kapListe);
-
- let status = restkap>=75?"Godkjent":"Ikke godkjent";
-
- let levetid = 0;
-
- if(restkap>=75){
-  levetid=(restkap-75)*2;
- }
-
- let klima=miljo.value;
-
- if(klima==="Kyst") levetid*=0.7;
- if(klima==="Fjell") levetid*=0.6;
-
- if(fukt>20) levetid*=(1-(fukt-20)/100);
- if(fukt>30) levetid*=0.5;
-
- if(skader.some(s=>s.type==="Softråte")){
-  levetid*=0.7;
- }
-
- if(restkap<75){
-  levetid=0;
+ let levetid="";
+ if(rest>=75 && skader.length>0){
+  if(rest>90) levetid="20–30 år";
+  else if(rest>80) levetid="10–20 år";
+  else levetid="5–10 år";
  }
 
  resultat.innerHTML =
- `Restkapasitet: ${restkap.toFixed(1)} %<br>
+ `Restkapasitet: ${rest.toFixed(1)} %<br>
  Status: ${status}<br>
- Anslått restlevetid: ${Math.round(levetid)} år`;
+ ${levetid ? "Restlevetid: "+levetid+"<br>" : ""}
+ Merknad: Basert på registrert skade og fukt`;
 }
 
 function lagPDF(){
  const {jsPDF}=window.jspdf;
  let doc=new jsPDF();
- doc.text("Stolperapport",10,10);
- doc.text(resultat.innerText,10,20);
+
+ doc.text("STOLPERAPPORT",10,10);
+
+ let y=20;
+
+ doc.text("Stolpenr: "+document.getElementById("stolpenr").value,10,y);
+ y+=10;
+
+ doc.text(document.getElementById("resultat").innerText,10,y);
+
  doc.save("rapport.pdf");
 }
 
 function lagCSV(){
- let csv="Type,Høyde\n";
+
+ let csv="Type,A,B,C,D,E,HB,HH,HDY,HL,SK1\n";
+
  skader.forEach(s=>{
-  csv+=`${s.type},${s.h}\n`;
+  csv+=`${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.HB},${s.HH},${s.HDY},${s.HL},${s.SK1}\n`;
  });
+
  let blob=new Blob([csv]);
  let a=document.createElement("a");
  a.href=URL.createObjectURL(blob);
