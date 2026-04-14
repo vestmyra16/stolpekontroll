@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v6 komplett</title>
+<title>Stolpekontroll v6.1</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
@@ -17,21 +17,21 @@ button { background:#2e7d32; color:white; border:none; }
 
 <body>
 
-<h2>Stolpekontroll v6</h2>
+<h2>Stolpekontroll</h2>
 
 <!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
 
 <input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="Linjeidentifikasjon">
+<input id="linje" placeholder="Linje">
 <input id="mast" placeholder="Mast nr">
 <input id="stolpenr" placeholder="Stolpenr">
 
 <input type="number" id="diameter" placeholder="Diameter skadested (mm)">
-<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
 <input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
 <input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
+<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
 
 <select id="miljo">
 <option value="1.2">Kyst</option>
@@ -52,16 +52,30 @@ button { background:#2e7d32; color:white; border:none; }
 
 </div>
 
+<!-- FUKT -->
+<div class="card">
+<h3>Fukt</h3>
+
+<label><input type="checkbox" id="fuktAktiv" onchange="toggleFukt()"> Aktiver fukt</label>
+
+<div id="fuktFelter" style="display:none;">
+<input type="number" id="temp" placeholder="Temperatur (°C)">
+<input type="number" id="rf" placeholder="Relativ fukt (%)">
+<input type="number" id="fuktYtre" placeholder="Fukt ytre (%)">
+<input type="number" id="fuktIndre" placeholder="Fukt indre (%)">
+</div>
+</div>
+
 <!-- SKADER -->
 <div class="card">
-<h3>Skader</h3>
+<h3>Skade</h3>
 
 <select id="type">
-<option value="innvendig">Innvendig råte</option>
-<option value="sirkular">Sirkulær råte</option>
-<option value="softråte">Softråte</option>
-<option value="sprekk">Sprekk</option>
-<option value="spettsmie">Spettsmie</option>
+<option value="innvendig">Indre råte (A B E)</option>
+<option value="sirkular">Sirkulær råte (A B C D)</option>
+<option value="softråte">Softråte (A B C D)</option>
+<option value="sprekk">Sprekk (A B)</option>
+<option value="spettsmie">Spettsmie (A B)</option>
 </select>
 
 <input id="A" type="number" placeholder="A (mm)">
@@ -69,6 +83,7 @@ button { background:#2e7d32; color:white; border:none; }
 <input id="C" type="number" placeholder="C (mm)">
 <input id="D" type="number" placeholder="D (mm)">
 <input id="E" type="number" placeholder="E (mm)">
+
 <input id="L" type="number" placeholder="Lengde (mm)">
 <input id="H" type="number" placeholder="Skadehøyde (mm)">
 
@@ -85,82 +100,83 @@ button { background:#2e7d32; color:white; border:none; }
 <div id="forklaring" class="small"></div>
 </div>
 
+<!-- EKSPORT -->
+<div class="card">
+<button onclick="excel()">Last ned Excel</button>
+<button onclick="window.print()">Lag PDF</button>
+</div>
+
 <script>
 
 let skader = [];
 
+function toggleFukt() {
+  document.getElementById("fuktFelter").style.display =
+    document.getElementById("fuktAktiv").checked ? "block" : "none";
+}
+
 function leggTil() {
+
   let s = {
     type: type.value,
-    A: +A.value,
-    B: +B.value,
-    C: +C.value,
-    D: +D.value,
-    E: +E.value,
-    L: +L.value,
-    H: +H.value
+    A:+A.value, B:+B.value, C:+C.value, D:+D.value, E:+E.value,
+    L:+L.value, H:+H.value
   };
 
   skader.push(s);
-  liste.innerHTML += `<div>${s.type} (h=${s.H||0} mm)</div>`;
+
+  liste.innerHTML += `<div>${s.type} | h=${s.H} mm | L=${s.L} mm</div>`;
 }
 
 function beregn() {
 
   let D = +diameter.value;
-  let H = +hoyde.value;
-  let ned = +nedgraving.value;
+  let Htot = +hoyde.value;
+  let ned = +nedgraving.value || 0.8;
   let sigma = +styrke.value;
-
-  if (!D || !H) return alert("Mangler data");
 
   let miljoF = +miljo.value;
   let jordF = +jord.value;
 
-  // Effektiv høyde (momentarm)
-  let H_eff = H - (ned || 0.8);
+  let H_eff = Htot - ned;
 
-  // LASTMODELL
-  let q_vind = 0.6 * miljoF;
-  let q_is = 0.3 * miljoF;
+  let q = 0.6 * miljoF;
+  let M_last = q * H_eff * H_eff * 1000;
 
-  let M_vind = q_vind * H_eff * H_eff;
-  let M_is = q_is * H_eff * H_eff;
-
-  let M_last = (M_vind + M_is) * 1000;
-
-  // SKADE → effektiv diameter
   let d_eff = D;
   let faktor = 1;
 
   skader.forEach(s => {
 
-    if (s.type === "softråte") {
-      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
-      if (vals.length){
-        let max = Math.max(...vals);
-        d_eff = D - max;
-      }
-    }
-
-    if (s.type === "sirkular") {
-      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
-      if (vals.length){
-        let min = Math.min(...vals);
-        d_eff = min * 2;
-      }
-    }
-
+    // INDRE RÅTE (E styrer)
     if (s.type === "innvendig" && s.E) {
       d_eff = s.E * 2;
     }
 
-    if (s.type === "sprekk") faktor *= 0.9;
-    if (s.type === "spettsmie") faktor *= 0.85;
+    // SIRKULÆR RÅTE (min ABCD)
+    if (s.type === "sirkular") {
+      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
+      if (vals.length) d_eff = Math.min(...vals) * 2;
+    }
+
+    // SOFTRÅTE (maks ABCD)
+    if (s.type === "softråte") {
+      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
+      if (vals.length) d_eff = D - Math.max(...vals);
+    }
+
+    // SPREKK AB
+    if (s.type === "sprekk") {
+      faktor *= 0.9;
+    }
+
+    // SPETTSMIE AB
+    if (s.type === "spettsmie") {
+      faktor *= 0.85;
+    }
 
   });
 
-  // KAPASITET
   let W = (Math.PI * Math.pow(d_eff,3)) / 32;
 
   let sikkerhet = 1.2 * jordF;
@@ -169,19 +185,29 @@ function beregn() {
 
   let u = (M_last / M_kap) * 100;
 
-  let status = "";
-  if (u <= 100) status = "GODKJENT";
-  else if (u <= 120) status = "KRITISK";
-  else status = "IKKE GODKJENT";
+  let status = u <= 100 ? "GODKJENT" :
+               u <= 120 ? "KRITISK" : "IKKE GODKJENT";
 
   resultat.innerHTML =
     "Utnyttelse: " + u.toFixed(1) + "%<br>Status: " + status;
 
   forklaring.innerText =
-    "Effektiv høyde: " + H_eff.toFixed(2) +
-    " m | Effektiv diameter: " + d_eff.toFixed(1) +
-    " mm | Sikkerhetsfaktor: " + sikkerhet.toFixed(2);
+    "Effektiv diameter: " + d_eff.toFixed(1) + " mm";
+}
 
+function excel() {
+
+  let csv = "Stolpe,Type,A,B,C,D,E,L,H\n";
+
+  skader.forEach(s=>{
+    csv += `${stolpenr.value},${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.L},${s.H}\n`;
+  });
+
+  let blob = new Blob([csv]);
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "rapport.csv";
+  a.click();
 }
 
 </script>
