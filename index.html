@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v3</title>
+<title>Stolpekontroll v4</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
@@ -17,14 +17,37 @@ button { background:#2e7d32; color:white; border:none; }
 
 <body>
 
-<h2>Stolpekontroll v3</h2>
+<h2>Stolpekontroll v4</h2>
 
+<!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
+
+<input id="netteier" placeholder="Netteier">
+<input id="linje" placeholder="Linje">
+<input id="mast" placeholder="Mast nr">
 <input id="stolpenr" placeholder="Stolpenr">
+
 <input type="number" id="diameter" placeholder="Diameter skadested (mm)">
+<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
+<input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
+<input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
+
+<select id="miljo">
+<option>Kyst</option>
+<option>Innland</option>
+<option>Fjellklima</option>
+</select>
+
+<select id="jord">
+<option>Innmark</option>
+<option>Skogsmark</option>
+<option>Fjell</option>
+</select>
+
 </div>
 
+<!-- SKADER -->
 <div class="card">
 <h3>Ny skade</h3>
 
@@ -47,15 +70,16 @@ button { background:#2e7d32; color:white; border:none; }
 <button onclick="leggTil()">Legg til skade</button>
 
 <div id="liste"></div>
-
 </div>
 
+<!-- RESULTAT -->
 <div class="card">
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
 <div id="forklaring" class="small"></div>
 </div>
 
+<!-- EKSPORT -->
 <div class="card">
 <button onclick="excel()">Last ned Excel</button>
 <button onclick="window.print()">Lag PDF</button>
@@ -78,7 +102,6 @@ function leggTil() {
   };
 
   skader.push(s);
-
   liste.innerHTML += `<div>${s.type} (h=${s.H||0})</div>`;
 }
 
@@ -87,75 +110,88 @@ function beregn() {
   let d = parseFloat(diameter.value);
   if (!d) return alert("Mangler diameter");
 
-  let restSoftråte = 100;
-  let restSirk = 100;
-  let restInnvendig = 100;
-  let restLokalt = 100;
+  let resultater = [];
 
   skader.forEach(s => {
 
-    // SOFTRÅTE
-    if (s.type === "softråte") {
-      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
-      if (vals.length){
-        let max = Math.max(...vals);
-        let r = ((d - max) / d) * 100;
-        if (r < restSoftråte) restSoftråte = r;
-      }
+    let rest = 100;
+    let type = s.type;
+
+    // INNVENDIG
+    if (type === "innvendig" && s.E) {
+      rest = (s.E / (d/2)) * 100;
     }
 
     // SIRKULÆR
-    if (s.type === "sirkular") {
+    if (type === "sirkular") {
       let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
       if (vals.length){
         let min = Math.min(...vals);
-        let r = (min / (d/2)) * 100;
-        if (r < restSirk) restSirk = r;
+        rest = (min / (d/2)) * 100;
       }
     }
 
-    // INNVENDIG
-    if (s.type === "innvendig" && s.E) {
-      let r = (s.E / (d/2)) * 100;
-      if (r < restInnvendig) restInnvendig = r;
+    // SOFTRÅTE
+    if (type === "softråte") {
+      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
+      if (vals.length){
+        let max = Math.max(...vals);
+        rest = ((d - max) / d) * 100;
+      }
     }
 
     // SPREKK
-    if (s.type === "sprekk") {
-      let r = 100 - ((s.B||0)*1.2 + (s.L||0)/1000);
-      if (r < restLokalt) restLokalt = r;
+    if (type === "sprekk") {
+      rest = 100 - ((s.B||0)*1.2 + (s.L||0)/1000);
     }
 
     // SPETTSMIE
-    if (s.type === "spettsmie") {
-      let r = 100 - ((s.B||0)*2);
-      if (r < restLokalt) restLokalt = r;
+    if (type === "spettsmie") {
+      rest = 100 - ((s.B||0)*2);
     }
 
+    resultater.push({type, rest});
   });
 
-  let styrende = Math.min(restSoftråte, restSirk, restInnvendig, restLokalt);
+  // PRIORITET
+  let styrende = 100;
+  let styrendeType = "";
 
-  let fork = "";
-
-  if (styrende === restSoftråte) fork = "Softråte styrer";
-  else if (styrende === restSirk) fork = "Sirkulær råte styrer";
-  else if (styrende === restInnvendig) fork = "Innvendig råte styrer";
-  else fork = "Lokal skade styrer";
+  resultater.forEach(r => {
+    if (r.rest < styrende) {
+      styrende = r.rest;
+      styrendeType = r.type;
+    }
+  });
 
   let status = styrende >= 75 ? "GODKJENT" : "IKKE GODKJENT";
 
-  resultat.innerHTML =
-    "Restkapasitet: " + styrende.toFixed(1) + "%<br>Status: " + status;
+  // BESLUTNING
+  let beslutning = "";
 
-  forklaring.innerText = fork;
+  if (styrende >= 75) {
+    beslutning = "Stolpe kan beholdes";
+  } else if (styrende >= 60) {
+    beslutning = "Bør følges opp";
+  } else {
+    beslutning = "Bør skiftes";
+  }
+
+  resultat.innerHTML =
+    "Restkapasitet: " + styrende.toFixed(1) + "%<br>" +
+    "Status: " + status + "<br>" +
+    "Tiltak: " + beslutning;
+
+  forklaring.innerText = "Styrende skade: " + styrendeType;
 }
 
 // EXCEL
 function excel() {
-  let csv = "Stolpe,Type,A,B,C,D,E,L,H\n";
+
+  let csv = "Netteier,Linje,Mast,Stolpe,Type,Rest\n";
+
   skader.forEach(s=>{
-    csv += `${stolpenr.value},${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.L},${s.H}\n`;
+    csv += `${netteier.value},${linje.value},${mast.value},${stolpenr.value},${s.type},\n`;
   });
 
   let blob = new Blob([csv]);
