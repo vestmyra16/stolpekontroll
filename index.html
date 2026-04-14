@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v4</title>
+<title>Stolpekontroll v6</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
@@ -17,39 +17,35 @@ button { background:#2e7d32; color:white; border:none; }
 
 <body>
 
-<h2>Stolpekontroll v4</h2>
+<h2>Stolpekontroll v6 (Standardmodell)</h2>
 
-<!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
 
-<input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="Linje">
-<input id="mast" placeholder="Mast nr">
-<input id="stolpenr" placeholder="Stolpenr">
+<input id="diameter" type="number" placeholder="Diameter (mm)">
+<input id="hoyde" type="number" placeholder="Høyde (m)">
 
-<input type="number" id="diameter" placeholder="Diameter skadested (mm)">
-<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
-<input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
-<input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
-
-<select id="miljo">
-<option>Kyst</option>
-<option>Innland</option>
-<option>Fjellklima</option>
+<select id="styrke">
+<option value="30">30 N/mm²</option>
+<option value="40">40 N/mm²</option>
 </select>
 
-<select id="jord">
-<option>Innmark</option>
-<option>Skogsmark</option>
-<option>Fjell</option>
+<select id="vind">
+<option value="0.5">Lav vind</option>
+<option value="1">Normal vind</option>
+<option value="1.5">Høy vind</option>
+</select>
+
+<select id="is">
+<option value="0">Ingen is</option>
+<option value="0.5">Lett is</option>
+<option value="1">Mye is</option>
 </select>
 
 </div>
 
-<!-- SKADER -->
 <div class="card">
-<h3>Ny skade</h3>
+<h3>Skader</h3>
 
 <select id="type">
 <option value="innvendig">Innvendig råte</option>
@@ -59,30 +55,22 @@ button { background:#2e7d32; color:white; border:none; }
 <option value="spettsmie">Spettsmie</option>
 </select>
 
-<input type="number" id="A" placeholder="A (mm)">
-<input type="number" id="B" placeholder="B (mm)">
-<input type="number" id="C" placeholder="C (mm)">
-<input type="number" id="D" placeholder="D (mm)">
-<input type="number" id="E" placeholder="E (mm)">
-<input type="number" id="L" placeholder="Lengde (mm)">
-<input type="number" id="H" placeholder="Skadehøyde (mm)">
+<input id="A" type="number" placeholder="A">
+<input id="B" type="number" placeholder="B">
+<input id="C" type="number" placeholder="C">
+<input id="D" type="number" placeholder="D">
+<input id="E" type="number" placeholder="E">
 
 <button onclick="leggTil()">Legg til skade</button>
 
 <div id="liste"></div>
+
 </div>
 
-<!-- RESULTAT -->
 <div class="card">
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
 <div id="forklaring" class="small"></div>
-</div>
-
-<!-- EKSPORT -->
-<div class="card">
-<button onclick="excel()">Last ned Excel</button>
-<button onclick="window.print()">Lag PDF</button>
 </div>
 
 <script>
@@ -90,115 +78,88 @@ button { background:#2e7d32; color:white; border:none; }
 let skader = [];
 
 function leggTil() {
-  let s = {
+  skader.push({
     type: type.value,
-    A: parseFloat(A.value),
-    B: parseFloat(B.value),
-    C: parseFloat(C.value),
-    D: parseFloat(D.value),
-    E: parseFloat(E.value),
-    L: parseFloat(L.value),
-    H: parseFloat(H.value)
-  };
+    A: +A.value,
+    B: +B.value,
+    C: +C.value,
+    D: +D.value,
+    E: +E.value
+  });
 
-  skader.push(s);
-  liste.innerHTML += `<div>${s.type} (h=${s.H||0})</div>`;
+  liste.innerHTML += `<div>${type.value}</div>`;
 }
 
 function beregn() {
 
-  let d = parseFloat(diameter.value);
-  if (!d) return alert("Mangler diameter");
+  let D = +diameter.value;
+  let H = +hoyde.value;
+  let sigma = +styrke.value;
 
-  let resultater = [];
+  if (!D || !H) return alert("Mangler data");
+
+  let vindF = +vind.value;
+  let isF = +is.value;
+
+  // LAST
+  let q_vind = 0.6 * vindF;
+  let q_is = 0.3 * isF;
+
+  let M_vind = q_vind * H * H;
+  let M_is = q_is * H * H;
+
+  let M_last = (M_vind + M_is) * 1000;
+
+  // SKADE → effektiv diameter
+  let d_eff = D;
+  let faktor = 1;
 
   skader.forEach(s => {
 
-    let rest = 100;
-    let type = s.type;
-
-    // INNVENDIG
-    if (type === "innvendig" && s.E) {
-      rest = (s.E / (d/2)) * 100;
-    }
-
-    // SIRKULÆR
-    if (type === "sirkular") {
-      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
-      if (vals.length){
-        let min = Math.min(...vals);
-        rest = (min / (d/2)) * 100;
-      }
-    }
-
-    // SOFTRÅTE
-    if (type === "softråte") {
+    if (s.type === "softråte") {
       let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
       if (vals.length){
         let max = Math.max(...vals);
-        rest = ((d - max) / d) * 100;
+        d_eff = D - max;
       }
     }
 
-    // SPREKK
-    if (type === "sprekk") {
-      rest = 100 - ((s.B||0)*1.2 + (s.L||0)/1000);
+    if (s.type === "sirkular") {
+      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
+      if (vals.length){
+        let min = Math.min(...vals);
+        d_eff = min * 2;
+      }
     }
 
-    // SPETTSMIE
-    if (type === "spettsmie") {
-      rest = 100 - ((s.B||0)*2);
+    if (s.type === "innvendig" && s.E) {
+      d_eff = s.E * 2;
     }
 
-    resultater.push({type, rest});
+    if (s.type === "sprekk") faktor *= 0.9;
+    if (s.type === "spettsmie") faktor *= 0.85;
+
   });
 
-  // PRIORITET
-  let styrende = 100;
-  let styrendeType = "";
+  // KAPASITET
+  let W = (Math.PI * Math.pow(d_eff,3)) / 32;
+  let M_kap = sigma * W * faktor;
 
-  resultater.forEach(r => {
-    if (r.rest < styrende) {
-      styrende = r.rest;
-      styrendeType = r.type;
-    }
-  });
+  let u = (M_last / M_kap) * 100;
 
-  let status = styrende >= 75 ? "GODKJENT" : "IKKE GODKJENT";
-
-  // BESLUTNING
-  let beslutning = "";
-
-  if (styrende >= 75) {
-    beslutning = "Stolpe kan beholdes";
-  } else if (styrende >= 60) {
-    beslutning = "Bør følges opp";
-  } else {
-    beslutning = "Bør skiftes";
-  }
+  let status = "";
+  if (u <= 100) status = "GODKJENT";
+  else if (u <= 120) status = "KRITISK";
+  else status = "IKKE GODKJENT";
 
   resultat.innerHTML =
-    "Restkapasitet: " + styrende.toFixed(1) + "%<br>" +
-    "Status: " + status + "<br>" +
-    "Tiltak: " + beslutning;
+    "Utnyttelse: " + u.toFixed(1) + "%<br>Status: " + status;
 
-  forklaring.innerText = "Styrende skade: " + styrendeType;
-}
+  forklaring.innerText =
+    "Vindmoment: " + M_vind.toFixed(1) +
+    " | Ismoment: " + M_is.toFixed(1) +
+    " | Effektiv diameter: " + d_eff.toFixed(1);
 
-// EXCEL
-function excel() {
-
-  let csv = "Netteier,Linje,Mast,Stolpe,Type,Rest\n";
-
-  skader.forEach(s=>{
-    csv += `${netteier.value},${linje.value},${mast.value},${stolpenr.value},${s.type},\n`;
-  });
-
-  let blob = new Blob([csv]);
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "rapport.csv";
-  a.click();
 }
 
 </script>
