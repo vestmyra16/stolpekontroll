@@ -8,7 +8,7 @@
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-input, select, button { width:100%; padding:10px; margin:5px 0; border-radius:5px; border:1px solid #ccc;}
+input, select, button { width:100%; padding:10px; margin:5px 0; }
 button { background:#2e7d32; color:white; border:none; }
 .result { font-weight:bold; padding:10px; }
 </style>
@@ -25,89 +25,123 @@ button { background:#2e7d32; color:white; border:none; }
 </div>
 
 <div class="card">
-<h3>Fukt</h3>
-<label>
-<input type="checkbox" id="fuktAktiv">
- Aktiver fukt
-</label>
-
-<div id="fuktFelt" style="display:none;">
-<input id="temp" placeholder="Temperatur (°C)">
-<input id="rh" placeholder="Relativ luftfuktighet (%)">
-<input id="fuktYtre" placeholder="Fukt ytre (%)">
-<input id="fuktIndre" placeholder="Fukt indre (%)">
-</div>
-</div>
-
-<div class="card">
-<h3>Skader</h3>
-
-<select id="skadeType">
-<option>Ingen</option>
-<option>Innvendig råte</option>
-<option>Softråte</option>
+<h3>Skadetype</h3>
+<select id="type" onchange="visFelter()">
+<option value="">Velg</option>
+<option value="innvendig">Innvendig råte</option>
+<option value="sirkular">Sirkulær råte</option>
+<option value="softråte">Softråte</option>
+<option value="sprekk">Sprekk</option>
+<option value="spettsmie">Spettsmie</option>
 </select>
 
-<input id="A" placeholder="A (mm)">
-<input id="B" placeholder="B (mm)">
-<input id="reduksjon" placeholder="Diameterreduksjon (mm)">
+<div id="felter"></div>
 </div>
 
 <div class="card">
-<h3>Beregning</h3>
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
 </div>
 
 <div class="card">
-<h3>Eksport</h3>
-<button onclick="lastNedExcel()">Last ned Excel</button>
-<button onclick="lagPDF()">Lag PDF</button>
+<button onclick="excel()">Last ned Excel</button>
+<button onclick="window.print()">Lag PDF</button>
 </div>
 
 <script>
 
-// ===== FUKT FIX (iPhone stabil) =====
-const fuktCheckbox = document.getElementById("fuktAktiv");
-const fuktFelt = document.getElementById("fuktFelt");
+function visFelter() {
+  let t = document.getElementById("type").value;
+  let html = "";
 
-function toggleFukt() {
-  if (fuktCheckbox.checked === true) {
-    fuktFelt.style.display = "block";
-  } else {
-    fuktFelt.style.display = "none";
+  if (t === "innvendig") {
+    html = `
+      <input id="A" placeholder="A råtebredde">
+      <input id="B" placeholder="B hulrom">
+      <input id="E" placeholder="E restskall">
+    `;
   }
+
+  if (t === "sirkular") {
+    html = `
+      <input id="A" placeholder="A restskall">
+      <input id="B" placeholder="B restskall">
+      <input id="C" placeholder="C restskall">
+      <input id="D" placeholder="D restskall">
+    `;
+  }
+
+  if (t === "softråte") {
+    html = `
+      <input id="A" placeholder="A softråte">
+      <input id="B" placeholder="B softråte">
+      <input id="C" placeholder="C softråte">
+      <input id="D" placeholder="D softråte">
+    `;
+  }
+
+  if (t === "sprekk") {
+    html = `
+      <input id="A" placeholder="A bredde">
+      <input id="B" placeholder="B dybde">
+    `;
+  }
+
+  if (t === "spettsmie") {
+    html = `
+      <input id="A" placeholder="A bredde">
+      <input id="B" placeholder="B dybde">
+    `;
+  }
+
+  document.getElementById("felter").innerHTML = html;
 }
 
-fuktCheckbox.addEventListener("change", toggleFukt);
+function getVals(ids) {
+  return ids.map(id => parseFloat(document.getElementById(id)?.value)).filter(v => !isNaN(v));
+}
 
-window.addEventListener("load", function() {
-  fuktCheckbox.checked = false;
-  toggleFukt();
-});
-
-// ===== BEREGNING =====
 function beregn() {
-  let d = parseFloat(document.getElementById("diameter").value) || 0;
-  let A = parseFloat(document.getElementById("A").value) || 0;
-  let B = parseFloat(document.getElementById("B").value) || 0;
-  let reduksjon = parseFloat(document.getElementById("reduksjon").value) || 0;
-  let type = document.getElementById("skadeType").value;
+  let d = parseFloat(document.getElementById("diameter").value);
+  let t = document.getElementById("type").value;
 
-  if (d === 0) {
-    document.getElementById("resultat").innerHTML = "Mangler diameter";
-    return;
-  }
+  if (!d) return alert("Mangler diameter");
 
   let rest = 100;
+  let forklaring = "";
 
-  if (type === "Innvendig råte") {
-    let hulrom = A + B;
-    rest = ((d - hulrom) / d) * 100;
+  if (t === "innvendig") {
+    let E = parseFloat(document.getElementById("E").value);
+    rest = (E / (d/2)) * 100;
+    forklaring = "Basert på restskall (E)";
   }
 
-  if (type === "Softråte") {
-    rest = ((d - reduksjon) / d) * 100;
+  if (t === "sirkular") {
+    let vals = getVals(["A","B","C","D"]);
+    let min = Math.min(...vals);
+    rest = (min / (d/2)) * 100;
+    forklaring = "Min restskall brukt (" + min + " mm)";
+  }
+
+  if (t === "softråte") {
+    let vals = getVals(["A","B","C","D"]);
+    let max = Math.max(...vals);
+    rest = ((d - max) / d) * 100;
+    forklaring = "Største reduksjon brukt (" + max + " mm)";
+  }
+
+  if (t === "sprekk") {
+    let A = parseFloat(document.getElementById("A").value);
+    let B = parseFloat(document.getElementById("B").value);
+    rest = 100 - (B * 2);
+    forklaring = "Sprekk påvirkning";
+  }
+
+  if (t === "spettsmie") {
+    let A = parseFloat(document.getElementById("A").value);
+    let B = parseFloat(document.getElementById("B").value);
+    rest = 100 - (B * 3);
+    forklaring = "Spettsmie påvirkning";
   }
 
   if (rest < 0) rest = 0;
@@ -115,26 +149,21 @@ function beregn() {
   let status = rest >= 75 ? "GODKJENT" : "IKKE GODKJENT";
 
   document.getElementById("resultat").innerHTML =
-    "Restkapasitet: " + rest.toFixed(1) + "%<br>Status: " + status;
+    "Restkapasitet: " + rest.toFixed(1) + "%<br>" +
+    "Status: " + status + "<br>" +
+    forklaring;
 }
 
-// ===== EXCEL =====
-function lastNedExcel() {
-  let csv = "Stolpenr,Diameter,Resultat\n";
+function excel() {
+  let csv = "Stolpe,Resultat\n";
   csv += document.getElementById("stolpenr").value + ",";
-  csv += document.getElementById("diameter").value + ",";
   csv += document.getElementById("resultat").innerText;
 
-  let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  let link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "stolpekontroll.csv";
-  link.click();
-}
-
-// ===== PDF =====
-function lagPDF() {
-  window.print();
+  let blob = new Blob([csv], { type: "text/csv" });
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "rapport.csv";
+  a.click();
 }
 
 </script>
