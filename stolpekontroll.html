@@ -8,7 +8,7 @@
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-input, select, button { width:100%; padding:10px; margin:5px 0; }
+input, select, button { width:100%; padding:10px; margin:5px 0; border-radius:5px; border:1px solid #ccc;}
 button { background:#2e7d32; color:white; border:none; }
 .result { font-weight:bold; padding:10px; }
 </style>
@@ -21,18 +21,21 @@ button { background:#2e7d32; color:white; border:none; }
 <div class="card">
 <h3>Grunnlag</h3>
 <input id="stolpenr" placeholder="Stolpenr">
-<input id="diameter" placeholder="Diameter skadested (mm)" type="number">
+<input id="diameter" type="number" placeholder="Diameter skadested (mm)">
 </div>
 
 <div class="card">
 <h3>Fukt</h3>
-<label><input type="checkbox" id="fuktAktiv"> Aktiver fukt</label>
+<label>
+<input type="checkbox" id="fuktAktiv">
+ Aktiver fukt
+</label>
 
-<div id="fuktFelt">
-<input placeholder="Temperatur">
-<input placeholder="Relativ luftfuktighet">
-<input placeholder="Fukt ytre (%)">
-<input placeholder="Fukt indre (%)">
+<div id="fuktFelt" style="display:none;">
+<input id="temp" placeholder="Temperatur (°C)">
+<input id="rh" placeholder="Relativ luftfuktighet (%)">
+<input id="fuktYtre" placeholder="Fukt ytre (%)">
+<input id="fuktIndre" placeholder="Fukt indre (%)">
 </div>
 </div>
 
@@ -64,23 +67,37 @@ button { background:#2e7d32; color:white; border:none; }
 
 <script>
 
-// Fukt toggle (fikser iPhone bug)
+// ===== FUKT FIX (iPhone stabil) =====
 const fuktCheckbox = document.getElementById("fuktAktiv");
 const fuktFelt = document.getElementById("fuktFelt");
 
 function toggleFukt() {
-  fuktFelt.style.display = fuktCheckbox.checked ? "block" : "none";
+  if (fuktCheckbox.checked === true) {
+    fuktFelt.style.display = "block";
+  } else {
+    fuktFelt.style.display = "none";
+  }
 }
-fuktCheckbox.addEventListener("change", toggleFukt);
-window.addEventListener("load", toggleFukt);
 
-// Beregning (forenklet men riktig prinsipp)
+fuktCheckbox.addEventListener("change", toggleFukt);
+
+window.addEventListener("load", function() {
+  fuktCheckbox.checked = false;
+  toggleFukt();
+});
+
+// ===== BEREGNING =====
 function beregn() {
   let d = parseFloat(document.getElementById("diameter").value) || 0;
   let A = parseFloat(document.getElementById("A").value) || 0;
   let B = parseFloat(document.getElementById("B").value) || 0;
   let reduksjon = parseFloat(document.getElementById("reduksjon").value) || 0;
   let type = document.getElementById("skadeType").value;
+
+  if (d === 0) {
+    document.getElementById("resultat").innerHTML = "Mangler diameter";
+    return;
+  }
 
   let rest = 100;
 
@@ -93,27 +110,29 @@ function beregn() {
     rest = ((d - reduksjon) / d) * 100;
   }
 
+  if (rest < 0) rest = 0;
+
   let status = rest >= 75 ? "GODKJENT" : "IKKE GODKJENT";
 
   document.getElementById("resultat").innerHTML =
     "Restkapasitet: " + rest.toFixed(1) + "%<br>Status: " + status;
 }
 
-// Excel eksport
+// ===== EXCEL =====
 function lastNedExcel() {
-  let data = "Stolpenr,Diameter,Resultat\n";
-  data += document.getElementById("stolpenr").value + ",";
-  data += document.getElementById("diameter").value + ",";
-  data += document.getElementById("resultat").innerText;
+  let csv = "Stolpenr,Diameter,Resultat\n";
+  csv += document.getElementById("stolpenr").value + ",";
+  csv += document.getElementById("diameter").value + ",";
+  csv += document.getElementById("resultat").innerText;
 
-  let blob = new Blob([data], { type: "text/csv" });
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "rapport.csv";
-  a.click();
+  let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "stolpekontroll.csv";
+  link.click();
 }
 
-// PDF (bruker print)
+// ===== PDF =====
 function lagPDF() {
   window.print();
 }
