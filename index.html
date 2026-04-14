@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v6</title>
+<title>Stolpekontroll v6 komplett</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
@@ -17,33 +17,42 @@ button { background:#2e7d32; color:white; border:none; }
 
 <body>
 
-<h2>Stolpekontroll v6 (Standardmodell)</h2>
+<h2>Stolpekontroll v6</h2>
 
+<!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
 
-<input id="diameter" type="number" placeholder="Diameter (mm)">
-<input id="hoyde" type="number" placeholder="Høyde (m)">
+<input id="netteier" placeholder="Netteier">
+<input id="linje" placeholder="Linjeidentifikasjon">
+<input id="mast" placeholder="Mast nr">
+<input id="stolpenr" placeholder="Stolpenr">
+
+<input type="number" id="diameter" placeholder="Diameter skadested (mm)">
+<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
+<input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
+<input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
+
+<select id="miljo">
+<option value="1.2">Kyst</option>
+<option value="1.0">Innland</option>
+<option value="1.3">Fjellklima</option>
+</select>
+
+<select id="jord">
+<option value="1.0">Innmark</option>
+<option value="1.1">Skogsmark</option>
+<option value="1.2">Fjell</option>
+</select>
 
 <select id="styrke">
 <option value="30">30 N/mm²</option>
 <option value="40">40 N/mm²</option>
 </select>
 
-<select id="vind">
-<option value="0.5">Lav vind</option>
-<option value="1">Normal vind</option>
-<option value="1.5">Høy vind</option>
-</select>
-
-<select id="is">
-<option value="0">Ingen is</option>
-<option value="0.5">Lett is</option>
-<option value="1">Mye is</option>
-</select>
-
 </div>
 
+<!-- SKADER -->
 <div class="card">
 <h3>Skader</h3>
 
@@ -55,11 +64,13 @@ button { background:#2e7d32; color:white; border:none; }
 <option value="spettsmie">Spettsmie</option>
 </select>
 
-<input id="A" type="number" placeholder="A">
-<input id="B" type="number" placeholder="B">
-<input id="C" type="number" placeholder="C">
-<input id="D" type="number" placeholder="D">
-<input id="E" type="number" placeholder="E">
+<input id="A" type="number" placeholder="A (mm)">
+<input id="B" type="number" placeholder="B (mm)">
+<input id="C" type="number" placeholder="C (mm)">
+<input id="D" type="number" placeholder="D (mm)">
+<input id="E" type="number" placeholder="E (mm)">
+<input id="L" type="number" placeholder="Lengde (mm)">
+<input id="H" type="number" placeholder="Skadehøyde (mm)">
 
 <button onclick="leggTil()">Legg til skade</button>
 
@@ -67,6 +78,7 @@ button { background:#2e7d32; color:white; border:none; }
 
 </div>
 
+<!-- RESULTAT -->
 <div class="card">
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
@@ -78,35 +90,42 @@ button { background:#2e7d32; color:white; border:none; }
 let skader = [];
 
 function leggTil() {
-  skader.push({
+  let s = {
     type: type.value,
     A: +A.value,
     B: +B.value,
     C: +C.value,
     D: +D.value,
-    E: +E.value
-  });
+    E: +E.value,
+    L: +L.value,
+    H: +H.value
+  };
 
-  liste.innerHTML += `<div>${type.value}</div>`;
+  skader.push(s);
+  liste.innerHTML += `<div>${s.type} (h=${s.H||0} mm)</div>`;
 }
 
 function beregn() {
 
   let D = +diameter.value;
   let H = +hoyde.value;
+  let ned = +nedgraving.value;
   let sigma = +styrke.value;
 
   if (!D || !H) return alert("Mangler data");
 
-  let vindF = +vind.value;
-  let isF = +is.value;
+  let miljoF = +miljo.value;
+  let jordF = +jord.value;
 
-  // LAST
-  let q_vind = 0.6 * vindF;
-  let q_is = 0.3 * isF;
+  // Effektiv høyde (momentarm)
+  let H_eff = H - (ned || 0.8);
 
-  let M_vind = q_vind * H * H;
-  let M_is = q_is * H * H;
+  // LASTMODELL
+  let q_vind = 0.6 * miljoF;
+  let q_is = 0.3 * miljoF;
+
+  let M_vind = q_vind * H_eff * H_eff;
+  let M_is = q_is * H_eff * H_eff;
 
   let M_last = (M_vind + M_is) * 1000;
 
@@ -143,7 +162,10 @@ function beregn() {
 
   // KAPASITET
   let W = (Math.PI * Math.pow(d_eff,3)) / 32;
-  let M_kap = sigma * W * faktor;
+
+  let sikkerhet = 1.2 * jordF;
+
+  let M_kap = (sigma * W * faktor) / sikkerhet;
 
   let u = (M_last / M_kap) * 100;
 
@@ -156,9 +178,9 @@ function beregn() {
     "Utnyttelse: " + u.toFixed(1) + "%<br>Status: " + status;
 
   forklaring.innerText =
-    "Vindmoment: " + M_vind.toFixed(1) +
-    " | Ismoment: " + M_is.toFixed(1) +
-    " | Effektiv diameter: " + d_eff.toFixed(1);
+    "Effektiv høyde: " + H_eff.toFixed(2) +
+    " m | Effektiv diameter: " + d_eff.toFixed(1) +
+    " mm | Sikkerhetsfaktor: " + sikkerhet.toFixed(2);
 
 }
 
