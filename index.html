@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stolpekontroll</title>
 
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:10px; }
+.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
+input, select, button { width:100%; padding:10px; margin:5px 0; }
+button { background:#2e7d32; color:white; border:none; }
+.result { font-weight:bold; padding:10px; }
+.small { font-size: 12px; color:#555; }
+</style>
+</head>
+
+<body>
+
+<h2>Stolpekontroll</h2>
+
+<div class="card">
+<h3>Grunnlag</h3>
+<input id="stolpenr" placeholder="Stolpenr">
+<input id="diameter" type="number" placeholder="Diameter skadested (mm)">
+</div>
+
+<div class="card">
+<h3>Skadetype</h3>
+<select id="type" onchange="visFelter()">
+<option value="">Velg</option>
+<option value="innvendig">Innvendig råte</option>
+<option value="sirkular">Sirkulær råte</option>
+<option value="softråte">Softråte</option>
+<option value="sprekk">Sprekk</option>
+<option value="spettsmie">Spettsmie</option>
+</select>
+
+<div id="felter"></div>
+</div>
+
+<div class="card">
+<button onclick="beregn()">Beregn</button>
+<div id="resultat" class="result"></div>
+<div id="forklaring" class="small"></div>
+</div>
+
+<div class="card">
+<button onclick="excel()">Last ned Excel</button>
+<button onclick="window.print()">Lag PDF</button>
+</div>
+
+<script>
+
+function visFelter() {
+  let t = document.getElementById("type").value;
+  let html = "";
+
+  if (t === "innvendig") {
+    html = `
+      <input id="A" placeholder="A råtebredde">
+      <input id="B" placeholder="B hulrom">
+      <input id="E" placeholder="E restskall">
+    `;
+  }
+
+  if (t === "sirkular") {
+    html = `
+      <input id="A" placeholder="A restskall">
+      <input id="B" placeholder="B restskall">
+      <input id="C" placeholder="C restskall">
+      <input id="D" placeholder="D restskall">
+    `;
+  }
+
+  if (t === "softråte") {
+    html = `
+      <input id="A" placeholder="A softråte">
+      <input id="B" placeholder="B softråte">
+      <input id="C" placeholder="C softråte">
+      <input id="D" placeholder="D softråte">
+    `;
+  }
+
+  if (t === "sprekk") {
+    html = `
+      <input id="A" placeholder="A bredde">
+      <input id="B" placeholder="B dybde">
+      <input id="L" placeholder="Lengde (mm)">
+    `;
+  }
+
+  if (t === "spettsmie") {
+    html = `
+      <input id="A" placeholder="A bredde">
+      <input id="B" placeholder="B dybde">
+    `;
+  }
+
+  document.getElementById("felter").innerHTML = html;
+}
+
+function getVals(ids) {
+  return ids
+    .map(id => parseFloat(document.getElementById(id)?.value))
+    .filter(v => !isNaN(v));
+}
+
+function beregn() {
+  let d = parseFloat(document.getElementById("diameter").value);
+  let t = document.getElementById("type").value;
+
+  if (!d) {
+    alert("Mangler diameter");
+    return;
+  }
+
+  let rest = 100;
+  let tekst = "";
+
+  // INNVENDIG RÅTE
+  if (t === "innvendig") {
+    let E = parseFloat(document.getElementById("E").value);
+    if (!E) return alert("Mangler restskall (E)");
+
+    rest = (E / (d/2)) * 100;
+    tekst = "Basert på restskall (E)";
+  }
+
+  // SIRKULÆR RÅTE
+  if (t === "sirkular") {
+    let vals = getVals(["A","B","C","D"]);
+    if (vals.length === 0) return alert("Mangler målinger");
+
+    let min = Math.min(...vals);
+    rest = (min / (d/2)) * 100;
+
+    tekst = "Min restskall brukt: " + min + " mm (" + vals.length + " målinger)";
+  }
+
+  // SOFTRÅTE
+  if (t === "softråte") {
+    let vals = getVals(["A","B","C","D"]);
+    if (vals.length === 0) return alert("Mangler målinger");
+
+    let max = Math.max(...vals);
+    rest = ((d - max) / d) * 100;
+
+    tekst = "Største reduksjon brukt: " + max + " mm (" + vals.length + " målinger)";
+  }
+
+  // SPREKK (enkelt første nivå)
+  if (t === "sprekk") {
+    let B = parseFloat(document.getElementById("B").value) || 0;
+    let L = parseFloat(document.getElementById("L").value) || 0;
+
+    let reduksjon = B * 1.5 + (L / 1000);
+    rest = 100 - reduksjon;
+
+    tekst = "Sprekk påvirkning basert på dybde og lengde";
+  }
+
+  // SPETTSMIE
+  if (t === "spettsmie") {
+    let B = parseFloat(document.getElementById("B").value) || 0;
+    rest = 100 - (B * 2);
+
+    tekst = "Spettsmie påvirkning";
+  }
+
+  if (rest < 0) rest = 0;
+
+  let status = rest >= 75 ? "GODKJENT" : "IKKE GODKJENT";
+
+  document.getElementById("resultat").innerHTML =
+    "Restkapasitet: " + rest.toFixed(1) + "%<br>Status: " + status;
+
+  document.getElementById("forklaring").innerText = tekst;
+}
+
+// Excel
+function excel() {
+  let csv = "Stolpe,Resultat\n";
+  csv += document.getElementById("stolpenr").value + ",";
+  csv += document.getElementById("resultat").innerText;
+
+  let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "stolpekontroll.csv";
+  a.click();
+}
+
+</script>
+
+</body>
+</html>
