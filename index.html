@@ -11,7 +11,6 @@ body { font-family: Arial; background:#f4f4f4; padding:10px; }
 input, select, button { width:100%; padding:10px; margin:5px 0; }
 button { background:#2e7d32; color:white; border:none; }
 .result { font-weight:bold; padding:10px; }
-.small { font-size: 12px; color:#555; }
 </style>
 </head>
 
@@ -19,16 +18,39 @@ button { background:#2e7d32; color:white; border:none; }
 
 <h2>Stolpekontroll</h2>
 
+<!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
+
+<input id="netteier" placeholder="Netteier">
+<input id="linje" placeholder="Linjeidentifikasjon">
+<input id="mast" placeholder="Mast nr">
 <input id="stolpenr" placeholder="Stolpenr">
-<input id="diameter" type="number" placeholder="Diameter skadested (mm)">
+
+<input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
+<input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
+<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
+<input type="number" id="diameter" placeholder="Diameter skadested (mm)">
+
+<select id="miljo">
+<option>Kyst</option>
+<option>Innland</option>
+<option>Fjellklima</option>
+</select>
+
+<select id="jord">
+<option>Innmark</option>
+<option>Skogsmark</option>
+<option>Fjell</option>
+</select>
+
 </div>
 
+<!-- SKADER -->
 <div class="card">
-<h3>Skadetype</h3>
-<select id="type" onchange="visFelter()">
-<option value="">Velg</option>
+<h3>Legg til skade</h3>
+
+<select id="type">
 <option value="innvendig">Innvendig råte</option>
 <option value="sirkular">Sirkulær råte</option>
 <option value="softråte">Softråte</option>
@@ -36,15 +58,25 @@ button { background:#2e7d32; color:white; border:none; }
 <option value="spettsmie">Spettsmie</option>
 </select>
 
-<div id="felter"></div>
+<input type="number" id="A" placeholder="A (mm)">
+<input type="number" id="B" placeholder="B (mm)">
+<input type="number" id="C" placeholder="C (mm)">
+<input type="number" id="D" placeholder="D (mm)">
+<input type="number" id="E" placeholder="E (mm)">
+<input type="number" id="hoydeskade" placeholder="Skadehøyde (mm)">
+
+<button onclick="leggTil()">Legg til skade</button>
+
+<div id="liste"></div>
 </div>
 
+<!-- BEREGNING -->
 <div class="card">
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
-<div id="forklaring" class="small"></div>
 </div>
 
+<!-- EKSPORT -->
 <div class="card">
 <button onclick="excel()">Last ned Excel</button>
 <button onclick="window.print()">Lag PDF</button>
@@ -52,142 +84,82 @@ button { background:#2e7d32; color:white; border:none; }
 
 <script>
 
-function visFelter() {
-  let t = document.getElementById("type").value;
-  let html = "";
+let skader = [];
 
-  if (t === "innvendig") {
-    html = `
-      <input id="A" placeholder="A råtebredde">
-      <input id="B" placeholder="B hulrom">
-      <input id="E" placeholder="E restskall">
-    `;
-  }
+function leggTil() {
+  let skade = {
+    type: document.getElementById("type").value,
+    A: parseFloat(A.value),
+    B: parseFloat(B.value),
+    C: parseFloat(C.value),
+    D: parseFloat(D.value),
+    E: parseFloat(E.value),
+    h: parseFloat(hoydeskade.value)
+  };
 
-  if (t === "sirkular") {
-    html = `
-      <input id="A" placeholder="A restskall">
-      <input id="B" placeholder="B restskall">
-      <input id="C" placeholder="C restskall">
-      <input id="D" placeholder="D restskall">
-    `;
-  }
+  skader.push(skade);
 
-  if (t === "softråte") {
-    html = `
-      <input id="A" placeholder="A softråte">
-      <input id="B" placeholder="B softråte">
-      <input id="C" placeholder="C softråte">
-      <input id="D" placeholder="D softråte">
-    `;
-  }
-
-  if (t === "sprekk") {
-    html = `
-      <input id="A" placeholder="A bredde">
-      <input id="B" placeholder="B dybde">
-      <input id="L" placeholder="Lengde (mm)">
-    `;
-  }
-
-  if (t === "spettsmie") {
-    html = `
-      <input id="A" placeholder="A bredde">
-      <input id="B" placeholder="B dybde">
-    `;
-  }
-
-  document.getElementById("felter").innerHTML = html;
-}
-
-function getVals(ids) {
-  return ids
-    .map(id => parseFloat(document.getElementById(id)?.value))
-    .filter(v => !isNaN(v));
+  document.getElementById("liste").innerHTML +=
+    "<div>" + skade.type + " (h=" + skade.h + " mm)</div>";
 }
 
 function beregn() {
   let d = parseFloat(document.getElementById("diameter").value);
-  let t = document.getElementById("type").value;
+  let verste = 100;
 
-  if (!d) {
-    alert("Mangler diameter");
-    return;
-  }
+  skader.forEach(s => {
 
-  let rest = 100;
-  let tekst = "";
+    let rest = 100;
 
-  // INNVENDIG RÅTE
-  if (t === "innvendig") {
-    let E = parseFloat(document.getElementById("E").value);
-    if (!E) return alert("Mangler restskall (E)");
+    if (s.type === "innvendig" && s.E) {
+      rest = (s.E / (d/2)) * 100;
+    }
 
-    rest = (E / (d/2)) * 100;
-    tekst = "Basert på restskall (E)";
-  }
+    if (s.type === "sirkular") {
+      let vals = [s.A, s.B, s.C, s.D].filter(v => v);
+      if (vals.length > 0) {
+        let min = Math.min(...vals);
+        rest = (min / (d/2)) * 100;
+      }
+    }
 
-  // SIRKULÆR RÅTE
-  if (t === "sirkular") {
-    let vals = getVals(["A","B","C","D"]);
-    if (vals.length === 0) return alert("Mangler målinger");
+    if (s.type === "softråte") {
+      let vals = [s.A, s.B, s.C, s.D].filter(v => v);
+      if (vals.length > 0) {
+        let max = Math.max(...vals);
+        rest = ((d - max) / d) * 100;
+      }
+    }
 
-    let min = Math.min(...vals);
-    rest = (min / (d/2)) * 100;
+    if (s.type === "sprekk") {
+      rest = 100 - ((s.B || 0) * 1.5);
+    }
 
-    tekst = "Min restskall brukt: " + min + " mm (" + vals.length + " målinger)";
-  }
+    if (s.type === "spettsmie") {
+      rest = 100 - ((s.B || 0) * 2);
+    }
 
-  // SOFTRÅTE
-  if (t === "softråte") {
-    let vals = getVals(["A","B","C","D"]);
-    if (vals.length === 0) return alert("Mangler målinger");
+    if (rest < verste) verste = rest;
 
-    let max = Math.max(...vals);
-    rest = ((d - max) / d) * 100;
+  });
 
-    tekst = "Største reduksjon brukt: " + max + " mm (" + vals.length + " målinger)";
-  }
-
-  // SPREKK (enkelt første nivå)
-  if (t === "sprekk") {
-    let B = parseFloat(document.getElementById("B").value) || 0;
-    let L = parseFloat(document.getElementById("L").value) || 0;
-
-    let reduksjon = B * 1.5 + (L / 1000);
-    rest = 100 - reduksjon;
-
-    tekst = "Sprekk påvirkning basert på dybde og lengde";
-  }
-
-  // SPETTSMIE
-  if (t === "spettsmie") {
-    let B = parseFloat(document.getElementById("B").value) || 0;
-    rest = 100 - (B * 2);
-
-    tekst = "Spettsmie påvirkning";
-  }
-
-  if (rest < 0) rest = 0;
-
-  let status = rest >= 75 ? "GODKJENT" : "IKKE GODKJENT";
+  let status = verste >= 75 ? "GODKJENT" : "IKKE GODKJENT";
 
   document.getElementById("resultat").innerHTML =
-    "Restkapasitet: " + rest.toFixed(1) + "%<br>Status: " + status;
-
-  document.getElementById("forklaring").innerText = tekst;
+    "Restkapasitet: " + verste.toFixed(1) + "%<br>Status: " + status;
 }
 
-// Excel
 function excel() {
-  let csv = "Stolpe,Resultat\n";
-  csv += document.getElementById("stolpenr").value + ",";
-  csv += document.getElementById("resultat").innerText;
+  let csv = "Stolpe,Type,A,B,C,D,E,Høyde\n";
 
-  let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  skader.forEach(s => {
+    csv += stolpenr.value + "," + s.type + "," + s.A + "," + s.B + "," + s.C + "," + s.D + "," + s.E + "," + s.h + "\n";
+  });
+
+  let blob = new Blob([csv], { type: "text/csv" });
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "stolpekontroll.csv";
+  a.download = "rapport.csv";
   a.click();
 }
 
