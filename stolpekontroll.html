@@ -6,219 +6,117 @@
 <title>Stolpekontroll</title>
 
 <style>
-body { font-family: Arial; background:#f4f4f4; padding:15px;}
-.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
-input, select, button { width:100%; padding:10px; margin:5px 0;}
-button { background:#2e7d32; color:white; border:none;}
+body { font-family: Arial; background:#f4f4f4; padding:10px; }
+.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
+input, select, button { width:100%; padding:10px; margin:5px 0; }
+button { background:#2e7d32; color:white; border:none; }
+.result { font-weight:bold; padding:10px; }
 </style>
 </head>
 
 <body>
 
-<h1>Stolpekontroll</h1>
+<h2>Stolpekontroll</h2>
 
-<!-- GRUNNLAGSDATA -->
 <div class="card">
-<h2>Grunnlagsdata</h2>
-
-<input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="Linjeidentifikasjon">
-<input id="mast" placeholder="Mast nr">
-<input id="stolpe" placeholder="Stolpenr">
-
-<input id="hoyde" placeholder="Stolpehøyde (m)">
-<input id="nedgrav" placeholder="Nedgravingsdybde (m)">
-<input id="jordband" placeholder="Diameter ved jordband (mm)">
-<input id="diameter" placeholder="Diameter på skadested (mm)">
-
-<select id="miljo">
-<option>Kyst</option>
-<option>Innland</option>
-<option>Fjellklima</option>
-</select>
-
-<select id="jordtype">
-<option>Innmark</option>
-<option>Skogsmark</option>
-<option>Fjell</option>
-</select>
-
-<select id="fiber">
-<option value="30">30 N/mm²</option>
-<option value="40">40 N/mm²</option>
-</select>
-
+<h3>Grunnlag</h3>
+<input id="stolpenr" placeholder="Stolpenr">
+<input id="diameter" placeholder="Diameter skadested (mm)" type="number">
 </div>
 
-<!-- FUKT -->
 <div class="card">
-<h2>Fukt</h2>
+<h3>Fukt</h3>
+<label><input type="checkbox" id="fuktAktiv"> Aktiver fukt</label>
 
-<label><input type="checkbox" id="fuktToggle"> Aktiver fukt</label>
-
-<div id="fuktfelt" style="display:none;">
-<input id="relfukt" placeholder="Relativ luftfuktighet (%)">
-<input id="temp" placeholder="Temperatur (°C)">
-<input id="ytrefukt" placeholder="Fukt i ytterskall (%)">
+<div id="fuktFelt">
+<input placeholder="Temperatur">
+<input placeholder="Relativ luftfuktighet">
+<input placeholder="Fukt ytre (%)">
+<input placeholder="Fukt indre (%)">
+</div>
 </div>
 
-</div>
-
-<!-- SKADER -->
 <div class="card">
-<h2>Skader</h2>
+<h3>Skader</h3>
 
-<select id="type" onchange="visFelter()">
-<option>Softråte</option>
+<select id="skadeType">
+<option>Ingen</option>
 <option>Innvendig råte</option>
-<option>Sirkulær råte</option>
-<option>Sprekk</option>
-<option>Spettsmie</option>
-<option>Hakkespetthull med reirhull</option>
-<option>Annen skade</option>
+<option>Softråte</option>
 </select>
 
-<div id="felter"></div>
-
-<input id="retning" placeholder="Retning">
-<input id="hoydeskade" placeholder="Skadehøyde (mm)">
-
-<button onclick="leggTil()">Legg til skade</button>
-
-<div id="liste"></div>
-
+<input id="A" placeholder="A (mm)">
+<input id="B" placeholder="B (mm)">
+<input id="reduksjon" placeholder="Diameterreduksjon (mm)">
 </div>
 
-<!-- BEREGNING -->
 <div class="card">
-<button onclick="beregn()">Kjør beregning</button>
+<h3>Beregning</h3>
+<button onclick="beregn()">Beregn</button>
+<div id="resultat" class="result"></div>
 </div>
 
-<!-- RESULTAT -->
 <div class="card">
-<h2>Resultat</h2>
-<div id="resultat">Ingen beregning</div>
+<h3>Eksport</h3>
+<button onclick="lastNedExcel()">Last ned Excel</button>
+<button onclick="lagPDF()">Lag PDF</button>
 </div>
 
 <script>
 
-let skader = [];
+// Fukt toggle (fikser iPhone bug)
+const fuktCheckbox = document.getElementById("fuktAktiv");
+const fuktFelt = document.getElementById("fuktFelt");
 
-// Fukt toggle
-document.getElementById("fuktToggle").addEventListener("change", function(){
- document.getElementById("fuktfelt").style.display =
- this.checked ? "block" : "none";
-});
-
-// Dynamiske felt
-function visFelter(){
-
- let t = document.getElementById("type").value;
- let html = "";
-
- if(t === "Innvendig råte"){
-  html = "A<input id='A'> B<input id='B'> E<input id='E'>";
- }
-
- if(t === "Sirkulær råte"){
-  html = "A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
- }
-
- if(t === "Softråte"){
-  html = "A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
- }
-
- if(t === "Sprekk"){
-  html = "A<input id='A'> B<input id='B'>";
- }
-
- if(t === "Spettsmie"){
-  html = "A<input id='A'> B<input id='B'>";
- }
-
- if(t === "Hakkespetthull med reirhull"){
-  html = "HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'> HL<input id='HL'>";
- }
-
- if(t === "Annen skade"){
-  html = "Beskrivelse<input id='tekst'>";
- }
-
- document.getElementById("felter").innerHTML = html;
+function toggleFukt() {
+  fuktFelt.style.display = fuktCheckbox.checked ? "block" : "none";
 }
+fuktCheckbox.addEventListener("change", toggleFukt);
+window.addEventListener("load", toggleFukt);
 
-// Hent verdi
-function val(id){
- let el = document.getElementById(id);
- if(!el) return 0;
- return parseFloat(el.value) || 0;
-}
+// Beregning (forenklet men riktig prinsipp)
+function beregn() {
+  let d = parseFloat(document.getElementById("diameter").value) || 0;
+  let A = parseFloat(document.getElementById("A").value) || 0;
+  let B = parseFloat(document.getElementById("B").value) || 0;
+  let reduksjon = parseFloat(document.getElementById("reduksjon").value) || 0;
+  let type = document.getElementById("skadeType").value;
 
-// Legg til skade
-function leggTil(){
+  let rest = 100;
 
- let t = document.getElementById("type").value;
-
- skader.push({
-  type: t,
-  A: val("A"),
-  B: val("B"),
-  C: val("C"),
-  D: val("D"),
-  E: val("E"),
-  retning: document.getElementById("retning").value,
-  h: val("hoydeskade")
- });
-
- document.getElementById("liste").innerHTML =
- skader.map(s => s.type + " (" + s.h + " mm)").join("<br>");
-}
-
-// Beregning (REN-prinsipp)
-function beregn(){
-
- let D = parseFloat(document.getElementById("diameter").value);
-
- if(!D){
-  document.getElementById("resultat").innerHTML = "Mangler diameter";
-  return;
- }
-
- let worst = 100;
-
- for(let i=0;i<skader.length;i++){
-
-  let s = skader[i];
-
-  let r = Math.max(s.A, s.B, s.C, s.D);
-
-  if(r > 0){
-   let Deff = D - 2*r;
-
-   let rest = Deff <= 0 ? 0 : Math.pow(Deff / D, 2) * 100;
-
-   if(rest < worst){
-    worst = rest;
-   }
+  if (type === "Innvendig råte") {
+    let hulrom = A + B;
+    rest = ((d - hulrom) / d) * 100;
   }
 
-  if(s.E > 0){
-   let restE = (s.E / D) * 100;
-
-   if(restE < worst){
-    worst = restE;
-   }
+  if (type === "Softråte") {
+    rest = ((d - reduksjon) / d) * 100;
   }
- }
 
- let status = worst >= 75 ? "Godkjent" : "Tiltak nødvendig";
+  let status = rest >= 75 ? "GODKJENT" : "IKKE GODKJENT";
 
- document.getElementById("resultat").innerHTML =
- "Restkapasitet: " + worst.toFixed(1) + "%<br>Status: " + status;
+  document.getElementById("resultat").innerHTML =
+    "Restkapasitet: " + rest.toFixed(1) + "%<br>Status: " + status;
 }
 
-// Init
-visFelter();
+// Excel eksport
+function lastNedExcel() {
+  let data = "Stolpenr,Diameter,Resultat\n";
+  data += document.getElementById("stolpenr").value + ",";
+  data += document.getElementById("diameter").value + ",";
+  data += document.getElementById("resultat").innerText;
+
+  let blob = new Blob([data], { type: "text/csv" });
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "rapport.csv";
+  a.click();
+}
+
+// PDF (bruker print)
+function lagPDF() {
+  window.print();
+}
 
 </script>
 
