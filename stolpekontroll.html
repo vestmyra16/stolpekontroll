@@ -64,7 +64,7 @@ button { background:#2e7d32; color:white; border:none;}
 
 </div>
 
-<!-- SKADE -->
+<!-- SKADER -->
 <div class="card">
 <h2>Skader</h2>
 
@@ -98,118 +98,126 @@ button { background:#2e7d32; color:white; border:none;}
 <div class="card">
 <h2>Resultat</h2>
 <div id="resultat">Ingen beregning</div>
+</div>
 
 <script>
- alert("script fungerer");
 
-let skader=[];
+let skader = [];
 
 // Fukt toggle
-document.getElementById("fuktToggle").addEventListener("change",()=>{
+document.getElementById("fuktToggle").addEventListener("change", function(){
  document.getElementById("fuktfelt").style.display =
- document.getElementById("fuktToggle").checked ? "block":"none";
+ this.checked ? "block" : "none";
 });
 
-// Vis riktige felt
+// Dynamiske felt
 function visFelter(){
 
-let t = document.getElementById("type").value;
+ let t = document.getElementById("type").value;
+ let html = "";
 
- let html="";
-
- if(t==="Innvendig råte"){
-  html="A<input id='A'> B<input id='B'> E<input id='E'>";
+ if(t === "Innvendig råte"){
+  html = "A<input id='A'> B<input id='B'> E<input id='E'>";
  }
 
- if(t==="Sirkulær råte"){
-  html="A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
+ if(t === "Sirkulær råte"){
+  html = "A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
  }
 
- if(t==="Softråte"){
-  html="A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
+ if(t === "Softråte"){
+  html = "A<input id='A'> B<input id='B'> C<input id='C'> D<input id='D'>";
  }
 
- if(t==="Sprekk"){
-  html="A<input id='A'> B<input id='B'>";
+ if(t === "Sprekk"){
+  html = "A<input id='A'> B<input id='B'>";
  }
 
- if(t==="Spettsmie"){
-  html="A<input id='A'> B<input id='B'>";
+ if(t === "Spettsmie"){
+  html = "A<input id='A'> B<input id='B'>";
  }
 
- if(t==="Hakkespetthull med reirhull"){
-  html="HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'> HL<input id='HL'>";
+ if(t === "Hakkespetthull med reirhull"){
+  html = "HB<input id='HB'> HH<input id='HH'> HDY<input id='HDY'> HL<input id='HL'>";
  }
 
- if(t==="Annen skade"){
-  html="Beskrivelse<input id='tekst'>";
+ if(t === "Annen skade"){
+  html = "Beskrivelse<input id='tekst'>";
  }
 
- document.getElementById("felter").innerHTML=html;
+ document.getElementById("felter").innerHTML = html;
 }
 
+// Hent verdi
 function val(id){
- let el=document.getElementById(id);
- return el ? parseFloat(el.value)||0 : 0;
+ let el = document.getElementById(id);
+ if(!el) return 0;
+ return parseFloat(el.value) || 0;
 }
 
 // Legg til skade
 function leggTil(){
 
- let t=document.getElementById("type").value;
+ let t = document.getElementById("type").value;
 
  skader.push({
-  type:t,
-  A:val("A"), B:val("B"), C:val("C"), D:val("D"), E:val("E"),
-  retning:document.getElementById("retning").value,
-  h:val("hoydeskade")
+  type: t,
+  A: val("A"),
+  B: val("B"),
+  C: val("C"),
+  D: val("D"),
+  E: val("E"),
+  retning: document.getElementById("retning").value,
+  h: val("hoydeskade")
  });
 
  document.getElementById("liste").innerHTML =
- skader.map(s=>s.type+" ("+s.h+" mm)").join("<br>");
+ skader.map(s => s.type + " (" + s.h + " mm)").join("<br>");
 }
 
 // Beregning (REN-prinsipp)
 function beregn(){
 
- try{
+ let D = parseFloat(document.getElementById("diameter").value);
 
- let D=parseFloat(document.getElementById("diameter").value);
  if(!D){
-  resultat.innerHTML="Mangler diameter";
+  document.getElementById("resultat").innerHTML = "Mangler diameter";
   return;
  }
 
- let worst=100;
+ let worst = 100;
 
- skader.forEach(s=>{
+ for(let i=0;i<skader.length;i++){
 
-  let r=Math.max(s.A,s.B,s.C,s.D);
+  let s = skader[i];
 
-  if(r>0){
-   let Deff=D-2*r;
-   let rest = Deff<=0 ? 0 : Math.pow(Deff/D,2)*100;
-   if(rest<worst) worst=rest;
+  let r = Math.max(s.A, s.B, s.C, s.D);
+
+  if(r > 0){
+   let Deff = D - 2*r;
+
+   let rest = Deff <= 0 ? 0 : Math.pow(Deff / D, 2) * 100;
+
+   if(rest < worst){
+    worst = rest;
+   }
   }
 
-  if(s.E>0){
-   let restE=(s.E/D)*100;
-   if(restE<worst) worst=restE;
+  if(s.E > 0){
+   let restE = (s.E / D) * 100;
+
+   if(restE < worst){
+    worst = restE;
+   }
   }
-
- });
-
- let status = worst>=75 ? "Godkjent" : "Tiltak nødvendig";
-
- resultat.innerHTML =
- `Restkapasitet: ${worst.toFixed(1)} %<br>Status: ${status}`;
-
- } catch(e){
-  resultat.innerHTML="Feil: "+e.message;
  }
 
+ let status = worst >= 75 ? "Godkjent" : "Tiltak nødvendig";
+
+ document.getElementById("resultat").innerHTML =
+ "Restkapasitet: " + worst.toFixed(1) + "%<br>Status: " + status;
 }
 
+// Init
 visFelter();
 
 </script>
