@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll</title>
+<title>Stolpekontroll v3</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; padding:10px; }
@@ -11,44 +11,22 @@ body { font-family: Arial; background:#f4f4f4; padding:10px; }
 input, select, button { width:100%; padding:10px; margin:5px 0; }
 button { background:#2e7d32; color:white; border:none; }
 .result { font-weight:bold; padding:10px; }
+.small { font-size:12px; color:#444; }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll</h2>
+<h2>Stolpekontroll v3</h2>
 
-<!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
-
-<input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="Linjeidentifikasjon">
-<input id="mast" placeholder="Mast nr">
 <input id="stolpenr" placeholder="Stolpenr">
-
-<input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
-<input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
-<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
 <input type="number" id="diameter" placeholder="Diameter skadested (mm)">
-
-<select id="miljo">
-<option>Kyst</option>
-<option>Innland</option>
-<option>Fjellklima</option>
-</select>
-
-<select id="jord">
-<option>Innmark</option>
-<option>Skogsmark</option>
-<option>Fjell</option>
-</select>
-
 </div>
 
-<!-- SKADER -->
 <div class="card">
-<h3>Legg til skade</h3>
+<h3>Ny skade</h3>
 
 <select id="type">
 <option value="innvendig">Innvendig råte</option>
@@ -63,20 +41,21 @@ button { background:#2e7d32; color:white; border:none; }
 <input type="number" id="C" placeholder="C (mm)">
 <input type="number" id="D" placeholder="D (mm)">
 <input type="number" id="E" placeholder="E (mm)">
-<input type="number" id="hoydeskade" placeholder="Skadehøyde (mm)">
+<input type="number" id="L" placeholder="Lengde (mm)">
+<input type="number" id="H" placeholder="Skadehøyde (mm)">
 
 <button onclick="leggTil()">Legg til skade</button>
 
 <div id="liste"></div>
+
 </div>
 
-<!-- BEREGNING -->
 <div class="card">
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
+<div id="forklaring" class="small"></div>
 </div>
 
-<!-- EKSPORT -->
 <div class="card">
 <button onclick="excel()">Last ned Excel</button>
 <button onclick="window.print()">Lag PDF</button>
@@ -87,76 +66,99 @@ button { background:#2e7d32; color:white; border:none; }
 let skader = [];
 
 function leggTil() {
-  let skade = {
-    type: document.getElementById("type").value,
+  let s = {
+    type: type.value,
     A: parseFloat(A.value),
     B: parseFloat(B.value),
     C: parseFloat(C.value),
     D: parseFloat(D.value),
     E: parseFloat(E.value),
-    h: parseFloat(hoydeskade.value)
+    L: parseFloat(L.value),
+    H: parseFloat(H.value)
   };
 
-  skader.push(skade);
+  skader.push(s);
 
-  document.getElementById("liste").innerHTML +=
-    "<div>" + skade.type + " (h=" + skade.h + " mm)</div>";
+  liste.innerHTML += `<div>${s.type} (h=${s.H||0})</div>`;
 }
 
 function beregn() {
-  let d = parseFloat(document.getElementById("diameter").value);
-  let verste = 100;
+
+  let d = parseFloat(diameter.value);
+  if (!d) return alert("Mangler diameter");
+
+  let restSoftråte = 100;
+  let restSirk = 100;
+  let restInnvendig = 100;
+  let restLokalt = 100;
 
   skader.forEach(s => {
 
-    let rest = 100;
-
-    if (s.type === "innvendig" && s.E) {
-      rest = (s.E / (d/2)) * 100;
-    }
-
-    if (s.type === "sirkular") {
-      let vals = [s.A, s.B, s.C, s.D].filter(v => v);
-      if (vals.length > 0) {
-        let min = Math.min(...vals);
-        rest = (min / (d/2)) * 100;
-      }
-    }
-
+    // SOFTRÅTE
     if (s.type === "softråte") {
-      let vals = [s.A, s.B, s.C, s.D].filter(v => v);
-      if (vals.length > 0) {
+      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
+      if (vals.length){
         let max = Math.max(...vals);
-        rest = ((d - max) / d) * 100;
+        let r = ((d - max) / d) * 100;
+        if (r < restSoftråte) restSoftråte = r;
       }
     }
 
+    // SIRKULÆR
+    if (s.type === "sirkular") {
+      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
+      if (vals.length){
+        let min = Math.min(...vals);
+        let r = (min / (d/2)) * 100;
+        if (r < restSirk) restSirk = r;
+      }
+    }
+
+    // INNVENDIG
+    if (s.type === "innvendig" && s.E) {
+      let r = (s.E / (d/2)) * 100;
+      if (r < restInnvendig) restInnvendig = r;
+    }
+
+    // SPREKK
     if (s.type === "sprekk") {
-      rest = 100 - ((s.B || 0) * 1.5);
+      let r = 100 - ((s.B||0)*1.2 + (s.L||0)/1000);
+      if (r < restLokalt) restLokalt = r;
     }
 
+    // SPETTSMIE
     if (s.type === "spettsmie") {
-      rest = 100 - ((s.B || 0) * 2);
+      let r = 100 - ((s.B||0)*2);
+      if (r < restLokalt) restLokalt = r;
     }
-
-    if (rest < verste) verste = rest;
 
   });
 
-  let status = verste >= 75 ? "GODKJENT" : "IKKE GODKJENT";
+  let styrende = Math.min(restSoftråte, restSirk, restInnvendig, restLokalt);
 
-  document.getElementById("resultat").innerHTML =
-    "Restkapasitet: " + verste.toFixed(1) + "%<br>Status: " + status;
+  let fork = "";
+
+  if (styrende === restSoftråte) fork = "Softråte styrer";
+  else if (styrende === restSirk) fork = "Sirkulær råte styrer";
+  else if (styrende === restInnvendig) fork = "Innvendig råte styrer";
+  else fork = "Lokal skade styrer";
+
+  let status = styrende >= 75 ? "GODKJENT" : "IKKE GODKJENT";
+
+  resultat.innerHTML =
+    "Restkapasitet: " + styrende.toFixed(1) + "%<br>Status: " + status;
+
+  forklaring.innerText = fork;
 }
 
+// EXCEL
 function excel() {
-  let csv = "Stolpe,Type,A,B,C,D,E,Høyde\n";
-
-  skader.forEach(s => {
-    csv += stolpenr.value + "," + s.type + "," + s.A + "," + s.B + "," + s.C + "," + s.D + "," + s.E + "," + s.h + "\n";
+  let csv = "Stolpe,Type,A,B,C,D,E,L,H\n";
+  skader.forEach(s=>{
+    csv += `${stolpenr.value},${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.L},${s.H}\n`;
   });
 
-  let blob = new Blob([csv], { type: "text/csv" });
+  let blob = new Blob([csv]);
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "rapport.csv";
