@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v10.1</title>
+<title>Stolpekontroll v10.2</title>
 
 <link rel="apple-touch-icon" href="Knapp.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@ button { background:#2e7d32; color:white; border:none; }
 
 <body>
 
-<h2>Stolpekontroll v10.1 (REN)</h2>
+<h2>Stolpekontroll v10.2 (REN)</h2>
 
 <!-- GRUNNLAG -->
 <div class="card">
@@ -72,15 +72,18 @@ button { background:#2e7d32; color:white; border:none; }
 
 </div>
 
-<!-- FUKT -->
+<!-- FUKT (KORRIGERT) -->
 <div class="card">
-<h3>Fukt</h3>
+<h3>Fuktregistrering</h3>
+
 <label><input type="checkbox" id="fuktToggle"> Aktiver fuktmåling</label>
 
 <div id="fuktFelter" style="display:none;">
-<input type="number" id="fuktYtre" placeholder="Fukt ytre (%)">
-<input type="number" id="fuktIndre" placeholder="Fukt indre (%)">
+<input type="number" id="temp" placeholder="Temperatur (°C)">
+<input type="number" id="rf" placeholder="Relativ fuktighet (%)">
+<input type="number" id="fuktYtre" placeholder="Ytre fuktighet (%)">
 </div>
+
 </div>
 
 <!-- SKADER -->
@@ -116,6 +119,7 @@ button { background:#2e7d32; color:white; border:none; }
 
 <script>
 
+// FUKT VISNING
 document.getElementById("fuktToggle").onchange = function(){
   document.getElementById("fuktFelter").style.display =
     this.checked ? "block" : "none";
@@ -211,6 +215,9 @@ function beregn(){
 function lastExcel(){
   let data = [
     ["Stolpe", document.getElementById("stolpe").value],
+    ["Temperatur", document.getElementById("temp").value],
+    ["Relativ fukt", document.getElementById("rf").value],
+    ["Ytre fukt", document.getElementById("fuktYtre").value],
     ["Resultat", document.getElementById("resultat").innerText]
   ];
   let csv = data.map(e => e.join(";")).join("\n");
