@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v10</title>
+<title>Stolpekontroll v10.1</title>
 
 <link rel="apple-touch-icon" href="Knapp.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,16 +19,33 @@ button { background:#2e7d32; color:white; border:none; }
 
 <body>
 
-<h2>Stolpekontroll v10 (REN beregning)</h2>
+<h2>Stolpekontroll v10.1 (REN)</h2>
 
 <!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
 
+<input id="netteier" placeholder="Netteier">
+<input id="linje" placeholder="Linje">
+<input id="mast" placeholder="Mast nr">
 <input id="stolpe" placeholder="Stolpenr">
 
 <input type="number" id="diameter" placeholder="Diameter skadested (mm)">
 <input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
+<input type="number" id="nedgrav" placeholder="Nedgravingsdybde (m)">
+<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
+
+<select id="miljo">
+<option>Kyst</option>
+<option>Innland</option>
+<option>Fjellklima</option>
+</select>
+
+<select id="jordsmonn">
+<option>Innmark</option>
+<option>Skogsmark</option>
+<option>Fjell</option>
+</select>
 
 <select id="fiber">
 <option value="30">Fiberstyrke 30 N/mm²</option>
@@ -53,6 +70,17 @@ button { background:#2e7d32; color:white; border:none; }
 <option value="1.6">Tung is</option>
 </select>
 
+</div>
+
+<!-- FUKT -->
+<div class="card">
+<h3>Fukt</h3>
+<label><input type="checkbox" id="fuktToggle"> Aktiver fuktmåling</label>
+
+<div id="fuktFelter" style="display:none;">
+<input type="number" id="fuktYtre" placeholder="Fukt ytre (%)">
+<input type="number" id="fuktIndre" placeholder="Fukt indre (%)">
+</div>
 </div>
 
 <!-- SKADER -->
@@ -88,6 +116,11 @@ button { background:#2e7d32; color:white; border:none; }
 
 <script>
 
+document.getElementById("fuktToggle").onchange = function(){
+  document.getElementById("fuktFelter").style.display =
+    this.checked ? "block" : "none";
+};
+
 // FELTER
 function visFelter(){
   let t = document.getElementById("skadetype").value;
@@ -107,9 +140,12 @@ function visFelter(){
   }
 
   if(t==="sprekk" || t==="spett"){
-    html += `<input id="A" placeholder="A">`;
-    html += `<input id="B" placeholder="B">`;
+    html += `<input id="A" placeholder="A bredde">`;
+    html += `<input id="B" placeholder="B dybde">`;
   }
+
+  html += `<input id="lengde" placeholder="Lengde">`;
+  html += `<input id="hSkade" placeholder="Skadehøyde">`;
 
   document.getElementById("felter").innerHTML = html;
 }
@@ -117,7 +153,6 @@ function visFelter(){
 // BILDER
 function visBilde(){
   let t = document.getElementById("skadetype").value;
-
   if(t==="indre") window.open("indre.svg");
   if(t==="sirk") window.open("sirk.svg");
   if(t==="soft") window.open("soft.svg");
@@ -130,10 +165,8 @@ function beregn(){
 
   let d = parseFloat(document.getElementById("diameter").value);
   let h = parseFloat(document.getElementById("hoyde").value);
-
   let fiber = parseFloat(document.getElementById("fiber").value);
   let sf = parseFloat(document.getElementById("sikkerhet").value);
-
   let vind = parseFloat(document.getElementById("vind").value);
   let is = parseFloat(document.getElementById("is").value);
 
@@ -143,10 +176,9 @@ function beregn(){
   let D = parseFloat(document.getElementById("D")?.value) || 0;
   let E = parseFloat(document.getElementById("E")?.value) || 0;
 
-  // RESTKAPASITET
   let rest = 100;
 
-  if(E > 0){
+  if(E>0){
     rest = (E/d)*100;
   } else {
     let vals = [A,B,C,D].filter(v=>v>0);
@@ -156,22 +188,13 @@ function beregn(){
     }
   }
 
-  // EFFEKTIV DIAMETER
   let d_eff = d * (rest/100);
 
-  // TVERRSNITT (sirkulær)
   let I = Math.PI * Math.pow(d_eff,4) / 64;
-
-  // KAPASITETSMOMENT
   let M_kap = (fiber * I / (d_eff/2)) / sf;
 
-  // LAST
-  let vindlast = 0.6 * h * vind;
-  let islast = 0.3 * h * is;
+  let M_last = (0.6*h*vind + 0.3*h*is) * h;
 
-  let M_last = (vindlast + islast) * h;
-
-  // KNEKKPUNKT (indikasjon)
   let knekk = (M_last / M_kap) * h;
 
   let status = M_kap > M_last ? "GODKJENT" : "IKKE GODKJENT";
@@ -186,17 +209,13 @@ function beregn(){
 
 // EXCEL
 function lastExcel(){
-
   let data = [
     ["Stolpe", document.getElementById("stolpe").value],
     ["Resultat", document.getElementById("resultat").innerText]
   ];
-
   let csv = data.map(e => e.join(";")).join("\n");
-
-  let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  let blob = new Blob([csv], { type: 'text/csv' });
   let link = document.createElement("a");
-
   link.href = URL.createObjectURL(blob);
   link.download = "stolpekontroll.csv";
   link.click();
