@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v6.1</title>
-  <link rel="apple-touch-icon" href="Knapp.png">
+<title>Stolpekontroll v10</title>
+
+<link rel="apple-touch-icon" href="Knapp.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <style>
@@ -13,85 +14,63 @@ body { font-family: Arial; background:#f4f4f4; padding:10px; }
 input, select, button { width:100%; padding:10px; margin:5px 0; }
 button { background:#2e7d32; color:white; border:none; }
 .result { font-weight:bold; padding:10px; }
-.small { font-size:12px; color:#444; }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll</h2>
+<h2>Stolpekontroll v10 (REN beregning)</h2>
 
 <!-- GRUNNLAG -->
 <div class="card">
 <h3>Grunnlag</h3>
 
-<input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="Linje">
-<input id="mast" placeholder="Mast nr">
-<input id="stolpenr" placeholder="Stolpenr">
+<input id="stolpe" placeholder="Stolpenr">
 
 <input type="number" id="diameter" placeholder="Diameter skadested (mm)">
 <input type="number" id="hoyde" placeholder="Stolpehøyde (m)">
-<input type="number" id="nedgraving" placeholder="Nedgravingsdybde (m)">
-<input type="number" id="jordband" placeholder="Jordbåndsdiameter (mm)">
 
-<select id="miljo">
-<option value="1.2">Kyst</option>
-<option value="1.0">Innland</option>
-<option value="1.3">Fjellklima</option>
+<select id="fiber">
+<option value="30">Fiberstyrke 30 N/mm²</option>
+<option value="40">Fiberstyrke 40 N/mm²</option>
 </select>
 
-<select id="jord">
-<option value="1.0">Innmark</option>
-<option value="1.1">Skogsmark</option>
-<option value="1.2">Fjell</option>
+<select id="sikkerhet">
+<option value="1.5">Sikkerhetsfaktor 1.5</option>
+<option value="2">Sikkerhetsfaktor 2.0</option>
+<option value="2.5">Sikkerhetsfaktor 2.5</option>
 </select>
 
-<select id="styrke">
-<option value="30">30 N/mm²</option>
-<option value="40">40 N/mm²</option>
+<select id="vind">
+<option value="1">Lav vind</option>
+<option value="1.5">Middels vind</option>
+<option value="2">Høy vind</option>
 </select>
 
-</div>
+<select id="is">
+<option value="1">Ingen is</option>
+<option value="1.3">Lett is</option>
+<option value="1.6">Tung is</option>
+</select>
 
-<!-- FUKT -->
-<div class="card">
-<h3>Fukt</h3>
-
-<label><input type="checkbox" id="fuktAktiv" onchange="toggleFukt()"> Aktiver fukt</label>
-
-<div id="fuktFelter" style="display:none;">
-<input type="number" id="temp" placeholder="Temperatur (°C)">
-<input type="number" id="rf" placeholder="Relativ fukt (%)">
-<input type="number" id="fuktYtre" placeholder="Fukt ytre (%)">
-<input type="number" id="fuktIndre" placeholder="Fukt indre (%)">
-</div>
 </div>
 
 <!-- SKADER -->
 <div class="card">
-<h3>Skade</h3>
+<h3>Skader</h3>
 
-<select id="type">
-<option value="innvendig">Indre råte (A B E)</option>
-<option value="sirkular">Sirkulær råte (A B C D)</option>
-<option value="softråte">Softråte (A B C D)</option>
-<option value="sprekk">Sprekk (A B)</option>
-<option value="spettsmie">Spettsmie (A B)</option>
+<select id="skadetype" onchange="visFelter()">
+<option value="">Velg skade</option>
+<option value="indre">Innvendig råte (ABE)</option>
+<option value="sirk">Sirkulær råte (ABCD)</option>
+<option value="soft">Softråte (ABCD)</option>
+<option value="sprekk">Sprekk (AB)</option>
+<option value="spett">Spettsmie (AB)</option>
 </select>
 
-<input id="A" type="number" placeholder="A (mm)">
-<input id="B" type="number" placeholder="B (mm)">
-<input id="C" type="number" placeholder="C (mm)">
-<input id="D" type="number" placeholder="D (mm)">
-<input id="E" type="number" placeholder="E (mm)">
+<button onclick="visBilde()">Vis målebilde</button>
 
-<input id="L" type="number" placeholder="Lengde (mm)">
-<input id="H" type="number" placeholder="Skadehøyde (mm)">
-
-<button onclick="leggTil()">Legg til skade</button>
-
-<div id="liste"></div>
+<div id="felter"></div>
 
 </div>
 
@@ -99,117 +78,128 @@ button { background:#2e7d32; color:white; border:none; }
 <div class="card">
 <button onclick="beregn()">Beregn</button>
 <div id="resultat" class="result"></div>
-<div id="forklaring" class="small"></div>
 </div>
 
 <!-- EKSPORT -->
 <div class="card">
-<button onclick="excel()">Last ned Excel</button>
+<button onclick="lastExcel()">Last ned Excel</button>
 <button onclick="window.print()">Lag PDF</button>
 </div>
 
 <script>
 
-let skader = [];
+// FELTER
+function visFelter(){
+  let t = document.getElementById("skadetype").value;
+  let html = "";
 
-function toggleFukt() {
-  document.getElementById("fuktFelter").style.display =
-    document.getElementById("fuktAktiv").checked ? "block" : "none";
+  if(t==="indre"){
+    html += `<input id="A" placeholder="A råte">`;
+    html += `<input id="B" placeholder="B råte">`;
+    html += `<input id="E" placeholder="E restskall">`;
+  }
+
+  if(t==="sirk" || t==="soft"){
+    html += `<input id="A" placeholder="A">`;
+    html += `<input id="B" placeholder="B">`;
+    html += `<input id="C" placeholder="C">`;
+    html += `<input id="D" placeholder="D">`;
+  }
+
+  if(t==="sprekk" || t==="spett"){
+    html += `<input id="A" placeholder="A">`;
+    html += `<input id="B" placeholder="B">`;
+  }
+
+  document.getElementById("felter").innerHTML = html;
 }
 
-function leggTil() {
+// BILDER
+function visBilde(){
+  let t = document.getElementById("skadetype").value;
 
-  let s = {
-    type: type.value,
-    A:+A.value, B:+B.value, C:+C.value, D:+D.value, E:+E.value,
-    L:+L.value, H:+H.value
-  };
-
-  skader.push(s);
-
-  liste.innerHTML += `<div>${s.type} | h=${s.H} mm | L=${s.L} mm</div>`;
+  if(t==="indre") window.open("indre.svg");
+  if(t==="sirk") window.open("sirk.svg");
+  if(t==="soft") window.open("soft.svg");
+  if(t==="sprekk") window.open("sprekk.svg");
+  if(t==="spett") window.open("spett.svg");
 }
 
-function beregn() {
+// BEREGNING
+function beregn(){
 
-  let D = +diameter.value;
-  let Htot = +hoyde.value;
-  let ned = +nedgraving.value || 0.8;
-  let sigma = +styrke.value;
+  let d = parseFloat(document.getElementById("diameter").value);
+  let h = parseFloat(document.getElementById("hoyde").value);
 
-  let miljoF = +miljo.value;
-  let jordF = +jord.value;
+  let fiber = parseFloat(document.getElementById("fiber").value);
+  let sf = parseFloat(document.getElementById("sikkerhet").value);
 
-  let H_eff = Htot - ned;
+  let vind = parseFloat(document.getElementById("vind").value);
+  let is = parseFloat(document.getElementById("is").value);
 
-  let q = 0.6 * miljoF;
-  let M_last = q * H_eff * H_eff * 1000;
+  let A = parseFloat(document.getElementById("A")?.value) || 0;
+  let B = parseFloat(document.getElementById("B")?.value) || 0;
+  let C = parseFloat(document.getElementById("C")?.value) || 0;
+  let D = parseFloat(document.getElementById("D")?.value) || 0;
+  let E = parseFloat(document.getElementById("E")?.value) || 0;
 
-  let d_eff = D;
-  let faktor = 1;
+  // RESTKAPASITET
+  let rest = 100;
 
-  skader.forEach(s => {
-
-    // INDRE RÅTE (E styrer)
-    if (s.type === "innvendig" && s.E) {
-      d_eff = s.E * 2;
+  if(E > 0){
+    rest = (E/d)*100;
+  } else {
+    let vals = [A,B,C,D].filter(v=>v>0);
+    if(vals.length){
+      let snitt = vals.reduce((a,b)=>a+b,0)/vals.length;
+      rest = ((d - snitt)/d)*100;
     }
+  }
 
-    // SIRKULÆR RÅTE (min ABCD)
-    if (s.type === "sirkular") {
-      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
-      if (vals.length) d_eff = Math.min(...vals) * 2;
-    }
+  // EFFEKTIV DIAMETER
+  let d_eff = d * (rest/100);
 
-    // SOFTRÅTE (maks ABCD)
-    if (s.type === "softråte") {
-      let vals = [s.A,s.B,s.C,s.D].filter(v=>v);
-      if (vals.length) d_eff = D - Math.max(...vals);
-    }
+  // TVERRSNITT (sirkulær)
+  let I = Math.PI * Math.pow(d_eff,4) / 64;
 
-    // SPREKK AB
-    if (s.type === "sprekk") {
-      faktor *= 0.9;
-    }
+  // KAPASITETSMOMENT
+  let M_kap = (fiber * I / (d_eff/2)) / sf;
 
-    // SPETTSMIE AB
-    if (s.type === "spettsmie") {
-      faktor *= 0.85;
-    }
+  // LAST
+  let vindlast = 0.6 * h * vind;
+  let islast = 0.3 * h * is;
 
-  });
+  let M_last = (vindlast + islast) * h;
 
-  let W = (Math.PI * Math.pow(d_eff,3)) / 32;
+  // KNEKKPUNKT (indikasjon)
+  let knekk = (M_last / M_kap) * h;
 
-  let sikkerhet = 1.2 * jordF;
+  let status = M_kap > M_last ? "GODKJENT" : "IKKE GODKJENT";
 
-  let M_kap = (sigma * W * faktor) / sikkerhet;
-
-  let u = (M_last / M_kap) * 100;
-
-  let status = u <= 100 ? "GODKJENT" :
-               u <= 120 ? "KRITISK" : "IKKE GODKJENT";
-
-  resultat.innerHTML =
-    "Utnyttelse: " + u.toFixed(1) + "%<br>Status: " + status;
-
-  forklaring.innerText =
-    "Effektiv diameter: " + d_eff.toFixed(1) + " mm";
+  document.getElementById("resultat").innerHTML =
+    "Restkapasitet: " + rest.toFixed(1) + "%<br>" +
+    "Moment kapasitet: " + M_kap.toFixed(0) + "<br>" +
+    "Moment last: " + M_last.toFixed(0) + "<br>" +
+    "Knekkpunkt ca: " + knekk.toFixed(2) + " m<br>" +
+    "Status: " + status;
 }
 
-function excel() {
+// EXCEL
+function lastExcel(){
 
-  let csv = "Stolpe,Type,A,B,C,D,E,L,H\n";
+  let data = [
+    ["Stolpe", document.getElementById("stolpe").value],
+    ["Resultat", document.getElementById("resultat").innerText]
+  ];
 
-  skader.forEach(s=>{
-    csv += `${stolpenr.value},${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.L},${s.H}\n`;
-  });
+  let csv = data.map(e => e.join(";")).join("\n");
 
-  let blob = new Blob([csv]);
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "rapport.csv";
-  a.click();
+  let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement("a");
+
+  link.href = URL.createObjectURL(blob);
+  link.download = "stolpekontroll.csv";
+  link.click();
 }
 
 </script>
