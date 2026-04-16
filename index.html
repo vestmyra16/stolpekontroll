@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v10.4 (REN)</title>
+<title>Stolpekontroll v10.4.2 (REN)</title>
 
 <link rel="apple-touch-icon" href="Knapp.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,12 +13,23 @@ body { font-family: Arial; background:#f4f4f4; padding:10px; }
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
 input, select, button { width:100%; padding:10px; margin:5px 0; }
 button { background:#2e7d32; color:white; border:none; }
+
+.popup {
+display:none;
+position:fixed;
+top:0; left:0;
+width:100%; height:100%;
+background:rgba(0,0,0,0.7);
+justify-content:center;
+align-items:center;
+}
+.popup img { max-width:90%; max-height:90%; background:white; }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v10.4 (REN)</h2>
+<h2>Stolpekontroll v10.4.2 (REN)</h2>
 
 <div class="card">
 <h3>Grunnlag</h3>
@@ -59,7 +70,7 @@ button { background:#2e7d32; color:white; border:none; }
 <div class="card">
 <h3>Skader</h3>
 
-<select id="skadetype">
+<select id="skadetype" onchange="oppdaterSkade()">
 <option value="">Velg skade</option>
 <option value="indre">Indre råte (ABE)</option>
 <option value="sirk">Sirkulær råte (ABCD)</option>
@@ -68,13 +79,12 @@ button { background:#2e7d32; color:white; border:none; }
 <option value="spett">Spettsmie (AB)</option>
 </select>
 
-<button onclick="visBilde()">Vis målebilde</button>
+<label>
+<input type="checkbox" onchange="toggleBilde(this)">
+ Vis målebilde
+</label>
 
-<input id="A" placeholder="A (mm)">
-<input id="B" placeholder="B (mm)">
-<input id="C" placeholder="C (mm)">
-<input id="D" placeholder="D (mm)">
-<input id="E" placeholder="E restskall (mm)">
+<div id="felter"></div>
 
 <input id="lengde" placeholder="Lengde skade (mm)">
 <input id="hSkade" placeholder="Skadehøyde over bakken (m)">
@@ -82,97 +92,121 @@ button { background:#2e7d32; color:white; border:none; }
 </div>
 
 <button onclick="beregn()">Beregn</button>
-<button onclick="lagCSV()">Excel</button>
-<button onclick="window.print()">PDF</button>
 
 <h3 id="resultat"></h3>
 
+<div id="popup" class="popup" onclick="this.style.display='none'">
+<img id="popupimg">
+</div>
+
 <script>
+
+function oppdaterSkade(){
+
+let type = document.getElementById("skadetype").value;
+let f = document.getElementById("felter");
+
+let html = "";
+
+if(type==="indre"){
+html += input("A (mm)");
+html += input("B (mm)");
+html += input("E restskall (mm)");
+}
+
+if(type==="sirk" || type==="soft"){
+html += input("A (mm)");
+html += input("B (mm)");
+html += input("C (mm)");
+html += input("D (mm)");
+}
+
+if(type==="sprekk" || type==="spett"){
+html += input("A (mm)");
+html += input("B (mm)");
+}
+
+f.innerHTML = html;
+}
+
+function input(label){
+return `<input class="skade" placeholder="${label}">`;
+}
+
+function toggleBilde(el){
+
+if(!el.checked){
+document.getElementById("popup").style.display="none";
+return;
+}
+
+let type = document.getElementById("skadetype").value;
+
+let map = {
+indre:"Innvendig_raate.svg",
+sirk:"Sirkulaer_raate.svg",
+soft:"Softraate.svg",
+sprekk:"Sprekk.svg",
+spett:"Spettsmie.svg"
+};
+
+if(map[type]){
+document.getElementById("popupimg").src = map[type];
+document.getElementById("popup").style.display="flex";
+}
+}
 
 function beregn(){
 
 let d = parseFloat(diameter.value)||0;
 let h = parseFloat(hoyde.value)||0;
+
 let fiber = parseFloat(document.getElementById("fiber").value);
 let sf = parseFloat(document.getElementById("sf").value);
 let vind = parseFloat(document.getElementById("vind").value);
 let is = parseFloat(document.getElementById("is").value);
 
-let A = parseFloat(A.value)||0;
-let B = parseFloat(B.value)||0;
-let C = parseFloat(C.value)||0;
-let D = parseFloat(D.value)||0;
-let E = parseFloat(E.value)||0;
+let inputs = document.querySelectorAll(".skade");
+let vals = [];
 
-// RESTKAPASITET
+inputs.forEach(i=>{
+let v=parseFloat(i.value);
+if(v>0) vals.push(v);
+});
+
 let rest = 1;
 
-if(E>0){
-rest = E/d;
-} else {
-let vals=[A,B,C,D].filter(v=>v>0);
 if(vals.length){
-let snitt=vals.reduce((a,b)=>a+b,0)/vals.length;
-rest = (d-snitt)/d;
-}
+let snitt = vals.reduce((a,b)=>a+b,0)/vals.length;
+rest = (d - snitt)/d;
 }
 
-// effektiv diameter
 let d_eff = d * rest;
-
-// seksjonsmodul
 let W = Math.PI * Math.pow(d_eff,3) / 32;
-
-// kapasitet
 let M_kap = (fiber * W) / sf;
 
-// lastprofil
-let vindlast = 0.6 * vind;
-let islast = 0.3 * is;
+let last = (0.6* vind + 0.3*is);
 
-// moment langs høyde
-let maxMoment = 0;
-let knekkpunkt = 0;
+let maxM=0;
+let knekk=0;
 
-for(let x=0; x<=h; x+=0.5){
-let M = (vindlast + islast) * x * (h-x);
-if(M > maxMoment){
-maxMoment = M;
-knekkpunkt = x;
+for(let x=0;x<=h;x+=0.5){
+let M = last * x * (h-x);
+if(M>maxM){
+maxM=M;
+knekk=x;
 }
 }
 
-// sikkerhetsfaktor reell
-let SF_reell = M_kap / maxMoment;
-
-let status = SF_reell < 1 ? "IKKE GODKJENT" : "GODKJENT";
+let SF = M_kap / maxM;
+let status = SF < 1 ? "IKKE GODKJENT" : "GODKJENT";
 
 resultat.innerHTML =
-"Restkapasitet: " + (rest*100).toFixed(1) + "%<br>" +
-"Moment kapasitet: " + M_kap.toFixed(0) + "<br>" +
-"Moment last: " + maxMoment.toFixed(0) + "<br>" +
-"Sikkerhetsfaktor: " + SF_reell.toFixed(2) + "<br>" +
-"Knekkpunkt: " + knekkpunkt.toFixed(1) + " m<br>" +
-"Status: " + status;
+"Restkapasitet: "+(rest*100).toFixed(1)+"%<br>"+
+"Sikkerhetsfaktor: "+SF.toFixed(2)+"<br>"+
+"Knekkpunkt: "+knekk.toFixed(1)+" m<br>"+
+"Status: "+status;
 
-}
-
-// CSV
-function lagCSV(){
-
-let data = [
-netteier.value,
-linje.value,
-mast.value,
-stolpe.value,
-resultat.innerText
-];
-
-let blob = new Blob([data.join(";")]);
-let a = document.createElement("a");
-a.href = URL.createObjectURL(blob);
-a.download = "stolpe.csv";
-a.click();
 }
 
 </script>
