@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v10.4.2 (REN)</title>
+<title>Stolpekontroll v10.4.3 (REN)</title>
 
 <link rel="apple-touch-icon" href="Knapp.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,17 +19,22 @@ display:none;
 position:fixed;
 top:0; left:0;
 width:100%; height:100%;
-background:rgba(0,0,0,0.7);
+background:rgba(0,0,0,0.8);
 justify-content:center;
 align-items:center;
 }
-.popup img { max-width:90%; max-height:90%; background:white; }
+.popup img {
+width:90%;
+max-width:500px;
+background:white;
+padding:10px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v10.4.2 (REN)</h2>
+<h2>Stolpekontroll v10.4.3 (REN)</h2>
 
 <div class="card">
 <h3>Grunnlag</h3>
@@ -41,30 +46,6 @@ align-items:center;
 
 <input id="diameter" type="number" placeholder="Diameter skadested (mm)">
 <input id="hoyde" type="number" placeholder="Stolpehøyde (m)">
-
-<select id="fiber">
-<option value="30">Fiberstyrke 30</option>
-<option value="40">Fiberstyrke 40</option>
-</select>
-
-<select id="sf">
-<option value="1.5">SF 1.5</option>
-<option value="1.2">SF 1.2</option>
-<option value="1.0">SF 1.0</option>
-</select>
-
-<select id="vind">
-<option value="1">Lav vind</option>
-<option value="1.5">Middels vind</option>
-<option value="2">Høy vind</option>
-</select>
-
-<select id="is">
-<option value="1">Ingen is</option>
-<option value="1.3">Litt is</option>
-<option value="1.6">Mye is</option>
-</select>
-
 </div>
 
 <div class="card">
@@ -80,7 +61,7 @@ align-items:center;
 </select>
 
 <label>
-<input type="checkbox" onchange="toggleBilde(this)">
+<input type="checkbox" onchange="visBilde(this)">
  Vis målebilde
 </label>
 
@@ -88,10 +69,11 @@ align-items:center;
 
 <input id="lengde" placeholder="Lengde skade (mm)">
 <input id="hSkade" placeholder="Skadehøyde over bakken (m)">
-
 </div>
 
 <button onclick="beregn()">Beregn</button>
+<button onclick="lastCSV()">Last ned Excel</button>
+<button onclick="window.print()">Lag PDF</button>
 
 <h3 id="resultat"></h3>
 
@@ -103,44 +85,33 @@ align-items:center;
 
 function oppdaterSkade(){
 
-let type = document.getElementById("skadetype").value;
+let t = skadetype.value;
 let f = document.getElementById("felter");
 
-let html = "";
-
-if(type==="indre"){
-html += input("A (mm)");
-html += input("B (mm)");
-html += input("E restskall (mm)");
+if(t==="indre"){
+f.innerHTML = input("A (mm)") + input("B (mm)") + input("E restskall (mm)");
 }
-
-if(type==="sirk" || type==="soft"){
-html += input("A (mm)");
-html += input("B (mm)");
-html += input("C (mm)");
-html += input("D (mm)");
+else if(t==="sirk" || t==="soft"){
+f.innerHTML = input("A (mm)") + input("B (mm)") + input("C (mm)") + input("D (mm)");
 }
-
-if(type==="sprekk" || type==="spett"){
-html += input("A (mm)");
-html += input("B (mm)");
+else if(t==="sprekk" || t==="spett"){
+f.innerHTML = input("A (mm)") + input("B (mm)");
 }
-
-f.innerHTML = html;
+else{
+f.innerHTML="";
+}
 }
 
 function input(label){
 return `<input class="skade" placeholder="${label}">`;
 }
 
-function toggleBilde(el){
+function visBilde(el){
 
 if(!el.checked){
-document.getElementById("popup").style.display="none";
+popup.style.display="none";
 return;
 }
-
-let type = document.getElementById("skadetype").value;
 
 let map = {
 indre:"Innvendig_raate.svg",
@@ -150,9 +121,11 @@ sprekk:"Sprekk.svg",
 spett:"Spettsmie.svg"
 };
 
-if(map[type]){
-document.getElementById("popupimg").src = map[type];
-document.getElementById("popup").style.display="flex";
+let fil = map[skadetype.value];
+
+if(fil){
+popupimg.src = fil;
+popup.style.display="flex";
 }
 }
 
@@ -160,11 +133,6 @@ function beregn(){
 
 let d = parseFloat(diameter.value)||0;
 let h = parseFloat(hoyde.value)||0;
-
-let fiber = parseFloat(document.getElementById("fiber").value);
-let sf = parseFloat(document.getElementById("sf").value);
-let vind = parseFloat(document.getElementById("vind").value);
-let is = parseFloat(document.getElementById("is").value);
 
 let inputs = document.querySelectorAll(".skade");
 let vals = [];
@@ -181,32 +149,31 @@ let snitt = vals.reduce((a,b)=>a+b,0)/vals.length;
 rest = (d - snitt)/d;
 }
 
-let d_eff = d * rest;
-let W = Math.PI * Math.pow(d_eff,3) / 32;
-let M_kap = (fiber * W) / sf;
+let kapasitet = rest * 100;
 
-let last = (0.6* vind + 0.3*is);
-
-let maxM=0;
-let knekk=0;
-
-for(let x=0;x<=h;x+=0.5){
-let M = last * x * (h-x);
-if(M>maxM){
-maxM=M;
-knekk=x;
-}
-}
-
-let SF = M_kap / maxM;
-let status = SF < 1 ? "IKKE GODKJENT" : "GODKJENT";
+let status = kapasitet < 75 ? "IKKE GODKJENT" : "OK";
 
 resultat.innerHTML =
-"Restkapasitet: "+(rest*100).toFixed(1)+"%<br>"+
-"Sikkerhetsfaktor: "+SF.toFixed(2)+"<br>"+
-"Knekkpunkt: "+knekk.toFixed(1)+" m<br>"+
-"Status: "+status;
+"Restkapasitet: " + kapasitet.toFixed(1) + "%<br>" +
+"Status: " + status;
 
+}
+
+function lastCSV(){
+
+let data = [
+netteier.value,
+linje.value,
+mast.value,
+stolpe.value,
+resultat.innerText
+];
+
+let blob = new Blob([data.join(";")]);
+let a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "rapport.csv";
+a.click();
 }
 
 </script>
