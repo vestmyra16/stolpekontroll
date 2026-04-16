@@ -3,38 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v10.4.3 (REN)</title>
+<title>Stolpekontroll v10.5 (REN + kombinasjon)</title>
 
 <link rel="apple-touch-icon" href="Knapp.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <style>
-body { font-family: Arial; background:#f4f4f4; padding:10px; }
-.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-input, select, button { width:100%; padding:10px; margin:5px 0; }
-button { background:#2e7d32; color:white; border:none; }
-
-.popup {
-display:none;
-position:fixed;
-top:0; left:0;
-width:100%; height:100%;
-background:rgba(0,0,0,0.8);
-justify-content:center;
-align-items:center;
-}
-.popup img {
-width:90%;
-max-width:500px;
-background:white;
-padding:10px;
-}
+body {font-family: Arial; background:#f4f4f4; padding:10px;}
+.card {background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
+input, select {width:100%; padding:8px; margin:4px 0;}
+button {background:#2e7d32; color:white; padding:12px; width:100%; border:none; margin-top:10px;}
+img {max-width:100px; cursor:pointer;}
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v10.4.3 (REN)</h2>
+<h2>Stolpekontroll v10.5 (REN)</h2>
 
 <div class="card">
 <h3>Grunnlag</h3>
@@ -46,12 +31,40 @@ padding:10px;
 
 <input id="diameter" type="number" placeholder="Diameter skadested (mm)">
 <input id="hoyde" type="number" placeholder="Stolpehøyde (m)">
+<input id="nedgraving" type="number" placeholder="Nedgravingsdybde (m)">
+<input id="jordband" type="number" placeholder="Jordbånddiameter (mm)">
+
+<select id="miljo">
+<option value="1">Innland</option>
+<option value="1.1">Kyst</option>
+<option value="1.2">Fjell</option>
+</select>
+
+<select id="fiber">
+<option value="30">Fiberstyrke 30</option>
+<option value="40">Fiberstyrke 40</option>
+</select>
+
+<select id="sf">
+<option value="1.5">SF 1.5</option>
+<option value="2">SF 2.0</option>
+</select>
+
+</div>
+
+<div class="card">
+<h3>Fukt</h3>
+
+<input id="temp" placeholder="Temperatur (°C)">
+<input id="rf" placeholder="Relativ fuktighet (%)">
+<input id="yfukt" placeholder="Ytre fukt (%)">
+
 </div>
 
 <div class="card">
 <h3>Skader</h3>
 
-<select id="skadetype" onchange="oppdaterSkade()">
+<select id="skadevalg">
 <option value="">Velg skade</option>
 <option value="indre">Indre råte (ABE)</option>
 <option value="sirk">Sirkulær råte (ABCD)</option>
@@ -60,120 +73,138 @@ padding:10px;
 <option value="spett">Spettsmie (AB)</option>
 </select>
 
-<label>
-<input type="checkbox" onchange="visBilde(this)">
- Vis målebilde
-</label>
+<button onclick="leggTil()">Legg til skade</button>
 
-<div id="felter"></div>
+<div id="skadeliste"></div>
 
-<input id="lengde" placeholder="Lengde skade (mm)">
-<input id="hSkade" placeholder="Skadehøyde over bakken (m)">
 </div>
 
 <button onclick="beregn()">Beregn</button>
-<button onclick="lastCSV()">Last ned Excel</button>
-<button onclick="window.print()">Lag PDF</button>
+<button onclick="excel()">Last ned Excel</button>
+<button onclick="pdf()">Lag PDF</button>
 
-<h3 id="resultat"></h3>
-
-<div id="popup" class="popup" onclick="this.style.display='none'">
-<img id="popupimg">
-</div>
+<div id="resultat"></div>
 
 <script>
 
-function oppdaterSkade(){
+let skader = [];
 
-let t = skadetype.value;
-let f = document.getElementById("felter");
+function leggTil(){
+let type = document.getElementById("skadevalg").value;
+if(!type) return;
 
-if(t==="indre"){
-f.innerHTML = input("A (mm)") + input("B (mm)") + input("E restskall (mm)");
-}
-else if(t==="sirk" || t==="soft"){
-f.innerHTML = input("A (mm)") + input("B (mm)") + input("C (mm)") + input("D (mm)");
-}
-else if(t==="sprekk" || t==="spett"){
-f.innerHTML = input("A (mm)") + input("B (mm)");
-}
-else{
-f.innerHTML="";
-}
-}
+let obj = {type:type};
 
-function input(label){
-return `<input class="skade" placeholder="${label}">`;
+if(type=="indre"){
+obj.A = prompt("A (mm)");
+obj.B = prompt("B (mm)");
+obj.E = prompt("Restskall E (mm)");
 }
-
-function visBilde(el){
-
-if(!el.checked){
-popup.style.display="none";
-return;
+if(type=="sirk" || type=="soft"){
+obj.A = prompt("A (mm)");
+obj.B = prompt("B (mm)");
+obj.C = prompt("C (mm)");
+obj.D = prompt("D (mm)");
+}
+if(type=="sprekk" || type=="spett"){
+obj.A = prompt("A (mm)");
+obj.B = prompt("B (mm)");
 }
 
-let map = {
-indre:"Innvendig_raate.svg",
-sirk:"Sirkulaer_raate.svg",
-soft:"Softraate.svg",
-sprekk:"Sprekk.svg",
-spett:"Spettsmie.svg"
-};
+obj.L = prompt("Lengde skade (mm)");
+obj.H = prompt("Skadehøyde (m)");
 
-let fil = map[skadetype.value];
+skader.push(obj);
 
-if(fil){
-popupimg.src = fil;
-popup.style.display="flex";
+visSkader();
 }
+
+function visSkader(){
+let html="";
+skader.forEach((s,i)=>{
+html += "<div>Skade "+(i+1)+" ("+s.type+")</div>";
+});
+document.getElementById("skadeliste").innerHTML = html;
+}
+
+function kapasitet(s){
+
+let d = parseFloat(document.getElementById("diameter").value || 200);
+let fiber = parseFloat(document.getElementById("fiber").value);
+let sf = parseFloat(document.getElementById("sf").value);
+
+let reduksjon = 0;
+
+if(s.E) reduksjon = (d - s.E) / d;
+if(s.A) reduksjon += s.A / d * 0.3;
+
+let kap = (1 - reduksjon) * (fiber / 40) / sf * 100;
+
+return Math.max(0, kap);
 }
 
 function beregn(){
 
-let d = parseFloat(diameter.value)||0;
-let h = parseFloat(hoyde.value)||0;
+if(skader.length==0){
+document.getElementById("resultat").innerHTML="Ingen skade";
+return;
+}
 
-let inputs = document.querySelectorAll(".skade");
-let vals = [];
+let lavest = 100;
 
-inputs.forEach(i=>{
-let v=parseFloat(i.value);
-if(v>0) vals.push(v);
+skader.forEach(s=>{
+let k = kapasitet(s);
+if(k < lavest) lavest = k;
 });
 
-let rest = 1;
+let status = (lavest < 75) ? "IKKE GODKJENT" : "OK";
 
-if(vals.length){
-let snitt = vals.reduce((a,b)=>a+b,0)/vals.length;
-rest = (d - snitt)/d;
+if(parseFloat(document.getElementById("sf").value) < 1){
+status = "IKKE GODKJENT (SF<1)";
 }
 
-let kapasitet = rest * 100;
-
-let status = kapasitet < 75 ? "IKKE GODKJENT" : "OK";
-
-resultat.innerHTML =
-"Restkapasitet: " + kapasitet.toFixed(1) + "%<br>" +
-"Status: " + status;
-
+document.getElementById("resultat").innerHTML =
+"Restkapasitet: "+lavest.toFixed(1)+" %<br>Status: "+status;
 }
 
-function lastCSV(){
+function excel(){
 
-let data = [
-netteier.value,
-linje.value,
-mast.value,
-stolpe.value,
-resultat.innerText
-];
+let text = "Netteier,Linje,Restkapasitet\n";
+text += document.getElementById("netteier").value + ",";
+text += document.getElementById("linje").value + ",";
+text += document.getElementById("resultat").innerText;
 
-let blob = new Blob([data.join(";")]);
+let blob = new Blob([text]);
 let a = document.createElement("a");
 a.href = URL.createObjectURL(blob);
 a.download = "rapport.csv";
 a.click();
+
+reset();
+}
+
+function pdf(){
+
+let win = window.open();
+win.document.write("<h1>Stolpekontroll rapport</h1>");
+win.document.write(document.getElementById("resultat").innerHTML);
+win.print();
+
+reset();
+}
+
+function reset(){
+
+let netteier = document.getElementById("netteier").value;
+let linje = document.getElementById("linje").value;
+
+document.querySelectorAll("input").forEach(i=>i.value="");
+
+document.getElementById("netteier").value = netteier;
+document.getElementById("linje").value = linje;
+
+skader = [];
+visSkader();
 }
 
 </script>
