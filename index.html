@@ -4,20 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v11.2</title>
+<title>Stolpekontroll v11.3</title>
 
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
+<!-- IKON -->
+<link rel="icon" href="Knapp.png">
+<link rel="apple-touch-icon" href="Knapp.png">
 
 <style>
 body {
   font-family: Arial;
   background: #f2f2f2;
   padding: 10px;
-}
-
-h2 {
-  margin-bottom: 5px;
 }
 
 .section {
@@ -52,11 +49,6 @@ button {
   border-radius: 6px;
 }
 
-img.knapp {
-  width: 100%;
-  margin-top: 10px;
-}
-
 img.vis {
   width: 100%;
   max-height: 200px;
@@ -68,7 +60,7 @@ img.vis {
 
 <body>
 
-<h2>Stolpekontroll v11.2</h2>
+<h2>Stolpekontroll v11.3</h2>
 
 <div class="section">
 <h3>Grunnlagsdata</h3>
@@ -126,7 +118,7 @@ img.vis {
 
 <div id="felter"></div>
 
-<img src="Knapp.png" class="knapp" onclick="leggTil()">
+<button onclick="leggTil()">Legg til skade</button>
 
 </div>
 
@@ -134,16 +126,15 @@ img.vis {
 
 <script>
 
-// 30 dagers sperre
+// 30 dager
 let start = localStorage.getItem("startDato");
 if (!start) {
   localStorage.setItem("startDato", Date.now());
 } else {
   let dager = (Date.now() - start) / (1000*60*60*24);
   if (dager > 30) {
-    let pw = prompt("Skriv passord:");
+    let pw = prompt("Passord:");
     if (pw !== "stolpe123") {
-      alert("Ingen tilgang");
       document.body.innerHTML = "";
     }
   }
