@@ -4,11 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v11.3</title>
+<!-- FAST NAVN (uten versjon) -->
+<title>Stolpekontroll</title>
 
 <!-- IKON -->
 <link rel="icon" href="Knapp.png">
 <link rel="apple-touch-icon" href="Knapp.png">
+
+<!-- TVINGER NAVN PÅ IPHONE -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stolpekontroll">
 
 <style>
 body {
@@ -60,7 +65,8 @@ img.vis {
 
 <body>
 
-<h2>Stolpekontroll v11.3</h2>
+<!-- AUTOMATISK VERSJON -->
+<h2 id="appTittel"></h2>
 
 <div class="section">
 <h3>Grunnlagsdata</h3>
@@ -126,7 +132,13 @@ img.vis {
 
 <script>
 
-// 30 dager
+/* ====== HER ENDRES KUN VERSJON ====== */
+const VERSION = "v11.4";
+
+/* ====== VIS TITTEL ====== */
+document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
+
+/* ====== 30 DAGERS SPERRE ====== */
 let start = localStorage.getItem("startDato");
 if (!start) {
   localStorage.setItem("startDato", Date.now());
