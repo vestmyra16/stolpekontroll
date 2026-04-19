@@ -4,14 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- FAST NAVN (uten versjon) -->
 <title>Stolpekontroll</title>
 
-<!-- IKON -->
 <link rel="icon" href="Knapp.png">
 <link rel="apple-touch-icon" href="Knapp.png">
 
-<!-- TVINGER NAVN PÅ IPHONE -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Stolpekontroll">
 
@@ -65,7 +62,6 @@ img.vis {
 
 <body>
 
-<!-- AUTOMATISK VERSJON -->
 <h2 id="appTittel"></h2>
 
 <div class="section">
@@ -132,13 +128,11 @@ img.vis {
 
 <script>
 
-/* ====== HER ENDRES KUN VERSJON ====== */
-const VERSION = "v11.4";
-
-/* ====== VIS TITTEL ====== */
+// ===== VERSJON =====
+const VERSION = "v11.5";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
-/* ====== 30 DAGERS SPERRE ====== */
+// ===== 30 DAGERS SPERRE =====
 let start = localStorage.getItem("startDato");
 if (!start) {
   localStorage.setItem("startDato", Date.now());
@@ -152,8 +146,10 @@ if (!start) {
   }
 }
 
+// ===== DATA =====
 let skader = [];
 
+// ===== FELTER =====
 function oppdaterFelter() {
   let t = type.value;
   let f = document.getElementById("felter");
@@ -179,6 +175,7 @@ function oppdaterFelter() {
   }
 }
 
+// ===== BILDER =====
 function visBilde() {
   let img = document.getElementById("bilde");
   let t = type.value;
@@ -192,31 +189,47 @@ function visBilde() {
   img.style.display = "block";
 }
 
-function leggTil() {
-  skader.push({
-    netteier: netteier.value,
-    linje: linje.value,
-    mast: mast.value,
-    stolpe: stolpe.value,
-    hoyde: hoyde.value,
-    jord: jord.value,
-    klima: klima.value,
-    jordtype: jordtype.value,
-    sf: sf.value,
-    type: type.value,
-    diam: diam.value,
-    sh: sh.value,
-    A: A?.value || "",
-    B: B?.value || "",
-    C: C?.value || "",
-    D: D?.value || "",
-    E: E?.value || ""
-  });
-
-  alert("Registrert");
+// ===== HENT VERDI (STABIL) =====
+function getVal(id) {
+  let el = document.getElementById(id);
+  return el ? el.value : "";
 }
 
+// ===== LEGG TIL =====
+function leggTil() {
+
+  let obj = {
+    netteier: getVal("netteier"),
+    linje: getVal("linje"),
+    mast: getVal("mast"),
+    stolpe: getVal("stolpe"),
+    hoyde: getVal("hoyde"),
+    jord: getVal("jord"),
+    klima: getVal("klima"),
+    jordtype: getVal("jordtype"),
+    sf: getVal("sf"),
+    type: getVal("type"),
+    diam: getVal("diam"),
+    sh: getVal("sh"),
+    A: getVal("A"),
+    B: getVal("B"),
+    C: getVal("C"),
+    D: getVal("D"),
+    E: getVal("E")
+  };
+
+  skader.push(obj);
+
+  alert("Skade registrert (" + skader.length + ")");
+}
+
+// ===== CSV =====
 function lastNed() {
+
+  if (skader.length === 0) {
+    alert("Ingen data registrert");
+    return;
+  }
 
   let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordtype,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
 
@@ -243,6 +256,7 @@ function lastNed() {
   }
 }
 
+// INIT
 oppdaterFelter();
 
 </script>
