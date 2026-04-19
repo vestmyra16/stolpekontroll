@@ -120,7 +120,7 @@ img.vis {
 
 <div id="felter"></div>
 
-<button onclick="leggTil()">Legg til skade</button>
+<button onclick="leggTil()">Lagre skade</button>
 
 </div>
 
@@ -128,28 +128,14 @@ img.vis {
 
 <script>
 
-// ===== VERSJON =====
-const VERSION = "v11.5";
+// VERSION
+const VERSION = "v11.6";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
-// ===== 30 DAGERS SPERRE =====
-let start = localStorage.getItem("startDato");
-if (!start) {
-  localStorage.setItem("startDato", Date.now());
-} else {
-  let dager = (Date.now() - start) / (1000*60*60*24);
-  if (dager > 30) {
-    let pw = prompt("Passord:");
-    if (pw !== "stolpe123") {
-      document.body.innerHTML = "";
-    }
-  }
-}
-
-// ===== DATA =====
+// DATA
 let skader = [];
 
-// ===== FELTER =====
+// FIELD LOGIC
 function oppdaterFelter() {
   let t = type.value;
   let f = document.getElementById("felter");
@@ -175,7 +161,7 @@ function oppdaterFelter() {
   }
 }
 
-// ===== BILDER =====
+// IMAGE
 function visBilde() {
   let img = document.getElementById("bilde");
   let t = type.value;
@@ -189,13 +175,13 @@ function visBilde() {
   img.style.display = "block";
 }
 
-// ===== HENT VERDI (STABIL) =====
+// GET VALUE
 function getVal(id) {
   let el = document.getElementById(id);
   return el ? el.value : "";
 }
 
-// ===== LEGG TIL =====
+// SAVE
 function leggTil() {
 
   let obj = {
@@ -219,12 +205,15 @@ function leggTil() {
   };
 
   skader.push(obj);
-
-  alert("Skade registrert (" + skader.length + ")");
 }
 
-// ===== CSV =====
+// EXPORT + AUTO SAVE
 function lastNed() {
+
+  // AUTOMATISK lagre hvis noe er skrevet
+  if (getVal("diam") || getVal("A") || getVal("B")) {
+    leggTil();
+  }
 
   if (skader.length === 0) {
     alert("Ingen data registrert");
@@ -242,18 +231,6 @@ function lastNed() {
   a.href = URL.createObjectURL(blob);
   a.download = "stolpekontroll.csv";
   a.click();
-
-  let valg = confirm("Start ny registrering?");
-  if (valg) {
-    mast.value = "";
-    stolpe.value = "";
-    hoyde.value = "";
-    jord.value = "";
-    diam.value = "";
-    sh.value = "";
-    document.getElementById("felter").innerHTML = "";
-    skader = [];
-  }
 }
 
 // INIT
