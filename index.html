@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v11.0</title>
+
+<title>Stolpekontroll</title>
+
+<!-- IKON -->
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 
 <style>
 body {
@@ -65,7 +70,7 @@ img {
 
 <body>
 
-<h2>Stolpekontroll v11.0</h2>
+<h2>Stolpekontroll</h2>
 
 <div class="section">
 <h3>Grunnlagsdata</h3>
@@ -154,7 +159,7 @@ function oppdaterFelter() {
     `;
   }
 
-  else if (t.includes("AB)")) {
+  else {
     f.innerHTML = `
       <label>A</label><input id="A">
       <label>B</label><input id="B">
@@ -166,7 +171,6 @@ function visBilde() {
   let img = document.getElementById("bilde");
   let t = type.value;
 
-  // Bilder (samme mappe eller GitHub)
   if (t.includes("Indre")) img.src = "indre.svg";
   else if (t.includes("Sirkulær")) img.src = "sirk.svg";
   else if (t.includes("Softråte")) img.src = "soft.svg";
@@ -204,7 +208,7 @@ function leggTil() {
 
 function lastNed() {
 
-  let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordtype,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
+  let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordsmonn,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
 
   skader.forEach(s => {
     csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
