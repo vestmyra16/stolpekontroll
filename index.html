@@ -130,7 +130,7 @@ img.vis {
 <script>
 
 // VERSION
-const VERSION = "v11.7";
+const VERSION = "v11.8";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
@@ -205,6 +205,7 @@ function leggTil() {
   };
 
   skader.push(obj);
+  alert("Skade lagret (" + skader.length + ")");
 }
 
 // EXPORT
@@ -230,13 +231,9 @@ function lastNed() {
   a.href = URL.createObjectURL(blob);
   a.download = "stolpekontroll.csv";
   a.click();
-
-  if (confirm("Start ny registrering?")) {
-    nyRegistrering();
-  }
 }
 
-// RESET
+// RESET (kontrollert)
 function nyRegistrering() {
 
   let netteierVal = netteier.value;
@@ -250,7 +247,7 @@ function nyRegistrering() {
   document.getElementById("felter").innerHTML = "";
   skader = [];
 
-  alert("Ny registrering klar");
+  alert("Klar for ny registrering");
 }
 
 // INIT
