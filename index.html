@@ -4,15 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll</title>
+<title>Stolpekontroll v11.2</title>
 
-<!-- IKON -->
 <link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="Knapp.png">
+<link rel="apple-touch-icon" href="icon.png">
 
 <style>
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #f2f2f2;
   padding: 10px;
 }
@@ -30,20 +29,17 @@ h2 {
 
 label {
   font-weight: 700;
-  color: #000;
-  display: block;
   margin-top: 10px;
-  font-size: 15px;
+  display: block;
 }
 
 input, select {
   width: 100%;
-  padding: 11px;
-  margin-top: 4px;
+  padding: 10px;
+  margin-top: 3px;
   border: 2px solid #999;
   border-radius: 6px;
   font-size: 16px;
-  color: #000;
 }
 
 button {
@@ -54,23 +50,25 @@ button {
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 16px;
 }
 
-img {
+img.knapp {
   width: 100%;
-  max-height: 220px;
+  margin-top: 10px;
+}
+
+img.vis {
+  width: 100%;
+  max-height: 200px;
   object-fit: contain;
   margin-top: 10px;
-  border-radius: 6px;
-  background: #fafafa;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll</h2>
+<h2>Stolpekontroll v11.2</h2>
 
 <div class="section">
 <h3>Grunnlagsdata</h3>
@@ -79,8 +77,8 @@ img {
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
 <label>Stolpenr</label><input id="stolpe">
-<label>Stolpehøyde (m)</label><input id="hoyde">
-<label>Jordbanddiameter (mm)</label><input id="jord">
+<label>Stolpehøyde</label><input id="hoyde">
+<label>Jordbanddiameter</label><input id="jord">
 
 <label>Klima</label>
 <select id="klima">
@@ -118,23 +116,38 @@ img {
 </select>
 
 <button onclick="visBilde()">Vis bilde</button>
-<img id="bilde" style="display:none">
+<img id="bilde" class="vis" style="display:none">
 
-<label>Diameter skadested (mm)</label>
+<label>Diameter skadested</label>
 <input id="diam">
 
-<label>Skadehøyde (m)</label>
+<label>Skadehøyde</label>
 <input id="sh">
 
 <div id="felter"></div>
 
-<button onclick="leggTil()">Legg til skade</button>
+<img src="Knapp.png" class="knapp" onclick="leggTil()">
 
 </div>
 
 <button onclick="lastNed()">Last ned CSV</button>
 
 <script>
+
+// 30 dagers sperre
+let start = localStorage.getItem("startDato");
+if (!start) {
+  localStorage.setItem("startDato", Date.now());
+} else {
+  let dager = (Date.now() - start) / (1000*60*60*24);
+  if (dager > 30) {
+    let pw = prompt("Skriv passord:");
+    if (pw !== "stolpe123") {
+      alert("Ingen tilgang");
+      document.body.innerHTML = "";
+    }
+  }
+}
 
 let skader = [];
 
@@ -148,18 +161,14 @@ function oppdaterFelter() {
       <label>B</label><input id="B">
       <label>E</label><input id="E">
     `;
-  }
-
-  else if (t.includes("ABCD")) {
+  } else if (t.includes("ABCD")) {
     f.innerHTML = `
       <label>A</label><input id="A">
       <label>B</label><input id="B">
       <label>C</label><input id="C">
       <label>D</label><input id="D">
     `;
-  }
-
-  else {
+  } else {
     f.innerHTML = `
       <label>A</label><input id="A">
       <label>B</label><input id="B">
@@ -181,8 +190,7 @@ function visBilde() {
 }
 
 function leggTil() {
-
-  let obj = {
+  skader.push({
     netteier: netteier.value,
     linje: linje.value,
     mast: mast.value,
@@ -195,20 +203,19 @@ function leggTil() {
     type: type.value,
     diam: diam.value,
     sh: sh.value,
-    A: document.getElementById("A")?.value || "",
-    B: document.getElementById("B")?.value || "",
-    C: document.getElementById("C")?.value || "",
-    D: document.getElementById("D")?.value || "",
-    E: document.getElementById("E")?.value || ""
-  };
+    A: A?.value || "",
+    B: B?.value || "",
+    C: C?.value || "",
+    D: D?.value || "",
+    E: E?.value || ""
+  });
 
-  skader.push(obj);
-  alert("Skade registrert");
+  alert("Registrert");
 }
 
 function lastNed() {
 
-  let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordsmonn,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
+  let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordtype,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
 
   skader.forEach(s => {
     csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
@@ -219,6 +226,18 @@ function lastNed() {
   a.href = URL.createObjectURL(blob);
   a.download = "stolpekontroll.csv";
   a.click();
+
+  let valg = confirm("Start ny registrering?");
+  if (valg) {
+    mast.value = "";
+    stolpe.value = "";
+    hoyde.value = "";
+    jord.value = "";
+    diam.value = "";
+    sh.value = "";
+    document.getElementById("felter").innerHTML = "";
+    skader = [];
+  }
 }
 
 oppdaterFelter();
