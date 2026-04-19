@@ -125,11 +125,12 @@ img.vis {
 </div>
 
 <button onclick="lastNed()">Last ned CSV</button>
+<button onclick="nyRegistrering()">Ny registrering</button>
 
 <script>
 
 // VERSION
-const VERSION = "v11.6";
+const VERSION = "v11.7";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
@@ -183,7 +184,6 @@ function getVal(id) {
 
 // SAVE
 function leggTil() {
-
   let obj = {
     netteier: getVal("netteier"),
     linje: getVal("linje"),
@@ -207,10 +207,9 @@ function leggTil() {
   skader.push(obj);
 }
 
-// EXPORT + AUTO SAVE
+// EXPORT
 function lastNed() {
 
-  // AUTOMATISK lagre hvis noe er skrevet
   if (getVal("diam") || getVal("A") || getVal("B")) {
     leggTil();
   }
@@ -231,6 +230,27 @@ function lastNed() {
   a.href = URL.createObjectURL(blob);
   a.download = "stolpekontroll.csv";
   a.click();
+
+  if (confirm("Start ny registrering?")) {
+    nyRegistrering();
+  }
+}
+
+// RESET
+function nyRegistrering() {
+
+  let netteierVal = netteier.value;
+  let linjeVal = linje.value;
+
+  document.querySelectorAll("input").forEach(i => i.value = "");
+
+  netteier.value = netteierVal;
+  linje.value = linjeVal;
+
+  document.getElementById("felter").innerHTML = "";
+  skader = [];
+
+  alert("Ny registrering klar");
 }
 
 // INIT
