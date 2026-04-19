@@ -3,203 +3,189 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v10.7 (RE)</title>
-
-<link rel="apple-touch-icon" href="Knapp.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Stolpekontroll v10.8</title>
 
 <style>
-body {font-family: Arial; background:#f4f4f4; padding:10px;}
-.card {background:white; padding:15px; margin-bottom:15px; border-radius:10px;}
-input, select {width:100%; padding:8px; margin:5px 0;}
-button {background:#2e7d32; color:white; padding:12px; width:100%; border:none; margin-top:10px;}
-
-.rad {display:flex; gap:5px;}
-.rad input {flex:1;}
-
-.popup {
-display:none;
-position:fixed;
-top:0; left:0;
-width:100%; height:100%;
-background:rgba(0,0,0,0.7);
-justify-content:center;
-align-items:center;
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  margin: 0;
+  padding: 10px;
 }
-.popup img {
-max-width:500px;
-width:90%;
-background:white;
-padding:10px;
-border-radius:10px;
+
+h2 {
+  margin-top: 20px;
 }
+
+label {
+  font-weight: 600;
+  color: #111;
+  display: block;
+  margin-top: 10px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 3px;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  color: #000;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.section {
+  background: white;
+  padding: 10px;
+  margin-top: 15px;
+  border-radius: 8px;
+}
+
 </style>
 </head>
 
 <body>
-<h2>Stolpekontroll v10.7 (RE)</h2>
 
-<div class="card">
-<h3>Grunnlag</h3>
+<h2>Stolpekontroll v10.8</h2>
 
-<input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="LinjeID">
-<input id="mast" placeholder="Mast nr">
-<input id="stolpe" placeholder="Stolpenr">
+<div class="section">
+<h3>Grunnlagsdata</h3>
 
-<input id="diameter" placeholder="Diameter skadested (mm)">
-<input id="hoyde" placeholder="Stolpehøyde (m)">
-<input id="nedgraving" placeholder="Nedgravingsdybde (m)">
-<input id="jordband" placeholder="Jordbånddiameter (mm)">
+<label>Netteier</label>
+<input id="netteier">
 
+<label>LinjeID</label>
+<input id="linje">
+
+<label>Mastnr</label>
+<input id="mast">
+
+<label>Stolpenr</label>
+<input id="stolpe">
+
+<label>Stolpehøyde (m)</label>
+<input id="hoyde">
+
+<label>Jordbanddiameter (mm)</label>
+<input id="jord">
+
+<label>Klima</label>
 <select id="klima">
 <option>Kyst</option>
 <option>Innland</option>
 <option>Fjell</option>
 </select>
 
-<select id="jord">
+<label>Jordsmonn</label>
+<select id="jordtype">
 <option>Innmark</option>
 <option>Skogsmark</option>
 <option>Fjell</option>
 </select>
 
-<select id="fiber">
-<option>30</option>
-<option>40</option>
-</select>
-
+<label>Sikkerhetsfaktor</label>
 <select id="sf">
-<option value="1">1</option>
-<option value="1.5">1.5</option>
-<option value="2">2</option>
+<option>1</option>
+<option>1.5</option>
+<option>2</option>
 </select>
+
+<label>Temperatur</label>
+<input id="temp">
+
+<label>Relativ fukt (%)</label>
+<input id="rf">
+
+<label>Ytre fukt (%)</label>
+<input id="yf">
 
 </div>
 
-<div class="card">
-<h3>Fukt</h3>
+<div class="section">
+<h3>Skade</h3>
 
-<input id="temp" placeholder="Temperatur (°C)">
-<input id="rf" placeholder="Relativ luftfuktighet (%)">
-<input id="yf" placeholder="Ytre fukt (%)">
-
-</div>
-
-<div class="card">
-<h3>Skader</h3>
-
-<select id="skadevalg" onchange="visSkade()">
-<option value="">Velg skade</option>
-<option value="indre">Indre råte (ABE)</option>
-<option value="sirk">Sirkulær råte (ABCD)</option>
-<option value="soft">Softråte (ABCD)</option>
-<option value="sprekk">Sprekk (AB)</option>
-<option value="spett">Spettsmie (AB)</option>
+<label>Type skade</label>
+<select id="type">
+<option>Indre råte (ABE)</option>
+<option>Sirkulær råte (ABCD)</option>
+<option>Softråte (ABCD)</option>
+<option>Spettsmie (AB)</option>
+<option>Hakkespetthull (ABCD)</option>
 </select>
 
-<button onclick="visBilde()">Vis bilde</button>
+<label>Diameter skadested (mm)</label>
+<input id="diam">
 
-<div id="skjema"></div>
+<label>Skadehøyde (m)</label>
+<input id="sh">
 
-<input id="lengde" placeholder="Lengde skade (mm)">
-<input id="hskade" placeholder="Skadehøyde over bakken (m)">
+<label>A</label><input id="A">
+<label>B</label><input id="B">
+<label>C</label><input id="C">
+<label>D</label><input id="D">
+<label>E</label><input id="E">
 
 <button onclick="leggTil()">Legg til skade</button>
 
-<div id="liste"></div>
-
 </div>
 
-<button onclick="beregn()">Beregn</button>
-<button onclick="lagExcel()">Last ned Excel</button>
-<button onclick="lagPDF()">Lag PDF</button>
-
-<h3 id="resultat"></h3>
-
-<div id="popup" class="popup" onclick="this.style.display='none'">
-<img id="img">
-</div>
+<button onclick="lastNed()">Last ned CSV</button>
 
 <script>
 
-let skader=[];
+let skader = [];
 
-function visSkade(){
-let t = skadevalg.value;
-let html="";
+function leggTil() {
+  skader.push({
+    netteier: netteier.value,
+    linje: linje.value,
+    mast: mast.value,
+    stolpe: stolpe.value,
+    hoyde: hoyde.value,
+    jord: jord.value,
+    klima: klima.value,
+    jordtype: jordtype.value,
+    sf: sf.value,
+    temp: temp.value,
+    rf: rf.value,
+    yf: yf.value,
+    type: type.value,
+    diam: diam.value,
+    sh: sh.value,
+    A: A.value,
+    B: B.value,
+    C: C.value,
+    D: D.value,
+    E: E.value
+  });
 
-if(t==="indre") html += rad("A","B","E");
-if(t==="sirk"||t==="soft") html += rad("A","B","C","D");
-if(t==="sprekk"||t==="spett") html += rad("A","B");
-
-skjema.innerHTML = html;
+  alert("Skade registrert");
 }
 
-function rad(...labels){
-let r="<div class='rad'>";
-labels.forEach(l=>{
-r+=`<input class="felt" placeholder="${l} (mm)">`;
-});
-r+="</div>";
-return r;
-}
+function lastNed() {
 
-function leggTil(){
-let vals=[];
-document.querySelectorAll(".felt").forEach(f=>{
-vals.push(parseFloat(f.value)||0);
-});
-skader.push(vals);
+  let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jordband,Klima,Jordsmonn,SF,Temp,Fukt,YtreFukt,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
 
-liste.innerHTML += "Skade lagt til<br>";
-}
+  skader.forEach(s => {
+    csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.temp},${s.rf},${s.yf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
+  });
 
-function visBilde(){
-let map={
-indre:"indre.svg",
-sirk:"sirk.svg",
-soft:"soft.svg",
-sprekk:"sprekk.svg",
-spett:"spett.svg"
-};
-img.src = map[skadevalg.value]+"?v="+Date.now();
-popup.style.display="flex";
-}
-
-function beregn(){
-let d=parseFloat(diameter.value||200);
-let lavest=100;
-
-skader.forEach(s=>{
-let snitt=s.reduce((a,b)=>a+b,0)/s.length;
-let rest=(d-snitt)/d*100;
-if(rest<lavest) lavest=rest;
-});
-
-let status = lavest<75 ? "IKKE GODKJENT" : "OK";
-
-resultat.innerHTML =
-"Restkapasitet: "+lavest.toFixed(1)+" %<br>Status: "+status;
-}
-
-function lagExcel(){
-let csv="Netteier,Linje,Mast,Stolpe,Restkapasitet\n";
-
-csv += `${netteier.value},${linje.value},${mast.value},${stolpe.value},${resultat.innerText}\n`;
-
-let blob=new Blob([csv],{type:"text/csv"});
-let a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="rapport.csv";
-a.click();
-}
-
-function lagPDF(){
-let w=window.open("","","width=600,height=600");
-w.document.write("<h2>Stolpekontroll rapport</h2>");
-w.document.write("<p>"+resultat.innerHTML+"</p>");
-w.print();
+  let blob = new Blob([csv], { type: "text/csv" });
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "stolpekontroll.csv";
+  a.click();
 }
 
 </script>
