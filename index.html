@@ -71,8 +71,12 @@ img.vis {
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
 <label>Stolpenr</label><input id="stolpe">
-<label>Stolpehøyde</label><input id="hoyde">
-<label>Jordbanddiameter</label><input id="jord">
+
+<label>Stolpehøyde (m)</label>
+<input id="hoyde">
+
+<label>Jordbanddiameter (mm)</label>
+<input id="jord">
 
 <label>Klima</label>
 <select id="klima">
@@ -112,10 +116,10 @@ img.vis {
 <button onclick="visBilde()">Vis bilde</button>
 <img id="bilde" class="vis" style="display:none">
 
-<label>Diameter skadested</label>
+<label>Diameter skadested (mm)</label>
 <input id="diam">
 
-<label>Skadehøyde</label>
+<label>Skadehøyde (m)</label>
 <input id="sh">
 
 <div id="felter"></div>
@@ -130,39 +134,37 @@ img.vis {
 <script>
 
 // VERSION
-const VERSION = "v12.0";
+const VERSION = "v12.1";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
 let skader = [];
 
-// FIELD LOGIC
 function oppdaterFelter() {
   let t = type.value;
   let f = document.getElementById("felter");
 
   if (t.includes("ABE")) {
     f.innerHTML = `
-      <label>A</label><input id="A">
-      <label>B</label><input id="B">
-      <label>E</label><input id="E">
+      <label>A (mm)</label><input id="A">
+      <label>B (mm)</label><input id="B">
+      <label>E (mm)</label><input id="E">
     `;
   } else if (t.includes("ABCD")) {
     f.innerHTML = `
-      <label>A</label><input id="A">
-      <label>B</label><input id="B">
-      <label>C</label><input id="C">
-      <label>D</label><input id="D">
+      <label>A (mm)</label><input id="A">
+      <label>B (mm)</label><input id="B">
+      <label>C (mm)</label><input id="C">
+      <label>D (mm)</label><input id="D">
     `;
   } else {
     f.innerHTML = `
-      <label>A</label><input id="A">
-      <label>B</label><input id="B">
+      <label>A (mm)</label><input id="A">
+      <label>B (mm)</label><input id="B">
     `;
   }
 }
 
-// IMAGE
 function visBilde() {
   let img = document.getElementById("bilde");
   let t = type.value;
@@ -176,13 +178,11 @@ function visBilde() {
   img.style.display = "block";
 }
 
-// GET VALUE
 function getVal(id) {
   let el = document.getElementById(id);
   return el ? el.value : "";
 }
 
-// SAVE
 function leggTil() {
   let obj = {
     netteier: getVal("netteier"),
@@ -208,7 +208,6 @@ function leggTil() {
   alert("Skade lagret (" + skader.length + ")");
 }
 
-// EXPORT (REN CSV, åpnes i Excel uten feil)
 function lastNed() {
 
   if (getVal("diam") || getVal("A") || getVal("B")) {
@@ -220,7 +219,7 @@ function lastNed() {
     return;
   }
 
-  let csv = "sep=,\nNetteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordtype,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
+  let csv = "sep=,\nNetteier,Linje,Mast,Stolpe,Høyde (m),Jordband (mm),Klima,Jordtype,SF,Type,Diameter (mm),Skadehøyde (m),A (mm),B (mm),C (mm),D (mm),E (mm)\n";
 
   skader.forEach(s => {
     csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
@@ -233,9 +232,7 @@ function lastNed() {
   a.click();
 }
 
-// RESET
 function nyRegistrering() {
-
   let netteierVal = netteier.value;
   let linjeVal = linje.value;
 
@@ -250,7 +247,6 @@ function nyRegistrering() {
   alert("Klar for ny registrering");
 }
 
-// INIT
 oppdaterFelter();
 
 </script>
