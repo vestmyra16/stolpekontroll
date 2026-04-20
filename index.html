@@ -130,7 +130,7 @@ img.vis {
 <script>
 
 // VERSION
-const VERSION = "v11.9";
+const VERSION = "v12.0";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
@@ -208,7 +208,7 @@ function leggTil() {
   alert("Skade lagret (" + skader.length + ")");
 }
 
-// EXPORT (Excel)
+// EXPORT (REN CSV, åpnes i Excel uten feil)
 function lastNed() {
 
   if (getVal("diam") || getVal("A") || getVal("B")) {
@@ -226,10 +226,10 @@ function lastNed() {
     csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
   });
 
-  let blob = new Blob([csv], {type:"application/vnd.ms-excel"});
+  let blob = new Blob([csv], {type:"text/csv"});
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "stolpekontroll.xls";
+  a.download = "stolpekontroll.csv";
   a.click();
 }
 
