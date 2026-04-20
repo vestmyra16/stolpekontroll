@@ -130,7 +130,7 @@ img.vis {
 <script>
 
 // VERSION
-const VERSION = "v11.8";
+const VERSION = "v11.9";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
@@ -208,7 +208,7 @@ function leggTil() {
   alert("Skade lagret (" + skader.length + ")");
 }
 
-// EXPORT
+// EXPORT (Excel)
 function lastNed() {
 
   if (getVal("diam") || getVal("A") || getVal("B")) {
@@ -220,20 +220,20 @@ function lastNed() {
     return;
   }
 
-  let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordtype,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
+  let csv = "sep=,\nNetteier,Linje,Mast,Stolpe,Høyde,Jord,Klima,Jordtype,SF,Type,Diameter,Skadehøyde,A,B,C,D,E\n";
 
   skader.forEach(s => {
     csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
   });
 
-  let blob = new Blob([csv], {type:"text/csv"});
+  let blob = new Blob([csv], {type:"application/vnd.ms-excel"});
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
- a.download = "stolpekontroll.xls";
+  a.download = "stolpekontroll.xls";
   a.click();
 }
 
-// RESET (kontrollert)
+// RESET
 function nyRegistrering() {
 
   let netteierVal = netteier.value;
