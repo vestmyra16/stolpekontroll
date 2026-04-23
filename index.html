@@ -3,153 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Stolpekontroll</title>
 
 <link rel="icon" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 
 <style>
-body { font-family: Arial; background:#f2f2f2; padding:10px; }
-
-.section { background:#fff; padding:12px; margin-top:15px; border-radius:8px; }
-
-label { font-weight:bold; display:block; margin-top:10px; }
-
-input, select {
-  width:100%;
-  padding:10px;
-  border:2px solid #999;
-  border-radius:6px;
-}
-
-button {
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  background:#2e7d32;
-  color:#fff;
-  border:none;
-  border-radius:6px;
-}
+body{font-family:Arial;background:#f2f2f2;padding:10px}
+.section{background:#fff;padding:12px;margin-top:15px;border-radius:8px}
+label{font-weight:bold;display:block;margin-top:10px}
+input,select{width:100%;padding:10px;border:2px solid #999;border-radius:6px}
+button{width:100%;padding:12px;margin-top:10px;background:#2e7d32;color:#fff;border:none;border-radius:6px}
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v13.1</h2>
+<h2>Stolpekontroll v13</h2>
 
 <div class="section">
-<h3>Grunnlagsdata</h3>
-
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
-
-<label>Stolpehøyde (m)</label><input id="hoyde">
-<label>Jordbanddiameter (mm)</label><input id="jord">
 </div>
 
 <div class="section">
-<h3>Skade</h3>
-
 <label>Type skade</label>
-<select id="type" onchange="oppdaterFelter()">
-<option>Indre råte (ABE)</option>
-<option>Sirkulær råte (ABCD)</option>
-<option>Softråte (ABCD)</option>
-<option>Spettsmie (AB)</option>
-<option>Sprekk (ABCH)</option>
+<select id="type" onchange="felter()">
+<option>Indre råte</option>
+<option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Sprekk</option>
 </select>
 
-<label>Diameter skadested (mm)</label>
-<input id="diam">
+<div id="f"></div>
 
-<div id="felter"></div>
-
-<label>📸 Ta bilde</label>
+<label>📸</label>
 <input type="file" accept="image/*" capture="environment" multiple>
 
-<label>📝 Merknad</label>
-<input id="merknad">
+<label>📝</label>
+<input id="m">
 
-<button onclick="leggTil()">Lagre skade</button>
-
+<button onclick="lagre()">Lagre skade</button>
 </div>
 
 <button onclick="lastNed()">Last ned Excel</button>
 
 <script>
+let data=[];
 
-let skader = [];
-
-function oppdaterFelter() {
-
-  let t = type.value;
-  let f = document.getElementById("felter");
-
-  if (t.includes("Sprekk")) {
-    f.innerHTML = `
-      <label>A = Bredde (mm)</label><input id="A">
-      <label>B = Dybde (mm)</label><input id="B">
-      <label>C = Lengde (m)</label><input id="C">
-      <label>H = Høyde over bakken (m)</label><input id="H">
-    `;
-  } else {
-    f.innerHTML = `
-      <label>Skadehøyde (m)</label><input id="sh">
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-      <label>C (mm)</label><input id="C">
-      <label>D (mm)</label><input id="D">
-      <label>E (mm)</label><input id="E">
-    `;
-  }
+function felter(){
+if(type.value==="Sprekk"){
+f.innerHTML=`
+<label>Bredde A (mm)</label><input id="A">
+<label>Dybde B (mm)</label><input id="B">
+<label>Lengde C (m)</label><input id="C">
+<label>Høyde H (m)</label><input id="H">
+`;
+}else{
+f.innerHTML=`
+<label>Skadehøyde (m)</label><input id="sh">
+<label>A (mm)</label><input id="A">
+<label>B (mm)</label><input id="B">
+`;
+}
 }
 
-function getVal(id) {
-  let el = document.getElementById(id);
-  return el ? el.value : "";
+function g(id){return document.getElementById(id)?.value||""}
+
+function lagre(){
+data.push({
+netteier:g("netteier"),
+linje:g("linje"),
+mast:g("mast"),
+type:g("type"),
+sh:g("sh"),
+A:g("A"),
+B:g("B"),
+C:g("C"),
+H:g("H"),
+merknad:g("m")
+});
+alert("Lagret");
 }
 
-function leggTil() {
-
-  skader.push({
-    netteier: getVal("netteier"),
-    linje: getVal("linje"),
-    mast: getVal("mast"),
-    type: getVal("type"),
-    diam: getVal("diam"),
-    sh: getVal("sh"),
-    A: getVal("A"),
-    B: getVal("B"),
-    C: getVal("C"),
-    D: getVal("D"),
-    E: getVal("E"),
-    H: getVal("H"),
-    merknad: getVal("merknad")
-  });
-
-  alert("Skade lagret");
+function lastNed(){
+let csv="Netteier,Linje,Mast,Type,Skadehøyde,A,B,C,H,Merknad\n";
+data.forEach(r=>{
+csv+=`${r.netteier},${r.linje},${r.mast},${r.type},${r.sh},${r.A},${r.B},${r.C},${r.H},${r.merknad}\n`;
+});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([csv]));
+a.download="stolpekontroll.csv";
+a.click();
 }
 
-function lastNed() {
-
-  let csv = "Netteier,Linje,Mast,Type,Diameter,Skadehøyde,A,B,C,D,E,H,Merknad\n";
-
-  skader.forEach(s => {
-    csv += `${s.netteier},${s.linje},${s.mast},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E},${s.H},${s.merknad}\n`;
-  });
-
-  let blob = new Blob([csv], {type:"text/csv"});
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "stolpekontroll.csv";
-  a.click();
-}
-
-oppdaterFelter();
-
+felter();
 </script>
 
 </body>
