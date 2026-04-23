@@ -13,50 +13,30 @@
 <meta name="apple-mobile-web-app-title" content="Stolpekontroll">
 
 <style>
-body {
-  font-family: Arial;
-  background: #f2f2f2;
-  padding: 10px;
-}
+body { font-family: Arial; background:#f2f2f2; padding:10px; }
+.section { background:#fff; padding:12px; margin-top:15px; border-radius:8px; }
 
-.section {
-  background: #fff;
-  padding: 12px;
-  margin-top: 15px;
-  border-radius: 8px;
-}
-
-label {
-  font-weight: 700;
-  margin-top: 10px;
-  display: block;
-}
+label { font-weight:700; margin-top:10px; display:block; }
 
 input, select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 3px;
-  border: 2px solid #999;
-  border-radius: 6px;
-  font-size: 16px;
+  width:100%; padding:10px; margin-top:3px;
+  border:2px solid #999; border-radius:6px; font-size:16px;
 }
 
 button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background: #2e7d32;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
+  width:100%; padding:12px; margin-top:10px;
+  background:#2e7d32; color:#fff; border:none; border-radius:6px;
 }
 
 img.vis {
-  width: 100%;
-  max-height: 200px;
-  object-fit: contain;
-  margin-top: 10px;
+  width:100%; max-height:200px; object-fit:contain; margin-top:10px;
 }
+
+/* ANBEFALING */
+.anb { margin-top:10px; padding:10px; border-radius:6px; font-weight:bold; }
+.ok { background:#c8e6c9; }
+.warn { background:#fff9c4; }
+.crit { background:#ffcdd2; }
 </style>
 </head>
 
@@ -72,33 +52,23 @@ img.vis {
 <label>Mastnr</label><input id="mast">
 <label>Stolpenr</label><input id="stolpe">
 
-<label>Stolpehøyde (m)</label>
-<input id="hoyde">
-
-<label>Jordbanddiameter (mm)</label>
-<input id="jord">
+<label>Stolpehøyde (m)</label><input id="hoyde">
+<label>Jordbanddiameter (mm)</label><input id="jord">
 
 <label>Klima</label>
 <select id="klima">
-<option>Kyst</option>
-<option>Innland</option>
-<option>Fjell</option>
+<option>Kyst</option><option>Innland</option><option>Fjell</option>
 </select>
 
 <label>Jordsmonn</label>
 <select id="jordtype">
-<option>Innmark</option>
-<option>Skogsmark</option>
-<option>Fjell</option>
+<option>Innmark</option><option>Skogsmark</option><option>Fjell</option>
 </select>
 
 <label>Sikkerhetsfaktor</label>
 <select id="sf">
-<option>1</option>
-<option>1.5</option>
-<option>2</option>
+<option>1</option><option>1.5</option><option>2</option>
 </select>
-
 </div>
 
 <div class="section">
@@ -117,15 +87,15 @@ img.vis {
 <button onclick="visBilde()">Vis bilde</button>
 <img id="bilde" class="vis" style="display:none">
 
-<label>Diameter skadested (mm)</label>
-<input id="diam">
+<label>Diameter skadested (mm)</label><input id="diam">
 
 <div id="skadehoydeWrap">
-<label>Skadehøyde (m)</label>
-<input id="sh">
+<label>Skadehøyde (m)</label><input id="sh">
 </div>
 
 <div id="felter"></div>
+
+<div id="anbefaling"></div>
 
 <button onclick="leggTil()">Lagre skade</button>
 
@@ -136,143 +106,114 @@ img.vis {
 
 <script>
 
-// VERSION
-const VERSION = "v12.3";
-document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
+const VERSION = "v12.4";
+appTittel.innerText = "Stolpekontroll " + VERSION;
 
-// DATA
 let skader = [];
 
 function oppdaterFelter() {
   let t = type.value;
   let f = document.getElementById("felter");
-  let skadeWrap = document.getElementById("skadehoydeWrap");
+  let wrap = document.getElementById("skadehoydeWrap");
+  document.getElementById("anbefaling").innerHTML = "";
 
   if (t.includes("Sprekk")) {
-
-    skadeWrap.style.display = "none";
-
-    f.innerHTML = `
-      <label>A = Bredde på sprekk (mm)</label><input id="A">
-      <label>B = Dybde på sprekk (mm)</label><input id="B">
-      <label>C = Lengde på sprekk (m)</label><input id="C">
-      <label>H = Høyde over bakken (m)</label><input id="H">
-    `;
-
-  } else if (t.includes("ABE")) {
-
-    skadeWrap.style.display = "block";
+    wrap.style.display="none";
 
     f.innerHTML = `
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-      <label>E (mm)</label><input id="E">
+      <label>A = Bredde (mm)</label><input id="A" oninput="beregn()">
+      <label>B = Dybde (mm)</label><input id="B" oninput="beregn()">
+      <label>C = Lengde (m)</label><input id="C" oninput="beregn()">
+      <label>H = Høyde (m)</label><input id="H" oninput="beregn()">
     `;
-
-  } else if (t.includes("ABCD")) {
-
-    skadeWrap.style.display = "block";
-
-    f.innerHTML = `
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-      <label>C (mm)</label><input id="C">
-      <label>D (mm)</label><input id="D">
-    `;
-
   } else {
-
-    skadeWrap.style.display = "block";
-
-    f.innerHTML = `
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-    `;
+    wrap.style.display="block";
+    f.innerHTML="";
   }
 }
 
-function visBilde() {
-  let img = document.getElementById("bilde");
-  let t = type.value;
+function beregn(){
 
-  if (t.includes("Indre")) img.src = "indre.svg";
-  else if (t.includes("Sirkulær")) img.src = "sirk.svg";
-  else if (t.includes("Softråte")) img.src = "soft.svg";
-  else if (t.includes("Spettsmie")) img.src = "spett.svg";
-  else if (t.includes("Hakkespetthull")) img.src = "hakk.svg";
-  else if (t.includes("Sprekk")) img.src = "sprekk.svg";
+  let B = parseFloat(getVal("B"));
+  let C = parseFloat(getVal("C"));
+  let H = parseFloat(getVal("H"));
+  let diam = parseFloat(getVal("diam"));
 
-  img.style.display = "block";
+  if(!B || !diam) return;
+
+  let radius = diam/2;
+  let ratio = B/radius;
+
+  let text="", cls="";
+
+  if(ratio>0.3 || (H<1 && B>30) || (C>2 && ratio>0.2)){
+    text="🔴 Kritisk – bør vurderes i REN";
+    cls="crit";
+  }
+  else if(ratio>0.1 || C>1){
+    text="🟡 Bør vurderes nærmere";
+    cls="warn";
+  }
+  else{
+    text="🟢 OK";
+    cls="ok";
+  }
+
+  anbefaling.innerHTML = `<div class="anb ${cls}">${text}</div>`;
 }
 
-function getVal(id) {
-  let el = document.getElementById(id);
-  return el ? el.value : "";
+function visBilde(){
+  let t=type.value;
+  if(t.includes("Sprekk")) bilde.src="sprekk.svg";
+  bilde.style.display="block";
 }
 
-function leggTil() {
-  let obj = {
-    netteier: getVal("netteier"),
-    linje: getVal("linje"),
-    mast: getVal("mast"),
-    stolpe: getVal("stolpe"),
-    hoyde: getVal("hoyde"),
-    jord: getVal("jord"),
-    klima: getVal("klima"),
-    jordtype: getVal("jordtype"),
-    sf: getVal("sf"),
-    type: getVal("type"),
-    diam: getVal("diam"),
-    sh: getVal("sh"),
-    A: getVal("A"),
-    B: getVal("B"),
-    C: getVal("C"),
-    D: getVal("D"),
-    E: getVal("E"),
-    H: getVal("H")
+function getVal(id){
+  let el=document.getElementById(id);
+  return el?el.value:"";
+}
+
+function leggTil(){
+
+  let obj={
+    netteier:getVal("netteier"),
+    linje:getVal("linje"),
+    mast:getVal("mast"),
+    stolpe:getVal("stolpe"),
+    type:getVal("type"),
+    diam:getVal("diam"),
+    A:getVal("A"),
+    B:getVal("B"),
+    C:getVal("C"),
+    H:getVal("H"),
+    anbefaling:anbefaling.innerText
   };
 
   skader.push(obj);
-  alert("Skade lagret (" + skader.length + ")");
+  alert("Skade lagret");
 }
 
-function lastNed() {
+function lastNed(){
 
-  if (getVal("diam") || getVal("A") || getVal("B")) {
-    leggTil();
-  }
+  if(skader.length===0){ alert("Ingen data"); return; }
 
-  if (skader.length === 0) {
-    alert("Ingen data registrert");
-    return;
-  }
+  let csv="Netteier,Linje,Mast,Type,Diameter,A,B,C,H,Anbefaling\n";
 
-  let csv = "sep=,\nNetteier,Linje,Mast,Stolpe,Høyde (m),Jordband (mm),Klima,Jordtype,SF,Type,Diameter (mm),Skadehøyde (m),A (mm),B (mm),C (m),D (mm),E (mm),H (m)\n";
-
-  skader.forEach(s => {
-    csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E},${s.H}\n`;
+  skader.forEach(s=>{
+    csv+=`${s.netteier},${s.linje},${s.mast},${s.type},${s.diam},${s.A},${s.B},${s.C},${s.H},${s.anbefaling}\n`;
   });
 
-  let blob = new Blob([csv], {type:"text/csv"});
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "stolpekontroll.csv";
+  let blob=new Blob([csv],{type:"text/csv"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="stolpekontroll.csv";
   a.click();
 }
 
-function nyRegistrering() {
-  let netteierVal = netteier.value;
-  let linjeVal = linje.value;
-
-  document.querySelectorAll("input").forEach(i => i.value = "");
-
-  netteier.value = netteierVal;
-  linje.value = linjeVal;
-
-  document.getElementById("felter").innerHTML = "";
-  skader = [];
-
-  alert("Klar for ny registrering");
+function nyRegistrering(){
+  document.querySelectorAll("input").forEach(i=>i.value="");
+  anbefaling.innerHTML="";
+  skader=[];
 }
 
 oppdaterFelter();
