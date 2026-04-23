@@ -120,8 +120,10 @@ img.vis {
 <label>Diameter skadested (mm)</label>
 <input id="diam">
 
+<div id="skadehoydeWrap">
 <label>Skadehøyde (m)</label>
 <input id="sh">
+</div>
 
 <div id="felter"></div>
 
@@ -135,7 +137,7 @@ img.vis {
 <script>
 
 // VERSION
-const VERSION = "v12.2";
+const VERSION = "v12.3";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
@@ -144,28 +146,44 @@ let skader = [];
 function oppdaterFelter() {
   let t = type.value;
   let f = document.getElementById("felter");
+  let skadeWrap = document.getElementById("skadehoydeWrap");
 
-  if (t.includes("ABE")) {
+  if (t.includes("Sprekk")) {
+
+    skadeWrap.style.display = "none";
+
+    f.innerHTML = `
+      <label>A = Bredde på sprekk (mm)</label><input id="A">
+      <label>B = Dybde på sprekk (mm)</label><input id="B">
+      <label>C = Lengde på sprekk (m)</label><input id="C">
+      <label>H = Høyde over bakken (m)</label><input id="H">
+    `;
+
+  } else if (t.includes("ABE")) {
+
+    skadeWrap.style.display = "block";
+
     f.innerHTML = `
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
       <label>E (mm)</label><input id="E">
     `;
-  } else if (t.includes("ABCD") && !t.includes("Sprekk")) {
+
+  } else if (t.includes("ABCD")) {
+
+    skadeWrap.style.display = "block";
+
     f.innerHTML = `
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
       <label>C (mm)</label><input id="C">
       <label>D (mm)</label><input id="D">
     `;
-  } else if (t.includes("Sprekk")) {
-    f.innerHTML = `
-      <label>Bredde A (mm)</label><input id="A">
-      <label>Dybde B (mm)</label><input id="B">
-      <label>Lengde C (m)</label><input id="C">
-      <label>Høyde H (m)</label><input id="H">
-    `;
+
   } else {
+
+    skadeWrap.style.display = "block";
+
     f.innerHTML = `
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
