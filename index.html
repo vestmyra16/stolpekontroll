@@ -111,6 +111,7 @@ img.vis {
 <option>Softråte (ABCD)</option>
 <option>Spettsmie (AB)</option>
 <option>Hakkespetthull (ABCD)</option>
+<option>Sprekk (ABCH)</option>
 </select>
 
 <button onclick="visBilde()">Vis bilde</button>
@@ -134,7 +135,7 @@ img.vis {
 <script>
 
 // VERSION
-const VERSION = "v12.1";
+const VERSION = "v12.2";
 document.getElementById("appTittel").innerText = "Stolpekontroll " + VERSION;
 
 // DATA
@@ -150,12 +151,19 @@ function oppdaterFelter() {
       <label>B (mm)</label><input id="B">
       <label>E (mm)</label><input id="E">
     `;
-  } else if (t.includes("ABCD")) {
+  } else if (t.includes("ABCD") && !t.includes("Sprekk")) {
     f.innerHTML = `
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
       <label>C (mm)</label><input id="C">
       <label>D (mm)</label><input id="D">
+    `;
+  } else if (t.includes("Sprekk")) {
+    f.innerHTML = `
+      <label>Bredde A (mm)</label><input id="A">
+      <label>Dybde B (mm)</label><input id="B">
+      <label>Lengde C (m)</label><input id="C">
+      <label>Høyde H (m)</label><input id="H">
     `;
   } else {
     f.innerHTML = `
@@ -174,6 +182,7 @@ function visBilde() {
   else if (t.includes("Softråte")) img.src = "soft.svg";
   else if (t.includes("Spettsmie")) img.src = "spett.svg";
   else if (t.includes("Hakkespetthull")) img.src = "hakk.svg";
+  else if (t.includes("Sprekk")) img.src = "sprekk.svg";
 
   img.style.display = "block";
 }
@@ -201,7 +210,8 @@ function leggTil() {
     B: getVal("B"),
     C: getVal("C"),
     D: getVal("D"),
-    E: getVal("E")
+    E: getVal("E"),
+    H: getVal("H")
   };
 
   skader.push(obj);
@@ -219,10 +229,10 @@ function lastNed() {
     return;
   }
 
-  let csv = "sep=,\nNetteier,Linje,Mast,Stolpe,Høyde (m),Jordband (mm),Klima,Jordtype,SF,Type,Diameter (mm),Skadehøyde (m),A (mm),B (mm),C (mm),D (mm),E (mm)\n";
+  let csv = "sep=,\nNetteier,Linje,Mast,Stolpe,Høyde (m),Jordband (mm),Klima,Jordtype,SF,Type,Diameter (mm),Skadehøyde (m),A (mm),B (mm),C (m),D (mm),E (mm),H (m)\n";
 
   skader.forEach(s => {
-    csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E}\n`;
+    csv += `${s.netteier},${s.linje},${s.mast},${s.stolpe},${s.hoyde},${s.jord},${s.klima},${s.jordtype},${s.sf},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E},${s.H}\n`;
   });
 
   let blob = new Blob([csv], {type:"text/csv"});
