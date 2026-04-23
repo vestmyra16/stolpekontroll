@@ -6,8 +6,8 @@
 
 <title>Stolpekontroll</title>
 
-<link rel="icon" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 
 <style>
 body { font-family: Arial; background:#f2f2f2; padding:10px; }
@@ -34,33 +34,41 @@ input, select {
 
 button {
   width:100%;
-  padding:12px;
-  margin-top:10px;
+  padding:14px;
+  margin-top:8px;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+  text-align:left;
+}
+
+/* Kamera */
+.camBtn {
   background:#2e7d32;
   color:#fff;
-  border:none;
-  border-radius:6px;
+}
+
+/* Lagre */
+.saveBtn {
+  background:#1565c0;
+  color:#fff;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v13.2</h2>
+<h2>Stolpekontroll v13.3</h2>
 
 <div class="section">
-<h3>Grunnlagsdata</h3>
 
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
 
-<label>Stolpehøyde (m)</label><input id="hoyde">
-<label>Jordbanddiameter (mm)</label><input id="jord">
 </div>
 
 <div class="section">
-<h3>Skade</h3>
 
 <label>Type skade</label>
 <select id="type" onchange="oppdaterFelter()">
@@ -77,48 +85,49 @@ button {
 
 <div id="felter"></div>
 
-<label>📸 Ta bilde</label>
-<input type="file" accept="image/*" capture="environment" multiple>
+<!-- 📸 Kamera -->
+<input type="file" id="cam" accept="image/*" capture="environment" multiple style="display:none">
 
-<label>📝 Merknad</label>
+<button class="camBtn" onclick="document.getElementById('cam').click()">
+📸 Ta bilde
+</button>
+
+<label>Merknad</label>
 <input id="merknad">
 
-<button onclick="leggTil()">Lagre skade</button>
+<button onclick="leggTil()">💾 Lagre skade</button>
 
 </div>
 
-<button onclick="lastNed()">Last ned Excel</button>
-<button onclick="nyRegistrering()">Ny registrering</button>
+<button onclick="nesteMast()">➡️ Neste mast</button>
+<button class="saveBtn" onclick="lagreMast()">💾 Lagre mast</button>
+<button onclick="lastNed()">📥 Last ned Excel</button>
 
 <script>
 
 let skader = [];
 
+// FELTER
 function oppdaterFelter() {
 
   let t = type.value;
   let f = document.getElementById("felter");
 
   if (t.includes("Sprekk")) {
-
     f.innerHTML = `
-      <label>A = Bredde på sprekk (mm)</label><input id="A">
-      <label>B = Dybde på sprekk (mm)</label><input id="B">
-      <label>C = Lengde på sprekk (m)</label><input id="C">
-      <label>H = Høyde over bakken (m)</label><input id="H">
+      <label>Bredde A (mm)</label><input id="A">
+      <label>Dybde B (mm)</label><input id="B">
+      <label>Lengde C (m)</label><input id="C">
+      <label>Høyde H (m)</label><input id="H">
     `;
-
   } else if (t.includes("ABE")) {
-
     f.innerHTML = `
       <label>Skadehøyde (m)</label><input id="sh">
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
       <label>E (mm)</label><input id="E">
     `;
-
   } else if (t.includes("ABCD")) {
-
     f.innerHTML = `
       <label>Skadehøyde (m)</label><input id="sh">
       <label>A (mm)</label><input id="A">
@@ -126,9 +135,7 @@ function oppdaterFelter() {
       <label>C (mm)</label><input id="C">
       <label>D (mm)</label><input id="D">
     `;
-
   } else {
-
     f.innerHTML = `
       <label>Skadehøyde (m)</label><input id="sh">
       <label>A (mm)</label><input id="A">
@@ -142,6 +149,7 @@ function getVal(id) {
   return el ? el.value : "";
 }
 
+// 💾 LAGRE SKADE
 function leggTil() {
 
   skader.push({
@@ -157,23 +165,34 @@ function leggTil() {
     D: getVal("D"),
     E: getVal("E"),
     H: getVal("H"),
-    merknad: getVal("merknad")
+    merknad: getVal("merknad"),
+    bilder: document.getElementById("cam").files.length
   });
 
-  alert("Skade lagret (" + skader.length + ")");
+  alert("Skade lagret");
 }
 
-function lastNed() {
+// 💾 LAGRE MAST
+function lagreMast(){
+  alert("Mast lagret (manuelt)");
+}
 
-  if (skader.length === 0) {
-    alert("Ingen data registrert");
-    return;
-  }
+// ➡️ NESTE MAST
+function nesteMast(){
+  leggTil();
+  document.getElementById("mast").value = "";
+  document.querySelectorAll("input").forEach(i=>{
+    if(i.id !== "netteier" && i.id !== "linje") i.value="";
+  });
+}
 
-  let csv = "Netteier,Linje,Mast,Type,Diameter,Skadehøyde,A,B,C,D,E,H,Merknad\n";
+// 📥 EXCEL
+function lastNed(){
 
-  skader.forEach(s => {
-    csv += `${s.netteier},${s.linje},${s.mast},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E},${s.H},${s.merknad}\n`;
+  let csv = "Netteier,Linje,Mast,Type,Diameter,Skadehøyde,A,B,C,D,E,H,Merknad,Bilder\n";
+
+  skader.forEach(s=>{
+    csv += `${s.netteier},${s.linje},${s.mast},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E},${s.H},${s.merknad},${s.bilder}\n`;
   });
 
   let blob = new Blob([csv], {type:"text/csv"});
@@ -181,19 +200,6 @@ function lastNed() {
   a.href = URL.createObjectURL(blob);
   a.download = "stolpekontroll.csv";
   a.click();
-}
-
-function nyRegistrering() {
-
-  let netteierVal = netteier.value;
-  let linjeVal = linje.value;
-
-  document.querySelectorAll("input").forEach(i => i.value = "");
-
-  netteier.value = netteierVal;
-  linje.value = linjeVal;
-
-  skader = [];
 }
 
 oppdaterFelter();
