@@ -6,12 +6,24 @@
 
 <title>Stolpekontroll</title>
 
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+
 <style>
 body { font-family: Arial; background:#f2f2f2; padding:10px; }
 
-.section { background:#fff; padding:12px; margin-top:15px; border-radius:8px; }
+.section {
+  background:#fff;
+  padding:12px;
+  margin-top:15px;
+  border-radius:8px;
+}
 
-label { font-weight:bold; display:block; margin-top:10px; }
+label {
+  font-weight:bold;
+  display:block;
+  margin-top:10px;
+}
 
 input, select {
   width:100%;
@@ -32,22 +44,45 @@ button {
 
 .camBtn { background:#2e7d32; color:#fff; }
 .saveBtn { background:#1565c0; color:#fff; }
+.imgBtn { background:#6d4c41; color:#fff; }
 
-img { width:100%; max-height:180px; object-fit:contain; margin-top:10px; }
-
-#resultat { margin-top:10px; font-weight:bold; }
+img {
+  width:100%;
+  max-height:180px;
+  object-fit:contain;
+  margin-top:10px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v14.0</h2>
+<h2>Stolpekontroll v14.1</h2>
 
 <div class="section">
+<h3>Grunnlagsdata</h3>
+
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
-<label>Stolpehøyde (m)</label><input id="hoyde" oninput="oppdaterTotal()">
+<label>Stolpenr</label><input id="stolpe">
+
+<label>Stolpehøyde (m)</label><input id="hoyde">
+<label>Jordbanddiameter (mm)</label><input id="jord">
+
+<label>Klima</label>
+<select id="klima">
+<option>Kyst</option>
+<option>Innland</option>
+<option>Fjell</option>
+</select>
+
+<label>Jordsmonn</label>
+<select id="jordtype">
+<option>Innmark</option>
+<option>Skogsmark</option>
+<option>Fjell</option>
+</select>
 </div>
 
 <div class="section">
@@ -55,28 +90,36 @@ img { width:100%; max-height:180px; object-fit:contain; margin-top:10px; }
 <label>Type skade</label>
 <select id="type" onchange="oppdaterFelter()">
 <option>Indre råte (ABE)</option>
+<option>Sirkulær råte (ABCD)</option>
 <option>Softråte (ABCD)</option>
+<option>Spettsmie (AB)</option>
+<option>Hakkespetthull (ABCD)</option>
 <option>Sprekk (ABCH)</option>
 </select>
 
-<label>Diameter (mm)</label>
-<input id="diam" oninput="beregn()">
+<button class="imgBtn" onclick="visBilde()">📖 Vis forklaring</button>
+<img id="bilde" style="display:none">
+
+<label>Diameter skadested (mm)</label>
+<input id="diam">
 
 <div id="felter"></div>
 
 <input type="file" id="cam" accept="image/*" capture="environment" multiple style="display:none">
 <button class="camBtn" onclick="cam.click()">📸 Ta bilde</button>
 
-<div id="resultat"></div>
+<label>Merknad</label>
+<input id="merknad">
 
 </div>
 
 <button onclick="nesteMast()">➡️ Neste mast</button>
 <button class="saveBtn" onclick="lagreMast()">💾 Lagre mast</button>
+<button onclick="lastNed()">📥 Last ned Excel</button>
 
 <script>
 
-let beregninger = {};
+let registreringer = [];
 let sistLagretMast = "";
 
 // FELTER
@@ -84,123 +127,111 @@ function oppdaterFelter(){
 
 let t = type.value;
 
-if (t.includes("ABE")){
+if (t.includes("Indre")){
   felter.innerHTML = `
-  <label>Skadehøyde (m)</label><input id="sh" oninput="beregn()">
-  <label>A (mm)</label><input id="A" oninput="beregn()">
-  <label>B (mm)</label><input id="B" oninput="beregn()">
+  <label>Skadehøyde (m)</label><input id="sh">
+  <label>A – Råtebredde (mm)</label><input id="A">
+  <label>B – Indre råte (mm)</label><input id="B">
+  <label>E – Restskall (mm)</label><input id="E">
   `;
 }
 
-if (t.includes("ABCD")){
+else if (t.includes("Sirkulær") || t.includes("Softråte") || t.includes("Hakkespetthull")){
   felter.innerHTML = `
-  <label>Skadehøyde (m)</label><input id="sh" oninput="beregn()">
-  <label>A</label><input id="A" oninput="beregn()">
-  <label>B</label><input id="B" oninput="beregn()">
-  <label>C</label><input id="C" oninput="beregn()">
-  <label>D</label><input id="D" oninput="beregn()">
+  <label>Skadehøyde (m)</label><input id="sh">
+  <label>A (mm)</label><input id="A">
+  <label>B (mm)</label><input id="B">
+  <label>C (mm)</label><input id="C">
+  <label>D (mm)</label><input id="D">
   `;
 }
 
-if (t.includes("Sprekk")){
+else if (t.includes("Spettsmie")){
   felter.innerHTML = `
-  <label>Bredde A</label><input id="A">
-  <label>Dybde B</label><input id="B">
-  <label>Lengde C</label><input id="C">
-  <label>Høyde H</label><input id="H">
+  <label>Skadehøyde (m)</label><input id="sh">
+  <label>A (mm)</label><input id="A">
+  <label>B (mm)</label><input id="B">
+  `;
+}
+
+else if (t.includes("Sprekk")){
+  felter.innerHTML = `
+  <label>Bredde A (mm)</label><input id="A">
+  <label>Dybde B (mm)</label><input id="B">
+  <label>Lengde C (m)</label><input id="C">
+  <label>Høyde over bakken H (m)</label><input id="H">
+
+  <p style="font-size:14px;">
+  A = Bredde | B = Dybde | C = Lengde | H = Høyde over bakken
+  </p>
   `;
 }
 
 }
 
-// BEREGNING
-function beregn(){
+// BILDER
+function visBilde(){
 
-let D = parseFloat(diam.value);
-let sh = parseFloat(document.getElementById("sh")?.value);
-let hoyde = parseFloat(hoydeEl());
+let t = type.value;
 
-if (!D) return;
+if (t.includes("Indre")) bilde.src = "indre.svg";
+else if (t.includes("Sirkulær")) bilde.src = "sirk.svg";
+else if (t.includes("Softråte")) bilde.src = "soft.svg";
+else if (t.includes("Spettsmie")) bilde.src = "spett.svg";
+else if (t.includes("Hakkespetthull")) bilde.src = "hakk.svg";
+else if (t.includes("Sprekk")) bilde.src = "sprekk.svg";
 
-let rest = 100;
-
-// INDRE
-if (type.value.includes("Indre")){
-let A = parseFloat(AEl());
-let B = parseFloat(BEl());
-if (A){
-let rd = D - 2*(A + (B||0));
-rest = Math.pow(rd/D,2)*100;
-beregninger.indre = rest;
+bilde.style.display = "block";
 }
-}
-
-// SOFT
-if (type.value.includes("Softråte")){
-let vals = [AEl(),BEl(),CEl(),DEl()].map(x=>parseFloat(x)).filter(x=>!isNaN(x));
-if (vals.length){
-let red = vals.reduce((a,b)=>a+b)/vals.length;
-let rd = D - 2*red;
-rest = Math.pow(rd/D,2)*100;
-beregninger.soft = rest;
-}
-}
-
-oppdaterTotal();
-}
-
-// TOTAL + MOMENT
-function oppdaterTotal(){
-
-let vals = Object.values(beregninger);
-if (!vals.length) return;
-
-let min = Math.min(...vals);
-
-let refSF = 2;
-let SF = (min/100)*refSF;
-
-let h = parseFloat(hoydeEl());
-let sh = parseFloat(document.getElementById("sh")?.value);
-
-let korrSF = SF;
-
-if (h && sh){
-korrSF = SF * (1 - (sh/h)*0.5);
-}
-
-let knekk = h ? (h*0.35).toFixed(1) : "-";
-
-resultat.innerHTML = `
-Rest: ${min.toFixed(0)}%<br>
-SF: ${SF.toFixed(2)}<br>
-Korr SF: ${korrSF.toFixed(2)}<br>
-Knekkpunkt ca: ${knekk} m
-`;
-
-}
-
-// HELPERS
-function AEl(){return document.getElementById("A")?.value}
-function BEl(){return document.getElementById("B")?.value}
-function CEl(){return document.getElementById("C")?.value}
-function DEl(){return document.getElementById("D")?.value}
-function hoydeEl(){return document.getElementById("hoyde")?.value}
 
 // LAGRING
 function lagreMast(){
-if (!mast.value) return alert("Mangler mast");
-if (mast.value === sistLagretMast) return alert("Lagret");
+
+if (!mast.value) return alert("Mastnr mangler");
+
+if (mast.value === sistLagretMast) return alert("Allerede lagret");
+
 sistLagretMast = mast.value;
-alert("Lagret");
+
+registreringer.push({
+netteier:netteier.value,
+linje:linje.value,
+mast:mast.value,
+stolpe:stolpe.value,
+hoyde:hoyde.value,
+jord:jord.value,
+type:type.value
+});
+
+alert("Mast lagret");
 }
 
+// NESTE
 function nesteMast(){
+
 lagreMast();
-mast.value="";
+
+mast.value = "";
+
 document.querySelectorAll("input").forEach(i=>{
-if(i.id!=="netteier"&&i.id!=="linje") i.value="";
+if(i.id !== "netteier" && i.id !== "linje") i.value="";
 });
+}
+
+// EXCEL
+function lastNed(){
+
+let csv = "Netteier,Linje,Mast,Stolpe,Høyde,Jordband,Type\n";
+
+registreringer.forEach(r=>{
+csv += `${r.netteier},${r.linje},${r.mast},${r.stolpe},${r.hoyde},${r.jord},${r.type}\n`;
+});
+
+let blob = new Blob([csv]);
+let a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "stolpekontroll.csv";
+a.click();
 }
 
 oppdaterFelter();
