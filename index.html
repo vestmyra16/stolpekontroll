@@ -44,19 +44,24 @@ button {
 
 .camBtn { background:#2e7d32; color:#fff; }
 .saveBtn { background:#1565c0; color:#fff; }
+.imgBtn { background:#6d4c41; color:#fff; }
+
+img {
+  width:100%;
+  margin-top:10px;
+  border-radius:6px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v13.4</h2>
+<h2>Stolpekontroll v13.5</h2>
 
 <div class="section">
-
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
-
 </div>
 
 <div class="section">
@@ -70,6 +75,10 @@ button {
 <option>Hakkespetthull (ABCD)</option>
 <option>Sprekk (ABCH)</option>
 </select>
+
+<button class="imgBtn" onclick="visBilde()">📖 Vis forklaring</button>
+
+<img id="bilde" style="display:none">
 
 <label>Diameter skadested (mm)</label>
 <input id="diam">
@@ -95,7 +104,6 @@ button {
 <script>
 
 let registreringer = [];
-let current = {};
 let sistLagretMast = "";
 
 // FELTER
@@ -135,12 +143,29 @@ function oppdaterFelter() {
   }
 }
 
-function getVal(id) {
+// 🖼 VIS BILDE
+function visBilde() {
+
+  let img = document.getElementById("bilde");
+  let t = type.value;
+
+  if (t.includes("Indre")) img.src = "indre.svg";
+  else if (t.includes("Sirkulær")) img.src = "sirk.svg";
+  else if (t.includes("Softråte")) img.src = "soft.svg";
+  else if (t.includes("Spettsmie")) img.src = "spett.svg";
+  else if (t.includes("Hakkespetthull")) img.src = "hakk.svg";
+  else if (t.includes("Sprekk")) img.src = "sprekk.svg";
+
+  img.style.display = "block";
+}
+
+// HENT VERDI
+function v(id){
   let el = document.getElementById(id);
   return el ? el.value : "";
 }
 
-// 💾 LAGRE MAST
+// 💾 LAGRE
 function lagreMast(){
 
   if (!mast.value){
@@ -154,19 +179,19 @@ function lagreMast(){
   }
 
   registreringer.push({
-    netteier: getVal("netteier"),
-    linje: getVal("linje"),
-    mast: getVal("mast"),
-    type: getVal("type"),
-    diam: getVal("diam"),
-    sh: getVal("sh"),
-    A: getVal("A"),
-    B: getVal("B"),
-    C: getVal("C"),
-    D: getVal("D"),
-    E: getVal("E"),
-    H: getVal("H"),
-    merknad: getVal("merknad"),
+    netteier: v("netteier"),
+    linje: v("linje"),
+    mast: v("mast"),
+    type: v("type"),
+    diam: v("diam"),
+    sh: v("sh"),
+    A: v("A"),
+    B: v("B"),
+    C: v("C"),
+    D: v("D"),
+    E: v("E"),
+    H: v("H"),
+    merknad: v("merknad"),
     bilder: document.getElementById("cam").files.length
   });
 
@@ -175,7 +200,7 @@ function lagreMast(){
   alert("Mast lagret");
 }
 
-// ➡️ NESTE MAST
+// ➡️ NESTE
 function nesteMast(){
 
   lagreMast();
