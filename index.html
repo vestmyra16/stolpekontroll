@@ -59,7 +59,7 @@ img {
 
 <body>
 
-<h2>Stolpekontroll v14.2</h2>
+<h2>Stolpekontroll v14.3</h2>
 
 <div class="section">
 <h3>Grunnlagsdata</h3>
@@ -77,7 +77,7 @@ img {
 <h3>Skade</h3>
 
 <label>Type skade</label>
-<select id="type" onchange="oppdaterFelter()">
+<select id="type" onchange="oppdaterFelter(); visBilde();">
 <option>Indre råte (ABE)</option>
 <option>Sirkulær råte (ABCD)</option>
 <option>Softråte (ABCD)</option>
@@ -86,7 +86,6 @@ img {
 <option>Sprekk (ABCH)</option>
 </select>
 
-<button onclick="visBilde()">Vis forklaring</button>
 <img id="bilde" style="display:none">
 
 <label>Diameter skadested (mm)</label>
@@ -109,6 +108,11 @@ img {
 <script>
 
 let registreringer = [];
+
+function hent(id) {
+  let el = document.getElementById(id);
+  return el ? el.value : "";
+}
 
 function oppdaterFelter() {
   let t = type.value;
@@ -168,11 +172,6 @@ function taBilde() {
   document.getElementById("kamera").click();
 }
 
-function hent(id) {
-  let el = document.getElementById(id);
-  return el ? el.value : "";
-}
-
 function lagreMast() {
 
   if (!mast.value) {
@@ -180,18 +179,20 @@ function lagreMast() {
     return;
   }
 
-  rregistreringer.push({
-  netteier: hent("netteier"),
-  linje: hent("linje"),
-  mast: hent("mast"),
-  type: hent("type"),
-  A: hent("A"),
-  B: hent("B"),
-  C: hent("C"),
-  D: hent("D"),
-  E: hent("E"),
-  merknad: hent("merknad")
-});
+  registreringer.push({
+    netteier: hent("netteier"),
+    linje: hent("linje"),
+    mast: hent("mast"),
+    type: hent("type"),
+    A: hent("A"),
+    B: hent("B"),
+    C: hent("C"),
+    D: hent("D"),
+    E: hent("E"),
+    merknad: hent("merknad")
+  });
+
+  document.getElementById("bilde").style.display = "none";
 
   alert("Mast lagret");
 }
