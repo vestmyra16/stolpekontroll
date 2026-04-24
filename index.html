@@ -48,15 +48,16 @@ button {
 
 img {
   width:100%;
+  max-height:180px;
+  object-fit:contain;
   margin-top:10px;
-  border-radius:6px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v13.5</h2>
+<h2>Stolpekontroll v13.6</h2>
 
 <div class="section">
 <label>Netteier</label><input id="netteier">
@@ -77,7 +78,6 @@ img {
 </select>
 
 <button class="imgBtn" onclick="visBilde()">📖 Vis forklaring</button>
-
 <img id="bilde" style="display:none">
 
 <label>Diameter skadested (mm)</label>
@@ -85,12 +85,8 @@ img {
 
 <div id="felter"></div>
 
-<!-- 📸 Kamera -->
 <input type="file" id="cam" accept="image/*" capture="environment" multiple style="display:none">
-
-<button class="camBtn" onclick="document.getElementById('cam').click()">
-📸 Ta bilde
-</button>
+<button class="camBtn" onclick="cam.click()">📸 Ta bilde</button>
 
 <label>Merknad</label>
 <input id="merknad">
@@ -110,32 +106,41 @@ let sistLagretMast = "";
 function oppdaterFelter() {
 
   let t = type.value;
-  let f = document.getElementById("felter");
 
   if (t.includes("Sprekk")) {
-    f.innerHTML = `
-      <label>Bredde A (mm)</label><input id="A">
-      <label>Dybde B (mm)</label><input id="B">
-      <label>Lengde C (m)</label><input id="C">
-      <label>Høyde H (m)</label><input id="H">
+    felter.innerHTML = `
+      <label>Bredde på sprekk A (mm)</label><input id="A">
+      <label>Dybde på sprekk B (mm)</label><input id="B">
+      <label>Lengde på sprekk C (m)</label><input id="C">
+      <label>Høyde over bakken H (m)</label><input id="H">
+
+      <p style="font-size:14px;">
+      A = Bredde | B = Dybde | C = Lengde | H = Høyde over bakken
+      </p>
     `;
-  } else if (t.includes("ABE")) {
-    f.innerHTML = `
+  }
+
+  else if (t.includes("ABE")) {
+    felter.innerHTML = `
       <label>Skadehøyde (m)</label><input id="sh">
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
       <label>E (mm)</label><input id="E">
     `;
-  } else if (t.includes("ABCD")) {
-    f.innerHTML = `
+  }
+
+  else if (t.includes("ABCD")) {
+    felter.innerHTML = `
       <label>Skadehøyde (m)</label><input id="sh">
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
       <label>C (mm)</label><input id="C">
       <label>D (mm)</label><input id="D">
     `;
-  } else {
-    f.innerHTML = `
+  }
+
+  else {
+    felter.innerHTML = `
       <label>Skadehøyde (m)</label><input id="sh">
       <label>A (mm)</label><input id="A">
       <label>B (mm)</label><input id="B">
@@ -143,56 +148,46 @@ function oppdaterFelter() {
   }
 }
 
-// 🖼 VIS BILDE
+// BILDE
 function visBilde() {
 
-  let img = document.getElementById("bilde");
-  let t = type.value;
+  if (type.value.includes("Indre")) bilde.src = "indre.svg";
+  else if (type.value.includes("Sirkulær")) bilde.src = "sirk.svg";
+  else if (type.value.includes("Softråte")) bilde.src = "soft.svg";
+  else if (type.value.includes("Spettsmie")) bilde.src = "spett.svg";
+  else if (type.value.includes("Hakkespetthull")) bilde.src = "hakk.svg";
+  else if (type.value.includes("Sprekk")) bilde.src = "sprekk.svg";
 
-  if (t.includes("Indre")) img.src = "indre.svg";
-  else if (t.includes("Sirkulær")) img.src = "sirk.svg";
-  else if (t.includes("Softråte")) img.src = "soft.svg";
-  else if (t.includes("Spettsmie")) img.src = "spett.svg";
-  else if (t.includes("Hakkespetthull")) img.src = "hakk.svg";
-  else if (t.includes("Sprekk")) img.src = "sprekk.svg";
-
-  img.style.display = "block";
+  bilde.style.display = "block";
 }
 
-// HENT VERDI
 function v(id){
   let el = document.getElementById(id);
   return el ? el.value : "";
 }
 
-// 💾 LAGRE
+// LAGRE
 function lagreMast(){
 
-  if (!mast.value){
-    alert("Mastnr mangler");
-    return;
-  }
+  if (!mast.value) return alert("Mastnr mangler");
 
-  if (mast.value === sistLagretMast){
-    alert("Allerede lagret");
-    return;
-  }
+  if (mast.value === sistLagretMast) return alert("Allerede lagret");
 
   registreringer.push({
-    netteier: v("netteier"),
-    linje: v("linje"),
-    mast: v("mast"),
-    type: v("type"),
-    diam: v("diam"),
-    sh: v("sh"),
-    A: v("A"),
-    B: v("B"),
-    C: v("C"),
-    D: v("D"),
-    E: v("E"),
-    H: v("H"),
-    merknad: v("merknad"),
-    bilder: document.getElementById("cam").files.length
+    netteier:v("netteier"),
+    linje:v("linje"),
+    mast:v("mast"),
+    type:v("type"),
+    diam:v("diam"),
+    sh:v("sh"),
+    A:v("A"),
+    B:v("B"),
+    C:v("C"),
+    D:v("D"),
+    E:v("E"),
+    H:v("H"),
+    merknad:v("merknad"),
+    bilder:cam.files.length
   });
 
   sistLagretMast = mast.value;
@@ -200,19 +195,18 @@ function lagreMast(){
   alert("Mast lagret");
 }
 
-// ➡️ NESTE
+// NESTE
 function nesteMast(){
-
   lagreMast();
 
-  document.getElementById("mast").value = "";
+  mast.value = "";
 
   document.querySelectorAll("input").forEach(i=>{
     if(i.id !== "netteier" && i.id !== "linje") i.value="";
   });
 }
 
-// 📥 EXCEL
+// EXCEL
 function lastNed(){
 
   let csv = "Netteier,Linje,Mast,Type,Diameter,Skadehøyde,A,B,C,D,E,H,Merknad,Bilder\n";
@@ -221,7 +215,7 @@ function lastNed(){
     csv += `${s.netteier},${s.linje},${s.mast},${s.type},${s.diam},${s.sh},${s.A},${s.B},${s.C},${s.D},${s.E},${s.H},${s.merknad},${s.bilder}\n`;
   });
 
-  let blob = new Blob([csv], {type:"text/csv"});
+  let blob = new Blob([csv]);
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "stolpekontroll.csv";
