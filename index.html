@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Stolpekontroll</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
 body {
@@ -12,8 +16,6 @@ body {
   margin: auto;
   padding: 15px;
 }
-
-h2 { margin-top: 25px; }
 
 label {
   font-weight: bold;
@@ -41,6 +43,12 @@ button {
   font-size: 30px;
   background: none;
   border: none;
+}
+
+img {
+  width: 80px;
+  margin-top: 10px;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -78,8 +86,10 @@ button {
   <option value="hakk">Hakkespetthull</option>
 </select>
 
+<img id="skadebilde" src="indre.png" onclick="visStortBilde()">
+
 <label>Stolpenr</label>
-<input id="stolpenr">
+<input>
 
 <label>Skadehøyde (m)</label>
 <input type="number">
@@ -102,12 +112,13 @@ function nyMast() {
   document.getElementById("mast").value = "";
   document.getElementById("hoyde").value = "";
   document.getElementById("jord").value = "";
-  document.getElementById("stolpenr").value = "";
 }
 
 function visFelter() {
   let type = document.getElementById("skadetype").value;
   let div = document.getElementById("bokstaver");
+  let img = document.getElementById("skadebilde");
+
   div.innerHTML = "";
 
   function felt(navn) {
@@ -115,47 +126,39 @@ function visFelter() {
   }
 
   if (type === "indre") {
-    div.innerHTML =
-      felt("A") +  // råtebredde
-      felt("B") +  // indre råte
-      felt("E");   // restskall
+    img.src = "indre.png";
+    div.innerHTML = felt("A") + felt("B") + felt("E");
   }
 
   if (type === "sirk") {
-    div.innerHTML =
-      felt("A") +
-      felt("B") +
-      felt("C") +
-      felt("D");
+    img.src = "sirk.png";
+    div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
   }
 
   if (type === "soft") {
-    div.innerHTML =
-      felt("A") +
-      felt("B") +
-      felt("C") +
-      felt("D");
+    img.src = "soft.png";
+    div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
   }
 
   if (type === "spett") {
-    div.innerHTML =
-      felt("A") +
-      felt("B");
+    img.src = "spett.png";
+    div.innerHTML = felt("A") + felt("B");
   }
 
   if (type === "sprekk") {
-    div.innerHTML =
-      felt("A") +  // bredde
-      felt("B");   // dybde
+    img.src = "sprekk.png";
+    div.innerHTML = felt("A") + felt("B");
   }
 
   if (type === "hakk") {
-    div.innerHTML =
-      felt("A") +
-      felt("B") +
-      felt("C") +
-      felt("D");
+    img.src = "hakk.png";
+    div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
   }
+}
+
+function visStortBilde() {
+  let src = document.getElementById("skadebilde").src;
+  window.open(src, "_blank");
 }
 
 visFelter();
