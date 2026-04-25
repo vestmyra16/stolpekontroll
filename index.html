@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll</title>
-
-<link rel="apple-touch-icon" href="icon-180.png">
+<title>Stolpekontroll v14.3</title>
 
 <style>
 body { font-family: Arial; background:#f2f2f2; padding:10px; }
@@ -21,18 +19,20 @@ button {
   background:#2e7d32; color:white;
   border:none; border-radius:6px;
 }
-.skade {
-  background:#eee;
+.rad {
+  background:#eef;
   padding:8px;
-  margin-top:5px;
+  margin-top:6px;
+  border-radius:6px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll</h2>
+<h2>Stolpekontroll v14.3</h2>
 
+<!-- GRUNNLAGSDATA -->
 <div class="section">
 
 <h3>Grunnlagsdata</h3>
@@ -41,17 +41,35 @@ button {
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
 
-<label>Diameter skadested (mm)</label>
-<input id="diam">
+<label>Stolpehøyde (m)</label><input id="hoyde">
+<label>Nedgravingsdybde (m)</label><input id="nedgrav">
+
+<label>Jordbandsdiameter (mm)</label><input id="jorddiam">
+<label>Diameter på skadested (mm)</label><input id="diam">
+
+<label>Klima</label>
+<select id="klima">
+<option>Kyst</option>
+<option>Innland</option>
+<option>Fjell</option>
+</select>
+
+<label>Jordsmonn</label>
+<select id="jord">
+<option>Innmark</option>
+<option>Skog</option>
+<option>Fjell</option>
+</select>
 
 </div>
 
+<!-- SKADE -->
 <div class="section">
 
-<h3>Skade</h3>
+<h3>Registrer skade</h3>
 
-<label>Type skade</label>
-<select id="type" onchange="oppdaterFelter()">
+<label>Skadetype</label>
+<select id="type">
 <option>Indre råte</option>
 <option>Sirkulær råte</option>
 <option>Softråte</option>
@@ -59,7 +77,7 @@ button {
 <option>Spettsmie</option>
 </select>
 
-<div id="felter"></div>
+<div id="inputfelter"></div>
 
 <button onclick="taBilde()">📸 Ta bilde</button>
 <input type="file" id="kamera" accept="image/*" capture="environment" style="display:none;">
@@ -67,76 +85,79 @@ button {
 <label>Merknad</label>
 <textarea id="merknad"></textarea>
 
-<button onclick="leggTilSkade()">➕ Legg til skade</button>
+<button onclick="leggTil()">➕ Ny skade på samme type</button>
 
-<div id="skadeliste"></div>
+<div id="liste"></div>
 
 </div>
 
 <button onclick="lastNed()">📄 Last ned Excel</button>
-<button onclick="slettAlt()">🗑️ Slett alt</button>
 
 <script>
 
-let skader = JSON.parse(localStorage.getItem("skader")) || [];
+let skader = [];
 
 function taBilde(){
-  document.getElementById("kamera").click();
+ document.getElementById("kamera").click();
 }
 
-function oppdaterFelter(){
+// DYNAMISKE FELTER
+function oppdater(){
 
 let t = document.getElementById("type").value;
-let f = document.getElementById("felter");
+let f = document.getElementById("inputfelter");
 
-if(t === "Indre råte"){
-  f.innerHTML = `
-  <label>A (mm)</label><input id="A">
-  <label>B (mm)</label><input id="B">
-  <label>E (mm)</label><input id="E">
-  `;
+if(t==="Indre råte"){
+ f.innerHTML=`
+ A (mm)<input id="A">
+ B (mm)<input id="B">
+ E (mm)<input id="E">
+ `;
 }
 
-else if(t === "Sirkulær råte"){
-  f.innerHTML = `
-  <label>A (mm)</label><input id="A">
-  <label>B (mm)</label><input id="B">
-  <label>C (mm)</label><input id="C">
-  <label>D (mm)</label><input id="D">
-  `;
+if(t==="Sirkulær råte"){
+ f.innerHTML=`
+ A (mm)<input id="A">
+ B (mm)<input id="B">
+ C (mm)<input id="C">
+ D (mm)<input id="D">
+ `;
 }
 
-else if(t === "Sprekk"){
-  f.innerHTML = `
-  <label>A bredde (mm)</label><input id="A">
-  <label>B dybde (mm)</label><input id="B">
-  <label>C lengde (m)</label><input id="C">
-  `;
+if(t==="Softråte"){
+ f.innerHTML=`
+ Tykkelse (mm)<input id="A">
+ `;
 }
 
-else if(t === "Spettsmie"){
-  f.innerHTML = `
-  <label>A (mm)</label><input id="A">
-  <label>B (mm)</label><input id="B">
-  `;
+if(t==="Sprekk"){
+ f.innerHTML=`
+ Bredde A (mm)<input id="A">
+ Dybde B (mm)<input id="B">
+ Lengde C (m)<input id="C">
+ `;
 }
 
-else {
-  f.innerHTML = `
-  <label>A (mm)</label><input id="A">
-  <label>B (mm)</label><input id="B">
-  `;
+if(t==="Spettsmie"){
+ f.innerHTML=`
+ Diameter (mm)<input id="A">
+ Dybde (mm)<input id="B">
+ `;
 }
 
 }
 
-function leggTilSkade(){
+document.getElementById("type").onchange = oppdater;
+oppdater();
 
-let type = document.getElementById("type").value;
+// LEGG TIL SKADE
+function leggTil(){
+
+let t = document.getElementById("type").value;
 
 // Softråte kun én
-if(type === "Softråte"){
-  skader = skader.filter(s => s.type !== "Softråte");
+if(t==="Softråte"){
+ skader = skader.filter(s => s.type !== "Softråte");
 }
 
 let bilde = document.getElementById("kamera").files[0];
@@ -145,73 +166,62 @@ let reader = new FileReader();
 reader.onload = function(e){
 
 let skade = {
-  type: type,
-  A: document.getElementById("A")?.value || "",
-  B: document.getElementById("B")?.value || "",
-  C: document.getElementById("C")?.value || "",
-  D: document.getElementById("D")?.value || "",
-  E: document.getElementById("E")?.value || "",
-  merknad: document.getElementById("merknad").value,
-  bilde: e.target.result
+ type:t,
+ A:document.getElementById("A")?.value,
+ B:document.getElementById("B")?.value,
+ C:document.getElementById("C")?.value,
+ D:document.getElementById("D")?.value,
+ E:document.getElementById("E")?.value,
+ merknad:document.getElementById("merknad").value,
+ bilde:e.target.result
 };
 
 skader.push(skade);
-localStorage.setItem("skader", JSON.stringify(skader));
-
-visSkader();
+vis();
 
 };
 
 if(bilde){
-  reader.readAsDataURL(bilde);
-} else {
-  reader.onload({target:{result:""}});
+ reader.readAsDataURL(bilde);
+}else{
+ reader.onload({target:{result:""}});
 }
 
 }
 
-function visSkader(){
+// VIS
+function vis(){
 
-let html = "<h4>Registrerte skader</h4>";
+let html="<h4>Registrerte skader</h4>";
 
-skader.forEach((s, i) => {
-  html += `
-  <div class="skade">
-  ${i+1}. ${s.type} | A:${s.A} B:${s.B} C:${s.C}
-  </div>
-  `;
+skader.forEach((s,i)=>{
+ html+=`
+ <div class="rad">
+ ${i+1}. ${s.type} | A:${s.A} B:${s.B} C:${s.C}
+ </div>
+ `;
 });
 
-document.getElementById("skadeliste").innerHTML = html;
+document.getElementById("liste").innerHTML=html;
 
 }
 
+// EXCEL
 function lastNed(){
 
-let csv = "Type,A,B,C,D,E,Merknad\n";
+let csv="Type,A,B,C,D,E,Merknad\n";
 
-skader.forEach(s => {
-  csv += `${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.merknad}\n`;
+skader.forEach(s=>{
+ csv+=`${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.merknad}\n`;
 });
 
-let blob = new Blob([csv], {type:"text/csv"});
-let a = document.createElement("a");
-a.href = URL.createObjectURL(blob);
-a.download = "stolpekontroll.csv";
+let blob=new Blob([csv],{type:"text/csv"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="stolpekontroll.csv";
 a.click();
 
 }
-
-function slettAlt(){
-if(confirm("Slette alle registreringer?")){
-  localStorage.removeItem("skader");
-  skader = [];
-  visSkader();
-}
-}
-
-oppdaterFelter();
-visSkader();
 
 </script>
 
