@@ -3,181 +3,162 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v14.6</title>
-
-<link rel="apple-touch-icon" href="icon-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#2e7d32">
+<title>Stolpekontroll</title>
 
 <style>
-body { font-family: Arial; max-width: 600px; margin:auto; padding:10px; }
-input, select, textarea, button { width:100%; margin:5px 0; padding:8px; }
-button { background:#2e7d32; color:white; border:none; }
-h3 { margin-top:20px; }
-img { border:1px solid #ccc; padding:4px; }
+body {
+  font-family: Arial;
+  max-width: 700px;
+  margin: auto;
+  padding: 15px;
+}
+
+h2 { margin-top: 25px; }
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+}
+
+button {
+  margin-top: 15px;
+  padding: 12px;
+  width: 100%;
+  background: green;
+  color: white;
+  border: none;
+  font-size: 16px;
+}
+
+.camera-btn {
+  font-size: 30px;
+  background: none;
+  border: none;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v14.6</h2>
+<h2>Grunnlagsdata</h2>
 
-<h3>Grunnlagsdata</h3>
 <label>Netteier</label>
 <input id="netteier">
 
 <label>LinjeID</label>
 <input id="linje">
 
+<label>Mastnr</label>
+<input id="mast">
+
+<label>Stolpehøyde (m)</label>
+<input type="number" id="hoyde">
+
+<label>Jordbånddiameter (mm)</label>
+<input type="number" id="jord">
+
 <button onclick="nyMast()">Ny mast</button>
 
-<h3>Registrer skade</h3>
+<h2>Registrer skade</h2>
 
 <label>Skadetype</label>
-<select id="skadetype" onchange="oppdaterBilde()">
+<select id="skadetype" onchange="visFelter()">
   <option value="indre">Indre råte</option>
   <option value="sirk">Sirkulær råte</option>
   <option value="soft">Softråte</option>
   <option value="spett">Spettsmie</option>
-  <option value="hakk">Hakkespetthull</option>
   <option value="sprekk">Sprekk</option>
+  <option value="hakk">Hakkespetthull</option>
 </select>
-
-<div id="skadeBilde">
-  <img id="bilde" src="" width="80" onclick="visStortBilde()">
-</div>
 
 <label>Stolpenr</label>
 <input id="stolpenr">
 
 <label>Skadehøyde (m)</label>
-<input id="hoyde" type="number">
+<input type="number">
 
 <label>Diameter på skadested (mm)</label>
-<input id="diameter" type="number">
+<input type="number">
 
-<label>A (mm)</label>
-<input id="A" type="number">
+<div id="bokstaver"></div>
 
-<label>B (mm)</label>
-<input id="B" type="number">
-
-<label>C (mm)</label>
-<input id="C" type="number">
-
-<label>D (mm)</label>
-<input id="D" type="number">
-
-<label>E (mm)</label>
-<input id="E" type="number">
+<h3>Foto</h3>
+<button class="camera-btn" onclick="document.getElementById('kamera').click()">📷</button>
+<input type="file" id="kamera" accept="image/*" capture="environment" style="display:none">
 
 <label>Merknad</label>
-<textarea id="merknad"></textarea>
-
-<label>Ta bilde</label>
-<input type="file" accept="image/*" capture="environment" multiple onchange="hentBilder(this)">
-
-<button onclick="leggTilSkade()">Legg til skade</button>
-<button onclick="lagreMast()">💾 Lagre mast</button>
-
-<h3>Registrerte skader</h3>
-<div id="liste"></div>
+<textarea rows="3"></textarea>
 
 <script>
 
-let skader = [];
-let bilder = [];
+function nyMast() {
+  document.getElementById("mast").value = "";
+  document.getElementById("hoyde").value = "";
+  document.getElementById("jord").value = "";
+  document.getElementById("stolpenr").value = "";
+}
 
-function oppdaterBilde(){
+function visFelter() {
   let type = document.getElementById("skadetype").value;
-  let base = "https://vestmyra16.github.io/stolpekontroll/";
+  let div = document.getElementById("bokstaver");
+  div.innerHTML = "";
 
-  let map = {
-    indre: "indre.svg",
-    sirk: "sirk.svg",
-    soft: "soft.svg",
-    spett: "spett.svg",
-    hakk: "hakk.svg",
-    sprekk: "sprekk.svg"
-  };
+  function felt(navn) {
+    return `<label>${navn} (mm)</label><input type="number">`;
+  }
 
-  document.getElementById("bilde").src = base + map[type];
-}
+  if (type === "indre") {
+    div.innerHTML =
+      felt("A") +  // råtebredde
+      felt("B") +  // indre råte
+      felt("E");   // restskall
+  }
 
-function visStortBilde(){
-  let src = document.getElementById("bilde").src;
-  let w = window.open("");
-  w.document.write("<img src='"+src+"' style='width:100%'>");
-}
+  if (type === "sirk") {
+    div.innerHTML =
+      felt("A") +
+      felt("B") +
+      felt("C") +
+      felt("D");
+  }
 
-function hentBilder(input){
-  bilder = [];
-  for (let file of input.files){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      bilder.push(e.target.result);
-    }
-    reader.readAsDataURL(file);
+  if (type === "soft") {
+    div.innerHTML =
+      felt("A") +
+      felt("B") +
+      felt("C") +
+      felt("D");
+  }
+
+  if (type === "spett") {
+    div.innerHTML =
+      felt("A") +
+      felt("B");
+  }
+
+  if (type === "sprekk") {
+    div.innerHTML =
+      felt("A") +  // bredde
+      felt("B");   // dybde
+  }
+
+  if (type === "hakk") {
+    div.innerHTML =
+      felt("A") +
+      felt("B") +
+      felt("C") +
+      felt("D");
   }
 }
 
-function leggTilSkade(){
-  let skade = {
-    type: skadetype.value,
-    stolpenr: stolpenr.value,
-    hoyde: hoyde.value,
-    diameter: diameter.value,
-    A: A.value,
-    B: B.value,
-    C: C.value,
-    D: D.value,
-    E: E.value,
-    merknad: merknad.value,
-    bilder: [...bilder]
-  };
-
-  skader.push(skade);
-  visListe();
-}
-
-function visListe(){
-  let html = "";
-  skader.forEach((s,i)=>{
-    html += "<div style='border:1px solid #ccc;margin:5px;padding:5px'>";
-    html += "<b>" + s.type + "</b> - Stolpe " + s.stolpenr + "<br>";
-    html += "A:" + s.A + " B:" + s.B + " C:" + s.C + " D:" + s.D + " E:" + s.E + "<br>";
-    html += s.merknad;
-    html += "</div>";
-  });
-  document.getElementById("liste").innerHTML = html;
-}
-
-function lagreMast(){
-  let mast = {
-    netteier: netteier.value,
-    linje: linje.value,
-    skader: skader
-  };
-
-  localStorage.setItem("stolpe", JSON.stringify(mast));
-  alert("Mast lagret!");
-}
-
-function nyMast(){
-  skader = [];
-  visListe();
-  stolpenr.value="";
-  hoyde.value="";
-  diameter.value="";
-  A.value="";
-  B.value="";
-  C.value="";
-  D.value="";
-  E.value="";
-  merknad.value="";
-}
-
-oppdaterBilde();
+visFelter();
 
 </script>
 
