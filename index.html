@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Stolpekontroll</title>
+
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
+
 <style>
 body {
   font-family: Arial;
@@ -84,7 +86,7 @@ img {
   <option value="hakk">Hakkespetthull</option>
 </select>
 
-<img id="skadebilde" src="indre.png" onclick="visStortBilde()">
+<img id="skadebilde" src="indre.svg" onclick="visStortBilde()">
 
 <label>Stolpenr</label>
 <input>
@@ -113,9 +115,9 @@ function nyMast() {
 }
 
 function visFelter() {
-  let type = document.getElementById("skadetype").value;
-  let div = document.getElementById("bokstaver");
-  let img = document.getElementById("skadebilde");
+  const type = document.getElementById("skadetype").value;
+  const div = document.getElementById("bokstaver");
+  const img = document.getElementById("skadebilde");
 
   div.innerHTML = "";
 
@@ -124,62 +126,43 @@ function visFelter() {
   }
 
   if (type === "indre") {
-  img.src = "indre.svg";
-}
-
-if (type === "sirk") {
-  img.src = "sirk.svg";
-}
-
-if (type === "soft") {
-  img.src = "soft.svg";
-}
-
-if (type === "spett") {
-  img.src = "spett.svg";
-}
-
-if (type === "sprekk") {
-  img.src = "sprekk.svg";
-}
-
-if (type === "hakk") {
-  img.src = "hakk.svg";
-}
+    img.src = "indre.svg";
+    div.innerHTML = felt("A") + felt("B") + felt("E");
   }
 
   if (type === "sirk") {
-    img.src = "sirk.png";
+    img.src = "sirk.svg";
     div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
   }
 
   if (type === "soft") {
-    img.src = "soft.png";
+    img.src = "soft.svg";
     div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
   }
 
   if (type === "spett") {
-    img.src = "spett.png";
+    img.src = "spett.svg";
     div.innerHTML = felt("A") + felt("B");
   }
 
   if (type === "sprekk") {
-    img.src = "sprekk.png";
+    img.src = "sprekk.svg";
     div.innerHTML = felt("A") + felt("B");
   }
 
   if (type === "hakk") {
-    img.src = "hakk.png";
+    img.src = "hakk.svg";
     div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
   }
 }
 
 function visStortBilde() {
-  let src = document.getElementById("skadebilde").src;
-  window.open(src, "_blank");
+  window.open(document.getElementById("skadebilde").src, "_blank");
 }
 
-visFelter();
+window.onload = function() {
+  visFelter();
+};
 
 </script>
 
