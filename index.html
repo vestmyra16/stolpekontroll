@@ -3,203 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Stolpekontroll v14.4</title>
-
-<link rel="apple-touch-icon" href="icon-180.png">
+<title>Stolpekontroll v14.5</title>
 
 <style>
-body { font-family: Arial; background:#f2f2f2; padding:10px; }
-.section { background:#fff; padding:12px; margin-top:15px; border-radius:8px; }
-label { display:block; margin-top:8px; font-weight:bold; }
+body {
+    font-family: Arial;
+    background: #f4f4f4;
+    margin: 0;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 15px;
+    background: white;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
 input, select, textarea {
-  width:100%; padding:8px; margin-top:3px;
-  border:1px solid #999; border-radius:6px;
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
 }
+
 button {
-  width:100%; padding:12px; margin-top:10px;
-  background:#2e7d32; color:white;
-  border:none; border-radius:6px;
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    color: white;
+    background: #2e7d32;
+    font-size: 16px;
 }
-#bilde {
-  display:block;
-  margin:10px auto;
-  width:120px;
+
+button.secondary {
+    background: #555;
+}
+
+.skade-blokk {
+    border-top: 2px solid #ccc;
+    margin-top: 20px;
+    padding-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v14.4</h2>
+<div class="container">
 
-<!-- GRUNNLAGSDATA -->
-<div class="section">
+<h2>Stolpekontroll v14.5</h2>
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label><input id="netteier">
-<label>LinjeID</label><input id="linje">
-<label>Mastnr</label><input id="mast">
+<label>Netteier</label>
+<input id="netteier">
 
-<label>Stolpehøyde (m)</label><input id="hoyde">
-<label>Nedgravingsdybde (m)</label><input id="nedgrav">
+<label>LinjeID</label>
+<input id="linje">
 
-<label>Jordbandsdiameter (mm)</label><input id="jorddiam">
-<label>Diameter på skadested (mm)</label><input id="diam">
+<label>Stolpenr</label>
+<input id="stolpe">
+
+<label>Stolpehøyde (m)</label>
+<input>
+
+<label>Nedgravingsdybde (m)</label>
+<input>
+
+<label>Jordbåndsdiameter (mm)</label>
+<input>
 
 <label>Klima</label>
-<select id="klima">
+<select>
 <option>Kyst</option>
 <option>Innland</option>
 <option>Fjell</option>
 </select>
 
 <label>Jordsmonn</label>
-<select id="jord">
+<select>
 <option>Innmark</option>
-<option>Skog</option>
+<option>Skogsmark</option>
 <option>Fjell</option>
 </select>
 
-</div>
+<button class="secondary" onclick="nyMast()">Ny mast</button>
 
-<!-- SKADE -->
-<div class="section">
+<div class="skade-blokk">
 
 <h3>Registrer skade</h3>
 
 <label>Skadetype</label>
-<select id="type" onchange="visBilde();visFelter();">
-<option>Indre råte</option>
-<option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Sprekk</option>
-<option>Spettsmie</option>
+<select id="type" onchange="visFelter()">
+<option value="indre">Indre råte</option>
+<option value="sirk">Sirkulær råte</option>
+<option value="soft">Softråte</option>
+<option value="sprekk">Sprekk</option>
+<option value="spett">Spettsmie</option>
 </select>
 
-<img id="bilde" src="indre.svg">
+<label>Skadehøyde over bakken (m)</label>
+<input>
+
+<label>Diameter på skadested (mm)</label>
+<input>
 
 <div id="felter"></div>
 
-<button onclick="taBilde()">📸 Ta bilde</button>
-
 <label>Merknad</label>
-<textarea id="merknad"></textarea>
+<textarea></textarea>
 
-<button onclick="lagre()">➕ Ny skade på samme type</button>
+<button onclick="leggTil()">Legg til skade</button>
 
 </div>
 
-<div class="section">
 <h3>Registrerte skader</h3>
-<div id="liste"></div>
-</div>
+<ul id="liste"></ul>
 
-<button onclick="lastNed()">📄 Last ned Excel</button>
+<button onclick="lastNed()">Last ned Excel</button>
+
+</div>
 
 <script>
 
-let registreringer = [];
+function visFelter() {
+    let type = document.getElementById("type").value;
+    let f = document.getElementById("felter");
 
-function visBilde(){
-let t = document.getElementById("type").value;
-let b = document.getElementById("bilde");
+    if (type === "indre") {
+        f.innerHTML = `
+        <label>A (mm)</label><input>
+        <label>B (mm)</label><input>
+        <label>E (mm)</label><input>`;
+    }
 
-if(t==="Indre råte") b.src="indre.svg";
-if(t==="Sirkulær råte") b.src="sirk.svg";
-if(t==="Softråte") b.src="soft.svg";
-if(t==="Sprekk") b.src="sprekk.svg";
-if(t==="Spettsmie") b.src="spett.svg";
+    if (type === "sirk") {
+        f.innerHTML = `
+        <label>A (mm)</label><input>
+        <label>B (mm)</label><input>
+        <label>C (mm)</label><input>
+        <label>D (mm)</label><input>`;
+    }
+
+    if (type === "soft") {
+        f.innerHTML = `
+        <label>Softråte tykkelse (mm)</label><input>`;
+    }
+
+    if (type === "sprekk") {
+        f.innerHTML = `
+        <label>A bredde (mm)</label><input>
+        <label>B dybde (mm)</label><input>`;
+    }
+
+    if (type === "spett") {
+        f.innerHTML = `
+        <label>A (mm)</label><input>
+        <label>B (mm)</label><input>
+        <label>Retning</label><input>`;
+    }
 }
 
-function visFelter(){
-
-let t = document.getElementById("type").value;
-let html = "";
-
-html += `<label>Skadehøyde over bakken (m)</label><input id="sh">`;
-
-if(t==="Indre råte"){
-html += `<label>A (mm)</label><input id="A">
-<label>B (mm)</label><input id="B">
-<label>E (mm)</label><input id="E">`;
-}
-
-if(t==="Sirkulær råte"){
-html += `<label>A (mm)</label><input id="A">
-<label>B (mm)</label><input id="B">
-<label>C (mm)</label><input id="C">
-<label>D (mm)</label><input id="D">`;
-}
-
-if(t==="Softråte"){
-html += `<label>Tykkelse (mm)</label><input id="A">`;
-}
-
-if(t==="Sprekk"){
-html += `<label>A bredde (mm)</label><input id="A">
-<label>B dybde (mm)</label><input id="B">
-<label>C lengde (mm)</label><input id="C">`;
-}
-
-if(t==="Spettsmie"){
-html += `<label>A (mm)</label><input id="A">
-<label>B (mm)</label><input id="B">`;
-}
-
-document.getElementById("felter").innerHTML = html;
-}
-
-function lagre(){
-
-let t = document.getElementById("type").value;
-
-registreringer.push({
-type:t,
-h:document.getElementById("sh")?.value,
-A:document.getElementById("A")?.value,
-B:document.getElementById("B")?.value,
-C:document.getElementById("C")?.value,
-D:document.getElementById("D")?.value,
-E:document.getElementById("E")?.value
-});
-
-visListe();
-}
-
-function visListe(){
-
-let html = "";
-
-registreringer.forEach((r,i)=>{
-html += `${i+1}. ${r.type} | A:${r.A} B:${r.B} C:${r.C} E:${r.E}<br>`;
-});
-
-document.getElementById("liste").innerHTML = html;
-}
-
-function lastNed(){
-
-let csv = "Type,H,A,B,C,D,E\n";
-
-registreringer.forEach(r=>{
-csv += `${r.type},${r.h},${r.A},${r.B},${r.C},${r.D},${r.E}\n`;
-});
-
-let blob = new Blob([csv], {type:"text/csv"});
-let a = document.createElement("a");
-a.href = URL.createObjectURL(blob);
-a.download = "stolpekontroll.csv";
-a.click();
-}
-
-function taBilde(){
-alert("Kamera kobles inn senere");
-}
-
-// INIT
 visFelter();
+
+function leggTil() {
+    let li = document.createElement("li");
+    li.innerText = document.getElementById("type").value;
+    document.getElementById("liste").appendChild(li);
+}
+
+function nyMast() {
+    let netteier = document.getElementById("netteier").value;
+    let linje = document.getElementById("linje").value;
+
+    document.querySelectorAll("input, textarea").forEach(e => e.value = "");
+
+    document.getElementById("netteier").value = netteier;
+    document.getElementById("linje").value = linje;
+
+    document.getElementById("liste").innerHTML = "";
+}
+
+function lastNed() {
+    let tekst = "Dummy eksport";
+    let blob = new Blob([tekst], { type: "text/csv" });
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "stolpekontroll.csv";
+    a.click();
+}
 
 </script>
 
