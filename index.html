@@ -6,219 +6,212 @@
 
 <title>Stolpekontroll</title>
 
-<link rel="icon" href="icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
 <style>
-body {
-  font-family: Arial;
-  background: #f2f2f2;
-  padding: 10px;
+body { font-family: Arial; background:#f2f2f2; padding:10px; }
+.section { background:#fff; padding:12px; margin-top:15px; border-radius:8px; }
+label { display:block; margin-top:8px; font-weight:bold; }
+input, select, textarea {
+  width:100%; padding:10px; margin-top:3px;
+  border:1px solid #999; border-radius:6px;
 }
-
-.section {
-  background: #fff;
-  padding: 12px;
-  margin-top: 15px;
-  border-radius: 8px;
-}
-
-label {
-  font-weight: bold;
-  display: block;
-  margin-top: 8px;
-}
-
-input, select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #999;
-  border-radius: 6px;
-  margin-top: 3px;
-}
-
 button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background: #2e7d32;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  width:100%; padding:12px; margin-top:10px;
+  background:#2e7d32; color:white;
+  border:none; border-radius:6px;
 }
-
-img {
-  width: 100%;
-  max-height: 150px;
-  object-fit: contain;
-  margin-top: 10px;
+.skade {
+  background:#eee;
+  padding:8px;
+  margin-top:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll v14.3</h2>
+<h2>Stolpekontroll</h2>
 
 <div class="section">
+
 <h3>Grunnlagsdata</h3>
 
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
-<label>Stolpenr</label><input id="stolpe">
-
-<label>Stolpehøyde (m)</label><input id="hoyde">
-<label>Jordbanddiameter (mm)</label><input id="jord">
-</div>
-
-<div class="section">
-<h3>Skade</h3>
-
-<label>Type skade</label>
-<select id="type" onchange="oppdaterFelter(); visBilde();">
-<option>Indre råte (ABE)</option>
-<option>Sirkulær råte (ABCD)</option>
-<option>Softråte (ABCD)</option>
-<option>Spettsmie (AB)</option>
-<option>Hakkespetthull (ABCD)</option>
-<option>Sprekk (ABCH)</option>
-</select>
-
-<img id="bilde" style="display:none">
 
 <label>Diameter skadested (mm)</label>
 <input id="diam">
 
+</div>
+
+<div class="section">
+
+<h3>Skade</h3>
+
+<label>Type skade</label>
+<select id="type" onchange="oppdaterFelter()">
+<option>Indre råte</option>
+<option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Sprekk</option>
+<option>Spettsmie</option>
+</select>
+
 <div id="felter"></div>
 
 <button onclick="taBilde()">📸 Ta bilde</button>
-<input type="file" id="kamera" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="kamera" accept="image/*" capture="environment" style="display:none;">
 
 <label>Merknad</label>
-<input id="merknad">
+<textarea id="merknad"></textarea>
+
+<button onclick="leggTilSkade()">➕ Legg til skade</button>
+
+<div id="skadeliste"></div>
 
 </div>
 
-<button onclick="nesteMast()">➡️ Neste mast</button>
-<button onclick="lagreMast()">💾 Lagre mast</button>
-<button onclick="lastNed()">📥 Last ned Excel</button>
+<button onclick="lastNed()">📄 Last ned Excel</button>
+<button onclick="slettAlt()">🗑️ Slett alt</button>
 
 <script>
 
-let registreringer = [];
+let skader = JSON.parse(localStorage.getItem("skader")) || [];
 
-function hent(id) {
-  let el = document.getElementById(id);
-  return el ? el.value : "";
-}
-
-function oppdaterFelter() {
-  let t = type.value;
-  let f = document.getElementById("felter");
-
-  if (t.includes("ABE")) {
-    f.innerHTML = `
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-      <label>E (mm)</label><input id="E">
-    `;
-  }
-  else if (t.includes("ABCD") && !t.includes("Sprekk")) {
-    f.innerHTML = `
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-      <label>C (mm)</label><input id="C">
-      <label>D (mm)</label><input id="D">
-    `;
-  }
-  else if (t.includes("Spettsmie")) {
-    f.innerHTML = `
-      <label>Skadehøyde (m)</label><input id="sh">
-      <label>A (mm)</label><input id="A">
-      <label>B (mm)</label><input id="B">
-    `;
-  }
-  else if (t.includes("Sprekk")) {
-    f.innerHTML = `
-      <label>Bredde A (mm)</label><input id="A">
-      <label>Dybde B (mm)</label><input id="B">
-      <label>Lengde på sprekk (C) (m)</label><input id="C">
-      <label>Høyde over bakken H (m)</label><input id="H">
-
-      <p style="font-size:14px;">
-      A = Bredde | B = Dybde | C = Lengde på sprekk | H = Høyde over bakken
-      </p>
-    `;
-  }
-}
-
-function visBilde() {
-  let img = document.getElementById("bilde");
-  let t = type.value;
-
-  if (t.includes("Indre")) img.src = "indre.svg";
-  else if (t.includes("Sirkulær")) img.src = "sirk.svg";
-  else if (t.includes("Softråte")) img.src = "soft.svg";
-  else if (t.includes("Spettsmie")) img.src = "spett.svg";
-  else if (t.includes("Hakkespetthull")) img.src = "hakk.svg";
-  else if (t.includes("Sprekk")) img.src = "sprekk.svg";
-
-  img.style.display = "block";
-}
-
-function taBilde() {
+function taBilde(){
   document.getElementById("kamera").click();
 }
 
-function lagreMast() {
+function oppdaterFelter(){
 
-  if (!mast.value) {
-    alert("Mastnr mangler");
-    return;
-  }
+let t = document.getElementById("type").value;
+let f = document.getElementById("felter");
 
-  registreringer.push({
-    netteier: hent("netteier"),
-    linje: hent("linje"),
-    mast: hent("mast"),
-    type: hent("type"),
-    A: hent("A"),
-    B: hent("B"),
-    C: hent("C"),
-    D: hent("D"),
-    E: hent("E"),
-    merknad: hent("merknad")
-  });
-
-  document.getElementById("bilde").style.display = "none";
-
-  alert("Mast lagret");
+if(t === "Indre råte"){
+  f.innerHTML = `
+  <label>A (mm)</label><input id="A">
+  <label>B (mm)</label><input id="B">
+  <label>E (mm)</label><input id="E">
+  `;
 }
 
-function nesteMast() {
-  lagreMast();
-  document.getElementById("mast").value = "";
+else if(t === "Sirkulær råte"){
+  f.innerHTML = `
+  <label>A (mm)</label><input id="A">
+  <label>B (mm)</label><input id="B">
+  <label>C (mm)</label><input id="C">
+  <label>D (mm)</label><input id="D">
+  `;
 }
 
-function lastNed() {
+else if(t === "Sprekk"){
+  f.innerHTML = `
+  <label>A bredde (mm)</label><input id="A">
+  <label>B dybde (mm)</label><input id="B">
+  <label>C lengde (m)</label><input id="C">
+  `;
+}
 
-  let csv = "Netteier,Linje,Mast,Type,A,B,C,D,E,Merknad\n";
+else if(t === "Spettsmie"){
+  f.innerHTML = `
+  <label>A (mm)</label><input id="A">
+  <label>B (mm)</label><input id="B">
+  `;
+}
 
-  registreringer.forEach(r => {
-    csv += `${r.netteier},${r.linje},${r.mast},${r.type},${r.A},${r.B},${r.C},${r.D},${r.E},${r.merknad}\n`;
-  });
+else {
+  f.innerHTML = `
+  <label>A (mm)</label><input id="A">
+  <label>B (mm)</label><input id="B">
+  `;
+}
 
-  let blob = new Blob([csv], {type:"text/csv"});
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "stolpekontroll.csv";
-  a.click();
+}
+
+function leggTilSkade(){
+
+let type = document.getElementById("type").value;
+
+// Softråte kun én
+if(type === "Softråte"){
+  skader = skader.filter(s => s.type !== "Softråte");
+}
+
+let bilde = document.getElementById("kamera").files[0];
+let reader = new FileReader();
+
+reader.onload = function(e){
+
+let skade = {
+  type: type,
+  A: document.getElementById("A")?.value || "",
+  B: document.getElementById("B")?.value || "",
+  C: document.getElementById("C")?.value || "",
+  D: document.getElementById("D")?.value || "",
+  E: document.getElementById("E")?.value || "",
+  merknad: document.getElementById("merknad").value,
+  bilde: e.target.result
+};
+
+skader.push(skade);
+localStorage.setItem("skader", JSON.stringify(skader));
+
+visSkader();
+
+};
+
+if(bilde){
+  reader.readAsDataURL(bilde);
+} else {
+  reader.onload({target:{result:""}});
+}
+
+}
+
+function visSkader(){
+
+let html = "<h4>Registrerte skader</h4>";
+
+skader.forEach((s, i) => {
+  html += `
+  <div class="skade">
+  ${i+1}. ${s.type} | A:${s.A} B:${s.B} C:${s.C}
+  </div>
+  `;
+});
+
+document.getElementById("skadeliste").innerHTML = html;
+
+}
+
+function lastNed(){
+
+let csv = "Type,A,B,C,D,E,Merknad\n";
+
+skader.forEach(s => {
+  csv += `${s.type},${s.A},${s.B},${s.C},${s.D},${s.E},${s.merknad}\n`;
+});
+
+let blob = new Blob([csv], {type:"text/csv"});
+let a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "stolpekontroll.csv";
+a.click();
+
+}
+
+function slettAlt(){
+if(confirm("Slette alle registreringer?")){
+  localStorage.removeItem("skader");
+  skader = [];
+  visSkader();
+}
 }
 
 oppdaterFelter();
-visBilde();
+visSkader();
 
 </script>
 
