@@ -114,10 +114,13 @@ img { width:80px; margin-top:10px;}
 let lagret=[];
 
 function visSkade2(){
-  skade2.style.display="block";
-  visFelter(2);   // ← DETTE ER HELE LØSNINGEN
-}
+  skade2.style.display = "block";
 
+  // liten forsinkelse sikrer at DOM er klar
+  setTimeout(() => {
+    visFelter(2);
+  }, 50);
+}
 
 function felt(n,nr){
  return `<label>${n} (mm)</label><input id="${n}${nr}">`;
