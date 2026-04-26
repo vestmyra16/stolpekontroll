@@ -20,7 +20,6 @@ body {
 h1 {
   display:flex;
   justify-content: space-between;
-  align-items: center;
 }
 
 label {
@@ -42,11 +41,10 @@ button {
   background: green;
   color: white;
   border: none;
-  font-size: 16px;
 }
 
 .camera-btn {
-  font-size: 30px;
+  font-size: 28px;
   background: none;
   border: none;
 }
@@ -60,10 +58,7 @@ img {
 
 <body>
 
-<h1>
-  Stolpekontroll
-  <span>v1.0</span>
-</h1>
+<h1>Stolpekontroll <span>v1.1</span></h1>
 
 <h2>Grunnlagsdata</h2>
 
@@ -86,14 +81,13 @@ img {
 
 <h2>Registrer skade 1</h2>
 
-<div id="skade1">
 <select id="skadetype1" onchange="visFelter(1)">
-  <option value="indre">Indre råte</option>
-  <option value="sirk">Sirkulær råte</option>
-  <option value="soft">Softråte</option>
-  <option value="spett">Spettsmie</option>
-  <option value="sprekk">Sprekk</option>
-  <option value="hakk">Hakkespetthull</option>
+<option value="indre">Indre råte</option>
+<option value="sirk">Sirkulær råte</option>
+<option value="soft">Softråte</option>
+<option value="spett">Spettsmie</option>
+<option value="sprekk">Sprekk</option>
+<option value="hakk">Hakkespetthull</option>
 </select>
 
 <img id="img1" src="indre.svg">
@@ -104,24 +98,24 @@ img {
 <label>Skadehøyde (m)</label>
 <input id="h1" type="number">
 
-<label>Diameter (mm)</label>
+<label>Diameter på skadested (mm)</label>
 <input id="d1" type="number">
 
 <div id="bok1"></div>
-</div>
 
 <button onclick="visSkade2()">Ny registrering (skade 2)</button>
 
 <div id="skade2" style="display:none">
+
 <h2>Registrer skade 2</h2>
 
 <select id="skadetype2" onchange="visFelter(2)">
-  <option value="indre">Indre råte</option>
-  <option value="sirk">Sirkulær råte</option>
-  <option value="soft">Softråte</option>
-  <option value="spett">Spettsmie</option>
-  <option value="sprekk">Sprekk</option>
-  <option value="hakk">Hakkespetthull</option>
+<option value="indre">Indre råte</option>
+<option value="sirk">Sirkulær råte</option>
+<option value="soft">Softråte</option>
+<option value="spett">Spettsmie</option>
+<option value="sprekk">Sprekk</option>
+<option value="hakk">Hakkespetthull</option>
 </select>
 
 <img id="img2" src="indre.svg">
@@ -132,10 +126,11 @@ img {
 <label>Skadehøyde (m)</label>
 <input id="h2" type="number">
 
-<label>Diameter (mm)</label>
+<label>Diameter på skadested (mm)</label>
 <input id="d2" type="number">
 
 <div id="bok2"></div>
+
 </div>
 
 <h3>Foto</h3>
@@ -152,60 +147,115 @@ img {
 
 let lagret = [];
 
-function nyMast() {
-  document.getElementById("mast").value = "";
-  document.getElementById("hoyde").value = "";
-  document.getElementById("jord").value = "";
-  document.getElementById("skade2").style.display="none";
+function nyMast(){
+ mast.value="";
+ hoyde.value="";
+ jord.value="";
+ skade2.style.display="none";
 }
 
 function visSkade2(){
-  document.getElementById("skade2").style.display="block";
+ skade2.style.display="block";
 }
 
-function felt(n){ return `<label>${n} (mm)</label><input>` }
+function felt(n, nr){
+ return `<label>${n} (mm)</label><input id="${n}${nr}">`;
+}
 
 function visFelter(nr){
-  let type=document.getElementById("skadetype"+nr).value;
-  let div=document.getElementById("bok"+nr);
-  let img=document.getElementById("img"+nr);
 
-  div.innerHTML="";
+ let type=document.getElementById("skadetype"+nr).value;
+ let div=document.getElementById("bok"+nr);
+ let img=document.getElementById("img"+nr);
 
-  if(type==="indre"){ img.src="indre.svg"; div.innerHTML=felt("A")+felt("B")+felt("E");}
-  if(type==="sirk"){ img.src="sirk.svg"; div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");}
-  if(type==="soft"){ img.src="soft.svg"; div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");}
-  if(type==="spett"){ img.src="spett.svg"; div.innerHTML=felt("A")+felt("B");}
-  if(type==="sprekk"){ img.src="sprekk.svg"; div.innerHTML=felt("A")+felt("B");}
-  if(type==="hakk"){ img.src="hakk.svg"; div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");}
+ div.innerHTML="";
+
+ if(type==="indre"){
+  img.src="indre.svg";
+  div.innerHTML=felt("A",nr)+felt("B",nr)+felt("E",nr);
+ }
+
+ if(type==="sirk"){
+  img.src="sirk.svg";
+  div.innerHTML=felt("A",nr)+felt("B",nr)+felt("C",nr)+felt("D",nr);
+ }
+
+ if(type==="soft"){
+  img.src="soft.svg";
+  div.innerHTML=felt("A",nr)+felt("B",nr)+felt("C",nr)+felt("D",nr);
+ }
+
+ if(type==="spett"){
+  img.src="spett.svg";
+  div.innerHTML=felt("A",nr)+felt("B",nr);
+ }
+
+ if(type==="sprekk"){
+  img.src="sprekk.svg";
+  div.innerHTML=felt("A",nr)+felt("B",nr);
+ }
+
+ if(type==="hakk"){
+  img.src="hakk.svg";
+  div.innerHTML=felt("A",nr)+felt("B",nr)+felt("C",nr)+felt("D",nr);
+ }
 }
 
 function kamera(){
- document.getElementById("kamera").click();
+ kamera.click();
 }
 
 function lagre(){
 
- let data={
-  netteier: netteier.value,
-  linje: linje.value,
-  mast: mast.value,
-  skade1: skadetype1.value,
-  skade2: skadetype2.value || "",
-  merknad: merknad.value
+ let data = {
+
+  netteier:netteier.value,
+  linje:linje.value,
+  mast:mast.value,
+  hoyde:hoyde.value,
+  jord:jord.value,
+
+  type1:skadetype1.value,
+  stolpe1:stolpe1.value,
+  h1:h1.value,
+  d1:d1.value,
+  A1:A1?.value||"",
+  B1:B1?.value||"",
+  C1:C1?.value||"",
+  D1:D1?.value||"",
+  E1:E1?.value||"",
+
+  type2:skadetype2?.value||"",
+  stolpe2:stolpe2?.value||"",
+  h2:h2?.value||"",
+  d2:d2?.value||"",
+  A2:A2?.value||"",
+  B2:B2?.value||"",
+  C2:C2?.value||"",
+  D2:D2?.value||"",
+  E2:E2?.value||"",
+
+  merknad:merknad.value
  };
 
  lagret.push(data);
-
  alert("Lagret!");
 }
 
 function lastNed(){
 
- let csv="Netteier,Linje,Mast,Skade1,Skade2,Merknad\n";
+ let csv =
+"Netteier,LinjeID,Mastnr,Stolpehøyde,Jordbånddiameter," +
+"Type1,Stolpe1,Skadehøyde1,Diameter1,A1,B1,C1,D1,E1," +
+"Type2,Stolpe2,Skadehøyde2,Diameter2,A2,B2,C2,D2,E2," +
+"Merknad\n";
 
  lagret.forEach(r=>{
-   csv+=`${r.netteier},${r.linje},${r.mast},${r.skade1},${r.skade2},${r.merknad}\n`;
+  csv +=
+`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},`+
+`${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},`+
+`${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},`+
+`${r.merknad}\n`;
  });
 
  let blob=new Blob([csv],{type:"text/csv"});
