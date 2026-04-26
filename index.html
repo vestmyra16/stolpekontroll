@@ -14,36 +14,38 @@ body { font-family: Arial; max-width:700px; margin:auto; padding:15px;}
 h1 { display:flex; justify-content:space-between;}
 label { font-weight:bold; display:block; margin-top:10px;}
 input,select,textarea { width:100%; padding:8px; margin-top:4px;}
-button { margin-top:15px; padding:12px; width:100%; background:green; color:white; border:none;}
-.camera-btn { font-size:28px; background:none; border:none;}
-img { width:80px; margin-top:10px;}
+
+button {
+  margin-top:10px;
+  padding:12px;
+  width:100%;
+  background:green;
+  color:white;
+  border:none;
+  font-size:15px;
+}
+
+img { width:80px; margin-top:10px; }
+.skade { border-top:1px solid #ccc; margin-top:20px; padding-top:10px;}
 </style>
 </head>
 
 <body>
 
-<h1>Stolpekontroll <span>v1.2</span></h1>
+<h1>Stolpekontroll <span>v1.3</span></h1>
 
 <h2>Grunnlagsdata</h2>
 
-<label>Netteier</label>
-<input id="netteier">
-
-<label>LinjeID</label>
-<input id="linje">
-
-<label>Mastnr</label>
-<input id="mast">
-
-<label>Stolpehøyde (m)</label>
-<input id="hoyde" type="number">
-
-<label>Jordbånddiameter (mm)</label>
-<input id="jord" type="number">
+<label>Netteier</label><input id="netteier">
+<label>LinjeID</label><input id="linje">
+<label>Mastnr</label><input id="mast">
+<label>Stolpehøyde (m)</label><input id="hoyde" type="number">
+<label>Jordbånddiameter (mm)</label><input id="jord" type="number">
 
 <button onclick="nyMast()">Ny mast</button>
 
 <!-- SKADE 1 -->
+<div class="skade">
 <h2>Registrer skade 1</h2>
 
 <select id="skadetype1" onchange="visFelter(1)">
@@ -57,21 +59,22 @@ img { width:80px; margin-top:10px;}
 
 <img id="img1" src="indre.svg">
 
-<label>Stolpenr</label>
-<input id="stolpe1">
-
-<label>Skadehøyde (m)</label>
-<input id="h1" type="number">
-
-<label>Diameter på skadested (mm)</label>
-<input id="d1" type="number">
+<label>Stolpenr</label><input id="stolpe1">
+<label>Skadehøyde (m)</label><input id="h1" type="number">
+<label>Diameter på skadested (mm)</label><input id="d1" type="number">
 
 <div id="bok1"></div>
+
+<button onclick="kamera(1)">📷 Ta bilde</button>
+<input type="file" id="kamera1" accept="image/*" capture="environment" style="display:none">
+
+<label>Merknad</label><textarea id="merknad1"></textarea>
+</div>
 
 <button onclick="visSkade2()">Ny registrering (skade 2)</button>
 
 <!-- SKADE 2 -->
-<div id="skade2" style="display:none">
+<div id="skade2" class="skade" style="display:none">
 
 <h2>Registrer skade 2</h2>
 
@@ -86,25 +89,18 @@ img { width:80px; margin-top:10px;}
 
 <img id="img2" src="indre.svg">
 
-<label>Stolpenr</label>
-<input id="stolpe2">
-
-<label>Skadehøyde (m)</label>
-<input id="h2" type="number">
-
-<label>Diameter på skadested (mm)</label>
-<input id="d2" type="number">
+<label>Stolpenr</label><input id="stolpe2">
+<label>Skadehøyde (m)</label><input id="h2" type="number">
+<label>Diameter på skadested (mm)</label><input id="d2" type="number">
 
 <div id="bok2"></div>
 
+<button onclick="kamera(2)">📷 Ta bilde</button>
+<input type="file" id="kamera2" accept="image/*" capture="environment" style="display:none">
+
+<label>Merknad</label><textarea id="merknad2"></textarea>
+
 </div>
-
-<h3>Foto</h3>
-<button class="camera-btn" onclick="kamera()">📷</button>
-<input type="file" id="kamera" accept="image/*" capture="environment" style="display:none">
-
-<label>Merknad</label>
-<textarea id="merknad"></textarea>
 
 <button onclick="lagre()">Lagre</button>
 <button onclick="lastNed()">Last ned Excel</button>
@@ -113,13 +109,20 @@ img { width:80px; margin-top:10px;}
 
 let lagret=[];
 
-function visSkade2(){
-  skade2.style.display = "block";
+function nyMast(){
+ mast.value="";
+ hoyde.value="";
+ jord.value="";
+ skade2.style.display="none";
+}
 
-  // liten forsinkelse sikrer at DOM er klar
-  setTimeout(() => {
-    visFelter(2);
-  }, 50);
+function visSkade2(){
+ skade2.style.display="block";
+ visFelter(2);
+}
+
+function kamera(nr){
+ document.getElementById("kamera"+nr).click();
 }
 
 function felt(n,nr){
@@ -165,14 +168,9 @@ function visFelter(nr){
  }
 }
 
-function kamera(){
- kamera.click();
-}
-
 function lagre(){
 
  let data={
-
   netteier:netteier.value,
   linje:linje.value,
   mast:mast.value,
@@ -188,6 +186,7 @@ function lagre(){
   C1:C1?.value||"",
   D1:D1?.value||"",
   E1:E1?.value||"",
+  merknad1:merknad1.value,
 
   type2:skadetype2?.value||"",
   stolpe2:stolpe2?.value||"",
@@ -198,8 +197,7 @@ function lagre(){
   C2:C2?.value||"",
   D2:D2?.value||"",
   E2:E2?.value||"",
-
-  merknad:merknad.value
+  merknad2:merknad2.value
  };
 
  lagret.push(data);
@@ -208,17 +206,10 @@ function lagre(){
 
 function lastNed(){
 
- let csv=
-"Netteier,LinjeID,Mastnr,Stolpehøyde,Jordbånddiameter,"+
-"Type1,Stolpe1,Skadehøyde1,Diameter1,A1,B1,C1,D1,E1,"+
-"Type2,Stolpe2,Skadehøyde2,Diameter2,A2,B2,C2,D2,E2,"+
-"Merknad\n";
+ let csv="Netteier,Linje,Mast,Høyde,Jord,Type1,Stolpe1,H1,D1,A1,B1,C1,D1,E1,Merknad1,Type2,Stolpe2,H2,D2,A2,B2,C2,D2,E2,Merknad2\n";
 
  lagret.forEach(r=>{
-  csv+=`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},`+
-  `${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},`+
-  `${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},`+
-  `${r.merknad}\n`;
+  csv+=`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},${r.merknad1},${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},${r.merknad2}\n`;
  });
 
  let blob=new Blob([csv],{type:"text/csv"});
