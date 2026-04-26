@@ -10,55 +10,19 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 
 <style>
-body {
-  font-family: Arial;
-  max-width: 700px;
-  margin: auto;
-  padding: 15px;
-}
-
-h1 {
-  display:flex;
-  justify-content: space-between;
-}
-
-label {
-  font-weight: bold;
-  display: block;
-  margin-top: 10px;
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-}
-
-button {
-  margin-top: 15px;
-  padding: 12px;
-  width: 100%;
-  background: green;
-  color: white;
-  border: none;
-}
-
-.camera-btn {
-  font-size: 28px;
-  background: none;
-  border: none;
-}
-
-img {
-  width: 80px;
-  margin-top: 10px;
-}
+body { font-family: Arial; max-width:700px; margin:auto; padding:15px;}
+h1 { display:flex; justify-content:space-between;}
+label { font-weight:bold; display:block; margin-top:10px;}
+input,select,textarea { width:100%; padding:8px; margin-top:4px;}
+button { margin-top:15px; padding:12px; width:100%; background:green; color:white; border:none;}
+.camera-btn { font-size:28px; background:none; border:none;}
+img { width:80px; margin-top:10px;}
 </style>
 </head>
 
 <body>
 
-<h1>Stolpekontroll <span>v1.1</span></h1>
+<h1>Stolpekontroll <span>v1.2</span></h1>
 
 <h2>Grunnlagsdata</h2>
 
@@ -72,13 +36,14 @@ img {
 <input id="mast">
 
 <label>Stolpehøyde (m)</label>
-<input type="number" id="hoyde">
+<input id="hoyde" type="number">
 
 <label>Jordbånddiameter (mm)</label>
-<input type="number" id="jord">
+<input id="jord" type="number">
 
 <button onclick="nyMast()">Ny mast</button>
 
+<!-- SKADE 1 -->
 <h2>Registrer skade 1</h2>
 
 <select id="skadetype1" onchange="visFelter(1)">
@@ -105,6 +70,7 @@ img {
 
 <button onclick="visSkade2()">Ny registrering (skade 2)</button>
 
+<!-- SKADE 2 -->
 <div id="skade2" style="display:none">
 
 <h2>Registrer skade 2</h2>
@@ -145,12 +111,10 @@ img {
 
 <script>
 
-let lagret = [];
+let lagret=[];
 
 function nyMast(){
- mast.value="";
- hoyde.value="";
- jord.value="";
+ mast.value=""; hoyde.value=""; jord.value="";
  skade2.style.display="none";
 }
 
@@ -158,7 +122,7 @@ function visSkade2(){
  skade2.style.display="block";
 }
 
-function felt(n, nr){
+function felt(n,nr){
  return `<label>${n} (mm)</label><input id="${n}${nr}">`;
 }
 
@@ -207,7 +171,7 @@ function kamera(){
 
 function lagre(){
 
- let data = {
+ let data={
 
   netteier:netteier.value,
   linje:linje.value,
@@ -244,18 +208,17 @@ function lagre(){
 
 function lastNed(){
 
- let csv =
-"Netteier,LinjeID,Mastnr,Stolpehøyde,Jordbånddiameter," +
-"Type1,Stolpe1,Skadehøyde1,Diameter1,A1,B1,C1,D1,E1," +
-"Type2,Stolpe2,Skadehøyde2,Diameter2,A2,B2,C2,D2,E2," +
+ let csv=
+"Netteier,LinjeID,Mastnr,Stolpehøyde,Jordbånddiameter,"+
+"Type1,Stolpe1,Skadehøyde1,Diameter1,A1,B1,C1,D1,E1,"+
+"Type2,Stolpe2,Skadehøyde2,Diameter2,A2,B2,C2,D2,E2,"+
 "Merknad\n";
 
  lagret.forEach(r=>{
-  csv +=
-`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},`+
-`${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},`+
-`${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},`+
-`${r.merknad}\n`;
+  csv+=`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},`+
+  `${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},`+
+  `${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},`+
+  `${r.merknad}\n`;
  });
 
  let blob=new Blob([csv],{type:"text/csv"});
@@ -265,7 +228,7 @@ function lastNed(){
  a.click();
 }
 
-window.onload=()=>{visFelter(1)}
+window.onload=()=>visFelter(1);
 
 </script>
 
