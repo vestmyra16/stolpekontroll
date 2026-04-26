@@ -26,13 +26,18 @@ button {
 }
 
 img { width:80px; margin-top:10px; }
-.skade { border-top:1px solid #ccc; margin-top:20px; padding-top:10px;}
+
+.inline {
+  display:flex;
+  gap:10px;
+  margin-top:5px;
+}
 </style>
 </head>
 
 <body>
 
-<h1>Stolpekontroll <span>v1.3</span></h1>
+<h1>Stolpekontroll <span>v1.4</span></h1>
 
 <h2>Grunnlagsdata</h2>
 
@@ -42,10 +47,17 @@ img { width:80px; margin-top:10px; }
 <label>Stolpehøyde (m)</label><input id="hoyde" type="number">
 <label>Jordbånddiameter (mm)</label><input id="jord" type="number">
 
+<!-- NYTT FELT -->
+<label>Vertikallast</label>
+<div class="inline">
+  <label><input type="radio" name="vert" value="Lav"> Lav</label>
+  <label><input type="radio" name="vert" value="Normal"> Normal</label>
+  <label><input type="radio" name="vert" value="Høy"> Høy</label>
+</div>
+
 <button onclick="nyMast()">Ny mast</button>
 
 <!-- SKADE 1 -->
-<div class="skade">
 <h2>Registrer skade 1</h2>
 
 <select id="skadetype1" onchange="visFelter(1)">
@@ -69,12 +81,11 @@ img { width:80px; margin-top:10px; }
 <input type="file" id="kamera1" accept="image/*" capture="environment" style="display:none">
 
 <label>Merknad</label><textarea id="merknad1"></textarea>
-</div>
 
 <button onclick="visSkade2()">Ny registrering (skade 2)</button>
 
 <!-- SKADE 2 -->
-<div id="skade2" class="skade" style="display:none">
+<div id="skade2" style="display:none">
 
 <h2>Registrer skade 2</h2>
 
@@ -113,6 +124,7 @@ function nyMast(){
  mast.value="";
  hoyde.value="";
  jord.value="";
+ document.querySelectorAll('input[name="vert"]').forEach(r => r.checked=false);
  skade2.style.display="none";
 }
 
@@ -170,12 +182,15 @@ function visFelter(nr){
 
 function lagre(){
 
+ let vert = document.querySelector('input[name="vert"]:checked')?.value || "";
+
  let data={
   netteier:netteier.value,
   linje:linje.value,
   mast:mast.value,
   hoyde:hoyde.value,
   jord:jord.value,
+  vert:vert,
 
   type1:skadetype1.value,
   stolpe1:stolpe1.value,
@@ -206,10 +221,10 @@ function lagre(){
 
 function lastNed(){
 
- let csv="Netteier,Linje,Mast,Høyde,Jord,Type1,Stolpe1,H1,D1,A1,B1,C1,D1,E1,Merknad1,Type2,Stolpe2,H2,D2,A2,B2,C2,D2,E2,Merknad2\n";
+ let csv="Netteier,Linje,Mast,Høyde,Jord,Vertikallast,Type1,Stolpe1,H1,D1,A1,B1,C1,D1,E1,Merknad1,Type2,Stolpe2,H2,D2,A2,B2,C2,D2,E2,Merknad2\n";
 
  lagret.forEach(r=>{
-  csv+=`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},${r.merknad1},${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},${r.merknad2}\n`;
+  csv+=`${r.netteier},${r.linje},${r.mast},${r.hoyde},${r.jord},${r.vert},${r.type1},${r.stolpe1},${r.h1},${r.d1},${r.A1},${r.B1},${r.C1},${r.D1},${r.E1},${r.merknad1},${r.type2},${r.stolpe2},${r.h2},${r.d2},${r.A2},${r.B2},${r.C2},${r.D2},${r.E2},${r.merknad2}\n`;
  });
 
  let blob=new Blob([csv],{type:"text/csv"});
