@@ -17,6 +17,12 @@ body {
   padding: 15px;
 }
 
+h1 {
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 label {
   font-weight: bold;
   display: block;
@@ -48,12 +54,16 @@ button {
 img {
   width: 80px;
   margin-top: 10px;
-  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
+
+<h1>
+  Stolpekontroll
+  <span>v1.0</span>
+</h1>
 
 <h2>Grunnlagsdata</h2>
 
@@ -74,10 +84,10 @@ img {
 
 <button onclick="nyMast()">Ny mast</button>
 
-<h2>Registrer skade</h2>
+<h2>Registrer skade 1</h2>
 
-<label>Skadetype</label>
-<select id="skadetype" onchange="visFelter()">
+<div id="skade1">
+<select id="skadetype1" onchange="visFelter(1)">
   <option value="indre">Indre råte</option>
   <option value="sirk">Sirkulær råte</option>
   <option value="soft">Softråte</option>
@@ -86,83 +96,126 @@ img {
   <option value="hakk">Hakkespetthull</option>
 </select>
 
-<img id="skadebilde" src="indre.svg" onclick="visStortBilde()">
+<img id="img1" src="indre.svg">
 
 <label>Stolpenr</label>
-<input>
+<input id="stolpe1">
 
 <label>Skadehøyde (m)</label>
-<input type="number">
+<input id="h1" type="number">
 
-<label>Diameter på skadested (mm)</label>
-<input type="number">
+<label>Diameter (mm)</label>
+<input id="d1" type="number">
 
-<div id="bokstaver"></div>
+<div id="bok1"></div>
+</div>
+
+<button onclick="visSkade2()">Ny registrering (skade 2)</button>
+
+<div id="skade2" style="display:none">
+<h2>Registrer skade 2</h2>
+
+<select id="skadetype2" onchange="visFelter(2)">
+  <option value="indre">Indre råte</option>
+  <option value="sirk">Sirkulær råte</option>
+  <option value="soft">Softråte</option>
+  <option value="spett">Spettsmie</option>
+  <option value="sprekk">Sprekk</option>
+  <option value="hakk">Hakkespetthull</option>
+</select>
+
+<img id="img2" src="indre.svg">
+
+<label>Stolpenr</label>
+<input id="stolpe2">
+
+<label>Skadehøyde (m)</label>
+<input id="h2" type="number">
+
+<label>Diameter (mm)</label>
+<input id="d2" type="number">
+
+<div id="bok2"></div>
+</div>
 
 <h3>Foto</h3>
-<button class="camera-btn" onclick="document.getElementById('kamera').click()">📷</button>
+<button class="camera-btn" onclick="kamera()">📷</button>
 <input type="file" id="kamera" accept="image/*" capture="environment" style="display:none">
 
 <label>Merknad</label>
-<textarea rows="3"></textarea>
+<textarea id="merknad"></textarea>
+
+<button onclick="lagre()">Lagre</button>
+<button onclick="lastNed()">Last ned Excel</button>
 
 <script>
+
+let lagret = [];
 
 function nyMast() {
   document.getElementById("mast").value = "";
   document.getElementById("hoyde").value = "";
   document.getElementById("jord").value = "";
+  document.getElementById("skade2").style.display="none";
 }
 
-function visFelter() {
-  const type = document.getElementById("skadetype").value;
-  const div = document.getElementById("bokstaver");
-  const img = document.getElementById("skadebilde");
-
-  div.innerHTML = "";
-
-  function felt(navn) {
-    return `<label>${navn} (mm)</label><input type="number">`;
-  }
-
-  if (type === "indre") {
-    img.src = "indre.svg";
-    div.innerHTML = felt("A") + felt("B") + felt("E");
-  }
-
-  if (type === "sirk") {
-    img.src = "sirk.svg";
-    div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
-  }
-
-  if (type === "soft") {
-    img.src = "soft.svg";
-    div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
-  }
-
-  if (type === "spett") {
-    img.src = "spett.svg";
-    div.innerHTML = felt("A") + felt("B");
-  }
-
-  if (type === "sprekk") {
-    img.src = "sprekk.svg";
-    div.innerHTML = felt("A") + felt("B");
-  }
-
-  if (type === "hakk") {
-    img.src = "hakk.svg";
-    div.innerHTML = felt("A") + felt("B") + felt("C") + felt("D");
-  }
+function visSkade2(){
+  document.getElementById("skade2").style.display="block";
 }
 
-function visStortBilde() {
-  window.open(document.getElementById("skadebilde").src, "_blank");
+function felt(n){ return `<label>${n} (mm)</label><input>` }
+
+function visFelter(nr){
+  let type=document.getElementById("skadetype"+nr).value;
+  let div=document.getElementById("bok"+nr);
+  let img=document.getElementById("img"+nr);
+
+  div.innerHTML="";
+
+  if(type==="indre"){ img.src="indre.svg"; div.innerHTML=felt("A")+felt("B")+felt("E");}
+  if(type==="sirk"){ img.src="sirk.svg"; div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");}
+  if(type==="soft"){ img.src="soft.svg"; div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");}
+  if(type==="spett"){ img.src="spett.svg"; div.innerHTML=felt("A")+felt("B");}
+  if(type==="sprekk"){ img.src="sprekk.svg"; div.innerHTML=felt("A")+felt("B");}
+  if(type==="hakk"){ img.src="hakk.svg"; div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");}
 }
 
-window.onload = function() {
-  visFelter();
-};
+function kamera(){
+ document.getElementById("kamera").click();
+}
+
+function lagre(){
+
+ let data={
+  netteier: netteier.value,
+  linje: linje.value,
+  mast: mast.value,
+  skade1: skadetype1.value,
+  skade2: skadetype2.value || "",
+  merknad: merknad.value
+ };
+
+ lagret.push(data);
+
+ alert("Lagret!");
+}
+
+function lastNed(){
+
+ let csv="Netteier,Linje,Mast,Skade1,Skade2,Merknad\n";
+
+ lagret.forEach(r=>{
+   csv+=`${r.netteier},${r.linje},${r.mast},${r.skade1},${r.skade2},${r.merknad}\n`;
+ });
+
+ let blob=new Blob([csv],{type:"text/csv"});
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="stolpekontroll.csv";
+ a.click();
+}
+
+window.onload=()=>{visFelter(1)}
 
 </script>
 
