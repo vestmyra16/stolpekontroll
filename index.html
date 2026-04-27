@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll</title>
+<title>Stolpekontroll v3</title>
 
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -15,120 +15,28 @@
 <style>
 body {font-family: Arial; max-width:700px; margin:auto; padding:15px;}
 label {font-weight:bold; display:block; margin-top:10px;}
-input, select, textarea {width:100%; padding:8px; margin-top:4px;}
+input, select, textarea {width:100%; padding:8px;}
 button {margin-top:10px; padding:12px; width:100%; background:green; color:white; border:none;}
 img {width:80px; margin-top:10px;}
-.hidden {display:none;}
 </style>
 
 <script>
-/* 🔐 TILGANG */
-const ACCESS_CODE = "stolpe2026";
-const EXPIRY_DAYS = 365;
+const VERSION = "v3";
 
-function sjekkTilgang(){
-    let start = localStorage.getItem("startDato");
-    let idag = new Date().getTime();
-
-    if(!start){
-        localStorage.setItem("startDato", idag);
-    } else {
-        let diff = (idag - start) / (1000*60*60*24);
-        if(diff > EXPIRY_DAYS){
-            document.body.innerHTML = "<h2>Tilgang utløpt</h2>";
-            return false;
-        }
-    }
-
-    let kode = prompt("Skriv inn tilgangskode");
-    if(kode !== ACCESS_CODE){
-        document.body.innerHTML = "<h2>Feil kode</h2>";
-        return false;
-    }
-
-    return true;
-}
-</script>
-</head>
-
-<body>
-
-<h2>Grunnlagsdata</h2>
-<label>Netteier</label><input id="netteier">
-<label>LinjeID</label><input id="linje">
-<label>Mastnr</label><input id="mast">
-
-<button onclick="nyMast()">Ny mast</button>
-
-<h2>Registrer skade</h2>
-
-<select id="skade">
-<option value="">Velg skadetype</option>
-<option>Indre råte</option>
-<option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Spettsmie</option>
-<option>Sprekk</option>
-<option>Hakkespetthull</option>
-</select>
-
-<img id="illustrasjon" src="">
-
-<label>Skadehøyde (m)</label><input id="hoyde">
-<label>Diameter på skadested (mm)</label><input id="diameter">
-
-<div id="bokstaver"></div>
-
-<button onclick="taBilde()">📷 Ta bilde</button>
-<input type="file" id="kamera" accept="image/*" capture="environment" class="hidden">
-
-<label>Merknad</label>
-<textarea id="merknad"></textarea>
-
-<button onclick="ekstra()">Ny registrering (samme mast)</button>
-<button onclick="lagre()">Lagre</button>
-<button onclick="lastNed()">Last ned Excel</button>
-
-<script>
-
-/* 🚀 START (hindrer hvit skjerm) */
-window.onload = function(){
-    if(!sjekkTilgang()) return;
-};
-
-/* 📷 Kamera */
-function taBilde(){
-    document.getElementById("kamera").click();
-}
-
-/* 🔄 Ny mast */
 function nyMast(){
-    mast.value="";
-    hoyde.value="";
-    diameter.value="";
-    merknad.value="";
-    document.getElementById("bokstaver").innerHTML="";
+    document.querySelectorAll("input, textarea").forEach(e=>e.value="");
+    document.getElementById("skade2").style.display="none";
 }
 
-/* ➕ Ekstra registrering */
-function ekstra(){
-    hoyde.value="";
-    diameter.value="";
-    merknad.value="";
-    document.getElementById("bokstaver").innerHTML="";
-}
-
-/* 🔤 Dynamiske skader */
-document.getElementById("skade").onchange = function(){
-
-    let type = this.value;
-    let div = document.getElementById("bokstaver");
-    let img = document.getElementById("illustrasjon");
+function visSkade(nr){
+    let type = document.getElementById("skadetype"+nr).value;
+    let div = document.getElementById("bokstaver"+nr);
+    let img = document.getElementById("img"+nr);
 
     div.innerHTML="";
 
     function felt(n){
-        return `<label>${n} (mm)</label><input>`;
+        return `<label>${n} (mm)</label><input id="${n}${nr}">`;
     }
 
     if(type=="Indre råte"){
@@ -160,35 +68,134 @@ document.getElementById("skade").onchange = function(){
         img.src="hakkespetthull.svg";
         div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
     }
-};
+}
 
-/* 💾 Lagring */
-let data = [];
+function visSkade2(){
+    document.getElementById("skade2").style.display="block";
+}
+
+function taBilde(nr){
+    document.getElementById("kamera"+nr).click();
+}
 
 function lagre(){
-    data.push({
-        netteier: netteier.value,
-        linje: linje.value,
-        mast: mast.value,
-        skade: skade.value,
-        hoyde: hoyde.value,
-        diameter: diameter.value,
-        merknad: merknad.value
-    });
     alert("Lagret");
 }
 
-/* 📊 Excel */
-function lastNed(){
-    let ws = XLSX.utils.json_to_sheet(data);
+function lastNedExcel(){
+
+    let data = [{
+        Netteier: netteier.value,
+        LinjeID: linje.value,
+        Mastnr: mast.value,
+
+        Skade1: skadetype1.value,
+        H1: hoyde1.value,
+        D1: diameter1.value,
+        A1: document.getElementById("A1")?.value || "",
+        B1: document.getElementById("B1")?.value || "",
+        C1: document.getElementById("C1")?.value || "",
+        D1b: document.getElementById("D1")?.value || "",
+        E1: document.getElementById("E1")?.value || "",
+
+        Skade2: skadetype2.value,
+        H2: hoyde2.value,
+        D2: diameter2.value,
+        A2: document.getElementById("A2")?.value || "",
+        B2: document.getElementById("B2")?.value || "",
+        C2: document.getElementById("C2")?.value || "",
+        D2b: document.getElementById("D2")?.value || "",
+        E2: document.getElementById("E2")?.value || ""
+    }];
+
     let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Ark1");
+    let ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
 
-    let navn = linje.value || "stolpekontroll";
-    XLSX.writeFile(wb, navn + ".xlsx");
+    XLSX.writeFile(wb, linje.value + "_stolpekontroll.xlsx");
 }
-
 </script>
+</head>
+
+<body>
+
+<h3>Stolpekontroll v3</h3>
+
+<h2>Grunnlagsdata</h2>
+
+<label>Netteier</label>
+<input id="netteier">
+
+<label>LinjeID</label>
+<input id="linje">
+
+<label>Mastnr</label>
+<input id="mast">
+
+<button onclick="nyMast()">Ny mast</button>
+
+<h2>Registrer skade 1</h2>
+
+<select id="skadetype1" onchange="visSkade(1)">
+<option>Indre råte</option>
+<option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Spettsmie</option>
+<option>Sprekk</option>
+<option>Hakkespetthull</option>
+</select>
+
+<img id="img1">
+
+<label>Skadehøyde (m)</label>
+<input id="hoyde1">
+
+<label>Diameter på skadested (mm)</label>
+<input id="diameter1">
+
+<div id="bokstaver1"></div>
+
+<button onclick="taBilde(1)">📷 Ta bilde</button>
+<input type="file" id="kamera1" accept="image/*" capture="environment" style="display:none">
+
+<label>Merknad</label>
+<textarea id="merknad1"></textarea>
+
+<button onclick="visSkade2()">Ny registrering (skade 2)</button>
+
+<div id="skade2" style="display:none">
+
+<h2>Registrer skade 2</h2>
+
+<select id="skadetype2" onchange="visSkade(2)">
+<option>Indre råte</option>
+<option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Spettsmie</option>
+<option>Sprekk</option>
+<option>Hakkespetthull</option>
+</select>
+
+<img id="img2">
+
+<label>Skadehøyde (m)</label>
+<input id="hoyde2">
+
+<label>Diameter på skadested (mm)</label>
+<input id="diameter2">
+
+<div id="bokstaver2"></div>
+
+<button onclick="taBilde(2)">📷 Ta bilde</button>
+<input type="file" id="kamera2" accept="image/*" capture="environment" style="display:none">
+
+<label>Merknad</label>
+<textarea id="merknad2"></textarea>
+
+</div>
+
+<button onclick="lagre()">Lagre</button>
+<button onclick="lastNedExcel()">Last ned Excel</button>
 
 </body>
 </html>
