@@ -17,6 +17,7 @@ body {font-family: Arial; max-width:700px; margin:auto; padding:15px;}
 label {font-weight:bold; display:block; margin-top:10px;}
 input, select, textarea {width:100%; padding:8px; margin-top:4px;}
 button {margin-top:10px; padding:12px; width:100%; background:green; color:white; border:none;}
+img {width:80px; margin-top:10px;}
 .hidden {display:none;}
 </style>
 
@@ -62,8 +63,6 @@ function sjekkTilgang(){
 <h2>Registrer skade</h2>
 
 <select id="skade">
-    <img id="illustrasjon" src="" style="width:80px; margin-top:10px;">
-    
 <option value="">Velg skadetype</option>
 <option>Indre råte</option>
 <option>Sirkulær råte</option>
@@ -72,6 +71,8 @@ function sjekkTilgang(){
 <option>Sprekk</option>
 <option>Hakkespetthull</option>
 </select>
+
+<img id="illustrasjon" src="">
 
 <label>Skadehøyde (m)</label><input id="hoyde">
 <label>Diameter på skadested (mm)</label><input id="diameter">
@@ -84,12 +85,13 @@ function sjekkTilgang(){
 <label>Merknad</label>
 <textarea id="merknad"></textarea>
 
+<button onclick="ekstra()">Ny registrering (samme mast)</button>
 <button onclick="lagre()">Lagre</button>
 <button onclick="lastNed()">Last ned Excel</button>
 
 <script>
 
-/* 🚀 START ETTER LAST (hindrer hvit skjerm) */
+/* 🚀 START (hindrer hvit skjerm) */
 window.onload = function(){
     if(!sjekkTilgang()) return;
 };
@@ -101,15 +103,24 @@ function taBilde(){
 
 /* 🔄 Ny mast */
 function nyMast(){
-    document.getElementById("mast").value="";
-    document.getElementById("hoyde").value="";
-    document.getElementById("diameter").value="";
-    document.getElementById("merknad").value="";
+    mast.value="";
+    hoyde.value="";
+    diameter.value="";
+    merknad.value="";
     document.getElementById("bokstaver").innerHTML="";
 }
 
-/* 🔤 Dynamiske bokstaver */
+/* ➕ Ekstra registrering */
+function ekstra(){
+    hoyde.value="";
+    diameter.value="";
+    merknad.value="";
+    document.getElementById("bokstaver").innerHTML="";
+}
+
+/* 🔤 Dynamiske skader */
 document.getElementById("skade").onchange = function(){
+
     let type = this.value;
     let div = document.getElementById("bokstaver");
     let img = document.getElementById("illustrasjon");
