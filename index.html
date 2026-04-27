@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v3.1</title>
+<title>Stolpekontroll v3.2</title>
 
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -18,6 +18,20 @@ label {font-weight:bold; display:block; margin-top:10px;}
 input, select, textarea {width:100%; padding:8px;}
 button {margin-top:10px; padding:12px; width:100%; background:green; color:white; border:none;}
 img {width:80px; margin-top:10px;}
+
+/* NYTT – vertikallast knapper */
+.vert-btn {
+    display:block;
+    padding:12px;
+    margin-top:5px;
+    background:#ccc;
+    text-align:center;
+    cursor:pointer;
+}
+.vert-btn.active {
+    background:green;
+    color:white;
+}
 </style>
 
 <script>
@@ -25,9 +39,20 @@ img {width:80px; margin-top:10px;}
 function nyMast(){
     document.querySelectorAll("input, textarea").forEach(e=>e.value="");
     document.getElementById("skade2").style.display="none";
+
+    document.querySelectorAll('.vert-btn').forEach(b=>b.classList.remove("active"));
+    document.getElementById("vert").value="";
 }
 
-/* FELLES FUNKSJON – KRITISK */
+function velgVert(val){
+    document.getElementById("vert").value = val;
+
+    document.querySelectorAll('.vert-btn').forEach(b=>b.classList.remove("active"));
+
+    document.getElementById("v_"+val).classList.add("active");
+}
+
+/* FELLES FUNKSJON */
 function visSkade(nr){
 
     let type = document.getElementById("skadetype"+nr).value;
@@ -71,7 +96,6 @@ function visSkade(nr){
     }
 }
 
-/* VIKTIG FIX */
 function visSkade2(){
     document.getElementById("skade2").style.display="block";
     visSkade(2);
@@ -91,6 +115,7 @@ function lastNedExcel(){
         Netteier: netteier.value,
         LinjeID: linje.value,
         Mastnr: mast.value,
+        Vertikallast: document.getElementById("vert").value,
 
         Skade1: skadetype1.value,
         H1: hoyde1.value,
@@ -108,7 +133,6 @@ function lastNedExcel(){
     XLSX.writeFile(wb, linje.value + "_stolpekontroll.xlsx");
 }
 
-/* KRITISK START FIX */
 window.onload = function(){
     visSkade(1);
 };
@@ -118,7 +142,7 @@ window.onload = function(){
 
 <body>
 
-<h3>Stolpekontroll v3.1</h3>
+<h3>Stolpekontroll v3.2</h3>
 
 <h2>Grunnlagsdata</h2>
 
@@ -130,6 +154,14 @@ window.onload = function(){
 
 <label>Mastnr</label>
 <input id="mast">
+
+<label>Vertikallast</label>
+
+<div class="vert-btn" id="v_Lav" onclick="velgVert('Lav')">Lav</div>
+<div class="vert-btn" id="v_Middels" onclick="velgVert('Middels')">Middels</div>
+<div class="vert-btn" id="v_Høy" onclick="velgVert('Høy')">Høy</div>
+
+<input type="hidden" id="vert">
 
 <button onclick="nyMast()">Ny mast</button>
 
