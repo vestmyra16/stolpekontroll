@@ -5,19 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Stolpekontroll</title>
-  
+
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
-  
+<link rel="manifest" href="manifest.json">
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
 body {font-family: Arial; max-width:700px; margin:auto; padding:15px;}
 label {font-weight:bold; display:block; margin-top:10px;}
-input, select, textarea {width:100%; padding:8px;}
+input, select, textarea {width:100%; padding:8px; margin-top:4px;}
 button {margin-top:10px; padding:12px; width:100%; background:green; color:white; border:none;}
 .hidden {display:none;}
 </style>
+
+<script>
+/* 🔐 TILGANG */
+const ACCESS_CODE = "stolpe2026";
+const EXPIRY_DAYS = 365;
+
+function sjekkTilgang(){
+    let start = localStorage.getItem("startDato");
+    let idag = new Date().getTime();
+
+    if(!start){
+        localStorage.setItem("startDato", idag);
+    } else {
+        let diff = (idag - start) / (1000*60*60*24);
+        if(diff > EXPIRY_DAYS){
+            document.body.innerHTML = "<h2>Tilgang utløpt</h2>";
+            return false;
+        }
+    }
+
+    let kode = prompt("Skriv inn tilgangskode");
+    if(kode !== ACCESS_CODE){
+        document.body.innerHTML = "<h2>Feil kode</h2>";
+        return false;
+    }
+
+    return true;
+}
+</script>
 </head>
 
 <body>
@@ -28,160 +58,97 @@ button {margin-top:10px; padding:12px; width:100%; background:green; color:white
 <label>Mastnr</label><input id="mast">
 
 <button onclick="nyMast()">Ny mast</button>
-<button onclick="mastOK()">Mast OK</button>
 
-<h2>Registrer skade 1</h2>
+<h2>Registrer skade</h2>
 
-<select id="skadetype1" onchange="visFelter(1)">
+<select id="skade">
 <option value="">Velg skadetype</option>
-<option value="indre">Indre råte</option>
-<option value="sirk">Sirkulær råte</option>
-<option value="soft">Softråte</option>
-<option value="spett">Spettsmie</option>
-<option value="sprekk">Sprekk</option>
-<option value="hakk">Hakkespetthull</option>
+<option>Indre råte</option>
+<option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Spettsmie</option>
+<option>Sprekk</option>
+<option>Hakkespetthull</option>
 </select>
 
-<img id="img1" width="80">
-<div id="bok1"></div>
+<label>Skadehøyde (m)</label><input id="hoyde">
+<label>Diameter på skadested (mm)</label><input id="diameter">
 
-<label>Skadehøyde (m)</label><input id="sh1">
-<label>Diameter (mm)</label><input id="d1">
+<div id="bokstaver"></div>
 
-<div id="foto1">
-<button onclick="kamera(1)">📷 Ta bilde</button>
-<input type="file" id="kamera1" accept="image/*" capture="environment" class="hidden">
-</div>
+<button onclick="taBilde()">📷 Ta bilde</button>
+<input type="file" id="kamera" accept="image/*" capture="environment" class="hidden">
 
-<div id="merknad1box">
-<label>Merknad</label><textarea id="merknad1"></textarea>
-</div>
-
-<button onclick="visSkade2()">Ny registrering (skade 2)</button>
-
-<div id="skade2" class="hidden">
-
-<h2>Registrer skade 2</h2>
-
-<select id="skadetype2" onchange="visFelter(2)">
-<option value="">Velg skadetype</option>
-<option value="indre">Indre råte</option>
-<option value="sirk">Sirkulær råte</option>
-<option value="soft">Softråte</option>
-<option value="spett">Spettsmie</option>
-<option value="sprekk">Sprekk</option>
-<option value="hakk">Hakkespetthull</option>
-</select>
-
-<img id="img2" width="80">
-<div id="bok2"></div>
-
-<label>Skadehøyde (m)</label><input id="sh2">
-<label>Diameter (mm)</label><input id="d2">
-
-<div id="foto2">
-<button onclick="kamera(2)">📷 Ta bilde</button>
-<input type="file" id="kamera2" accept="image/*" capture="environment" class="hidden">
-</div>
-
-<div id="merknad2box">
-<label>Merknad</label><textarea id="merknad2"></textarea>
-</div>
-
-</div>
+<label>Merknad</label>
+<textarea id="merknad"></textarea>
 
 <button onclick="lagre()">Lagre</button>
-<button onclick="excel()">Last ned Excel</button>
+<button onclick="lastNed()">Last ned Excel</button>
 
 <script>
 
-/* ===== TILGANG ===== */
-let kode = prompt("Skriv inn tilgangskode");
-if(kode !== "stolpe2026"){document.body.innerHTML="Ingen tilgang";throw new Error();}
+/* 🚀 START ETTER LAST (hindrer hvit skjerm) */
+window.onload = function(){
+    if(!sjekkTilgang()) return;
+};
 
-/* ===== TID ===== */
-const EXPIRY_DAYS = 365;
-let start=localStorage.getItem("start");
-if(!start){localStorage.setItem("start",Date.now());}
-if((Date.now()-start)/(1000*60*60*24)>EXPIRY_DAYS){
-document.body.innerHTML="Tilgang utløpt";throw new Error();
+/* 📷 Kamera */
+function taBilde(){
+    document.getElementById("kamera").click();
 }
 
-/* ===== APP ===== */
-let lagret=[];
-
+/* 🔄 Ny mast */
 function nyMast(){
-document.getElementById("skade2").classList.add("hidden");
+    document.getElementById("mast").value="";
+    document.getElementById("hoyde").value="";
+    document.getElementById("diameter").value="";
+    document.getElementById("merknad").value="";
+    document.getElementById("bokstaver").innerHTML="";
 }
 
-function mastOK(){
-document.getElementById("foto1").style.display="none";
-document.getElementById("merknad1box").style.display="none";
-document.getElementById("skade2").style.display="none";
-}
+/* 🔤 Dynamiske bokstaver */
+document.getElementById("skade").onchange = function(){
+    let type = this.value;
+    let div = document.getElementById("bokstaver");
+    div.innerHTML="";
 
-function visSkade2(){
-document.getElementById("skade2").classList.remove("hidden");
-visFelter(2);
-}
+    function felt(n){
+        return `<label>${n} (mm)</label><input>`;
+    }
 
-function kamera(nr){
-document.getElementById("kamera"+nr).click();
-}
+    if(type=="Indre råte") div.innerHTML=felt("A")+felt("B")+felt("E");
+    if(type=="Sirkulær råte") div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+    if(type=="Softråte") div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+    if(type=="Spettsmie") div.innerHTML=felt("A")+felt("B");
+    if(type=="Sprekk") div.innerHTML=felt("A")+felt("B");
+    if(type=="Hakkespetthull") div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+};
 
-function felt(n,nr){
-return `<label>${n} (mm)</label><input id="${n}${nr}">`;
-}
-
-function visFelter(nr){
-let type=document.getElementById("skadetype"+nr).value;
-let div=document.getElementById("bok"+nr);
-let img=document.getElementById("img"+nr);
-div.innerHTML="";
-
-if(type=="indre"){img.src="indre.svg";div.innerHTML=felt("A",nr)+felt("B",nr)+felt("E",nr);}
-if(type=="sirk"){img.src="sirk.svg";div.innerHTML=felt("A",nr)+felt("B",nr)+felt("C",nr)+felt("D",nr);}
-if(type=="soft"){img.src="soft.svg";div.innerHTML=felt("A",nr)+felt("B",nr)+felt("C",nr)+felt("D",nr);}
-if(type=="spett"){img.src="spett.svg";div.innerHTML=felt("A",nr)+felt("B",nr);}
-if(type=="sprekk"){img.src="sprekk.svg";div.innerHTML=felt("A",nr)+felt("B",nr);}
-if(type=="hakk"){img.src="hakkespetthull.svg";div.innerHTML=felt("A",nr)+felt("B",nr)+felt("C",nr)+felt("D",nr);}
-}
+/* 💾 Lagring */
+let data = [];
 
 function lagre(){
-
-let linje=document.getElementById("linje").value;
-let mast=document.getElementById("mast").value;
-
-let bilde1=document.getElementById("kamera1").files[0]?.name || "";
-let bilde2=document.getElementById("kamera2").files[0]?.name || "";
-
-lagret.push({
-Linje:linje,
-Mast:mast,
-Skade1:document.getElementById("skadetype1").value,
-Merknad1:document.getElementById("merknad1").value,
-Bilde1:bilde1,
-Skade2:document.getElementById("skadetype2").value,
-Merknad2:document.getElementById("merknad2").value,
-Bilde2:bilde2
-});
-
-alert("Lagret");
+    data.push({
+        netteier: netteier.value,
+        linje: linje.value,
+        mast: mast.value,
+        skade: skade.value,
+        hoyde: hoyde.value,
+        diameter: diameter.value,
+        merknad: merknad.value
+    });
+    alert("Lagret");
 }
 
-function excel(){
+/* 📊 Excel */
+function lastNed(){
+    let ws = XLSX.utils.json_to_sheet(data);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ark1");
 
-let linje=document.getElementById("linje").value || "UtenLinje";
-
-let wb=XLSX.utils.book_new();
-let ws=XLSX.utils.json_to_sheet(lagret);
-
-XLSX.utils.book_append_sheet(wb,ws,"Kontroll");
-
-XLSX.writeFile(wb,"Stolpekontroll_"+linje+".xlsx");
+    let navn = linje.value || "stolpekontroll";
+    XLSX.writeFile(wb, navn + ".xlsx");
 }
-
-visFelter(1);
 
 </script>
 
