@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v3</title>
+<title>Stolpekontroll v3.1</title>
 
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -21,14 +21,15 @@ img {width:80px; margin-top:10px;}
 </style>
 
 <script>
-const VERSION = "v3";
 
 function nyMast(){
     document.querySelectorAll("input, textarea").forEach(e=>e.value="");
     document.getElementById("skade2").style.display="none";
 }
 
+/* FELLES FUNKSJON – KRITISK */
 function visSkade(nr){
+
     let type = document.getElementById("skadetype"+nr).value;
     let div = document.getElementById("bokstaver"+nr);
     let img = document.getElementById("img"+nr);
@@ -36,7 +37,7 @@ function visSkade(nr){
     div.innerHTML="";
 
     function felt(n){
-        return `<label>${n} (mm)</label><input id="${n}${nr}">`;
+        return `<label>${n} (mm)</label><input>`;
     }
 
     if(type=="Indre råte"){
@@ -70,8 +71,10 @@ function visSkade(nr){
     }
 }
 
+/* VIKTIG FIX */
 function visSkade2(){
     document.getElementById("skade2").style.display="block";
+    visSkade(2);
 }
 
 function taBilde(nr){
@@ -92,20 +95,10 @@ function lastNedExcel(){
         Skade1: skadetype1.value,
         H1: hoyde1.value,
         D1: diameter1.value,
-        A1: document.getElementById("A1")?.value || "",
-        B1: document.getElementById("B1")?.value || "",
-        C1: document.getElementById("C1")?.value || "",
-        D1b: document.getElementById("D1")?.value || "",
-        E1: document.getElementById("E1")?.value || "",
 
         Skade2: skadetype2.value,
         H2: hoyde2.value,
-        D2: diameter2.value,
-        A2: document.getElementById("A2")?.value || "",
-        B2: document.getElementById("B2")?.value || "",
-        C2: document.getElementById("C2")?.value || "",
-        D2b: document.getElementById("D2")?.value || "",
-        E2: document.getElementById("E2")?.value || ""
+        D2: diameter2.value
     }];
 
     let wb = XLSX.utils.book_new();
@@ -114,12 +107,18 @@ function lastNedExcel(){
 
     XLSX.writeFile(wb, linje.value + "_stolpekontroll.xlsx");
 }
+
+/* KRITISK START FIX */
+window.onload = function(){
+    visSkade(1);
+};
+
 </script>
 </head>
 
 <body>
 
-<h3>Stolpekontroll v3</h3>
+<h3>Stolpekontroll v3.1</h3>
 
 <h2>Grunnlagsdata</h2>
 
