@@ -97,7 +97,7 @@ let kode = prompt("Skriv inn tilgangskode");
 if(kode !== "stolpe2026"){document.body.innerHTML="Ingen tilgang";throw new Error();}
 
 /* ===== TID ===== */
-const EXPIRY_DAYS=30;
+const EXPIRY_DAYS = 365;
 let start=localStorage.getItem("start");
 if(!start){localStorage.setItem("start",Date.now());}
 if((Date.now()-start)/(1000*60*60*24)>EXPIRY_DAYS){
