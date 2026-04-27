@@ -62,6 +62,8 @@ function sjekkTilgang(){
 <h2>Registrer skade</h2>
 
 <select id="skade">
+    <img id="illustrasjon" src="" style="width:80px; margin-top:10px;">
+    
 <option value="">Velg skadetype</option>
 <option>Indre råte</option>
 <option>Sirkulær råte</option>
@@ -110,18 +112,43 @@ function nyMast(){
 document.getElementById("skade").onchange = function(){
     let type = this.value;
     let div = document.getElementById("bokstaver");
+    let img = document.getElementById("illustrasjon");
+
     div.innerHTML="";
 
     function felt(n){
         return `<label>${n} (mm)</label><input>`;
     }
 
-    if(type=="Indre råte") div.innerHTML=felt("A")+felt("B")+felt("E");
-    if(type=="Sirkulær råte") div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
-    if(type=="Softråte") div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
-    if(type=="Spettsmie") div.innerHTML=felt("A")+felt("B");
-    if(type=="Sprekk") div.innerHTML=felt("A")+felt("B");
-    if(type=="Hakkespetthull") div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+    if(type=="Indre råte"){
+        img.src="indre.svg";
+        div.innerHTML=felt("A")+felt("B")+felt("E");
+    }
+
+    if(type=="Sirkulær råte"){
+        img.src="sirk.svg";
+        div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+    }
+
+    if(type=="Softråte"){
+        img.src="soft.svg";
+        div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+    }
+
+    if(type=="Spettsmie"){
+        img.src="spett.svg";
+        div.innerHTML=felt("A")+felt("B");
+    }
+
+    if(type=="Sprekk"){
+        img.src="sprekk.svg";
+        div.innerHTML=felt("A")+felt("B");
+    }
+
+    if(type=="Hakkespetthull"){
+        img.src="hakkespetthull.svg";
+        div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+    }
 };
 
 /* 💾 Lagring */
