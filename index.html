@@ -4,42 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v3.3</title>
+<title>Stolpekontroll</title>
 
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
 <style>
-body{font-family:Arial;max-width:700px;margin:auto;padding:15px;}
-label{font-weight:bold;display:block;margin-top:10px;}
-input,select,textarea{width:100%;padding:10px;margin-top:4px;}
-button{margin-top:10px;padding:16px;width:100%;background:green;color:white;border:none;font-size:16px;}
-img{width:80px;margin-top:10px;}
-
-/* Vertikallast */
-.vert-btn{
-    background:#ccc;
-    margin-top:5px;
-    padding:14px;
-    text-align:center;
-    cursor:pointer;
-}
-.vert-btn.active{
-    background:darkgreen;
-    color:white;
-    font-weight:bold;
-    border:2px solid black;
-}
+body{font-family:Arial;max-width:700px;margin:auto;padding:15px;background:#f5f5f5;}
+h2{text-align:center;}
+label{font-weight:bold;color:black;margin-top:12px;display:block;}
+input,select{width:100%;padding:12px;margin-top:5px;border-radius:6px;border:1px solid #888;font-size:16px;}
+button{width:100%;padding:14px;margin-top:10px;background:#1f7a1f;color:white;border:none;font-size:16px;border-radius:6px;}
+.result{margin-top:15px;padding:15px;background:#e6f2ff;border-radius:6px;}
 </style>
 </head>
 
-<body>
+<body onload="sjekkTilgang()">
 
-<h2>Grunnlagsdata</h2>
+<h2>Stolpekontroll v9</h2>
 
+<!-- IDENTIFIKASJON -->
 <label>Netteier</label>
 <input id="netteier">
 
@@ -49,194 +34,189 @@ img{width:80px;margin-top:10px;}
 <label>Mastnr</label>
 <input id="mast">
 
-<label>Vertikallast</label>
-<div class="vert-btn" onclick="velgVert(this,'Lav')">Lav</div>
-<div class="vert-btn" onclick="velgVert(this,'Normal')">Normal</div>
-<div class="vert-btn" onclick="velgVert(this,'Høy')">Høy</div>
-<input type="hidden" id="vert">
+<label>Stolpenr</label>
+<input id="stolpe">
 
-<button onclick="nyMast()">Ny mast</button>
+<!-- GRUNNLAG -->
+<label>Stolpehøyde (m)</label>
+<input id="H" value="15">
 
-<h2>Registrer skade 1</h2>
+<label>Nedgravingsdybde (m)</label>
+<input id="ned" value="2">
 
-<select id="skadetype1" onchange="visSkade(1)">
-<option>Indre råte</option>
-<option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Spettsmie</option>
-<option>Sprekk</option>
-<option>Hakkespetthull</option>
-</select>
+<label>Diameter ved skadested (mm)</label>
+<input id="D">
 
-<img id="img1">
+<label>Avtrapping (mm/m)</label>
+<input id="k" value="7.5">
 
 <label>Skadehøyde (m)</label>
-<input id="hoyde1">
+<input id="x">
 
-<label>Diameter på skadested (mm)</label>
-<input id="diameter1">
-
-<div id="bokstaver1"></div>
-
-<button onclick="taBilde(1)">📷 Ta bilde</button>
-<input type="file" id="kamera1" accept="image/*" capture="environment" style="display:none">
-
-<label>Merknad</label>
-<textarea id="merknad1"></textarea>
-
-<button onclick="visSkade2()">Ny registrering (skade 2)</button>
-
-<div id="skade2" style="display:none;">
-
-<h2>Registrer skade 2</h2>
-
-<select id="skadetype2" onchange="visSkade(2)">
-<option>Indre råte</option>
+<!-- SKADE -->
+<label>Skadetype</label>
+<select id="type">
+<option>Innvendig råte</option>
 <option>Sirkulær råte</option>
 <option>Softråte</option>
-<option>Spettsmie</option>
 <option>Sprekk</option>
-<option>Hakkespetthull</option>
+<option>Spettsmie</option>
 </select>
 
-<img id="img2">
+<label>Måling A (mm)</label>
+<input id="A">
 
-<label>Skadehøyde (m)</label>
-<input id="hoyde2">
+<label>Måling B (mm)</label>
+<input id="B">
 
-<label>Diameter på skadested (mm)</label>
-<input id="diameter2">
+<label>Måling C (mm)</label>
+<input id="C">
 
-<div id="bokstaver2"></div>
+<label>Måling D (mm)</label>
+<input id="D2">
 
-<button onclick="taBilde(2)">📷 Ta bilde</button>
-<input type="file" id="kamera2" accept="image/*" capture="environment" style="display:none">
+<label>Måling E (mm)</label>
+<input id="E">
 
-<label>Merknad</label>
-<textarea id="merknad2"></textarea>
+<label>Lastnivå</label>
+<select id="last">
+<option>Lett</option>
+<option selected>Normal</option>
+<option>Høy</option>
+</select>
 
-</div>
+<button onclick="beregn()">Beregn</button>
+<button onclick="lagreData()">💾 Lagre mast</button>
+<button onclick="lastNedExcel()">📄 Last ned Excel</button>
+<button onclick="nyMast()">➕ Ny mast</button>
 
-<button onclick="lagre()">Lagre</button>
-<button onclick="lastNed()">Last ned Excel</button>
+<div class="result" id="res"></div>
 
 <script>
 
-let data=[];
+// 🔐 BESKYTTELSE
+const KODE="stolpe2026";
+const DAGER=60;
 
-/* Vertikallast */
-function velgVert(el,verdi){
-    document.querySelectorAll('.vert-btn').forEach(b=>b.classList.remove("active"));
-    el.classList.add("active");
-    document.getElementById("vert").value=verdi;
+function sjekkTilgang(){
+
+let start=localStorage.getItem("startDato");
+let idag=new Date().getTime();
+
+if(!start){
+localStorage.setItem("startDato", idag);
+}else{
+let diff=(idag-start)/(1000*60*60*24);
+if(diff>DAGER){
+document.body.innerHTML="<h2>Tilgang utløpt</h2>";
+return;
+}
 }
 
-/* Ny mast */
-function nyMast(){
-    let n=netteier.value;
-    let l=linje.value;
-
-    document.querySelectorAll("input, textarea").forEach(e=>e.value="");
-
-    netteier.value=n;
-    linje.value=l;
-
-    document.getElementById("skade2").style.display="none";
-
-    document.querySelectorAll('.vert-btn').forEach(b=>b.classList.remove("active"));
-    document.getElementById("vert").value="";
+let input=prompt("Kode:");
+if(input!==KODE){
+document.body.innerHTML="<h2>Feil kode</h2>";
+}
 }
 
-/* Kamera */
-function taBilde(nr){
-    document.getElementById("kamera"+nr).click();
+// 📊 LAGRING
+let registreringer=[];
+
+function lagreData(){
+
+let rad=[
+netteier.value,
+linje.value,
+mast.value,
+stolpe.value,
+type.value,
+D.value,
+A.value,
+B.value,
+C.value,
+D2.value,
+E.value,
+x.value,
+H.value,
+ned.value,
+last.value,
+res.innerText
+];
+
+registreringer.push(rad);
+
+alert("Mast lagret");
 }
 
-/* Vis skade */
-function visSkade(nr){
+// 📄 EXCEL
+function lastNedExcel(){
 
-let type=document.getElementById("skadetype"+nr).value;
-let div=document.getElementById("bokstaver"+nr);
-let img=document.getElementById("img"+nr);
+let header=[
+"Netteier","Linje","Mast","Stolpe",
+"Skadetype","Diameter","A","B","C","D","E",
+"Skadehøyde","Høyde","Nedgraving","Last","Resultat"
+];
 
-div.innerHTML="";
+let data=[header,...registreringer];
 
-function felt(n){
-    return `<label>${n} (mm)</label><input id="${n}${nr}">`;
+let csv=data.map(e=>e.join(";")).join("\n");
+
+let blob=new Blob([csv],{type:"text/csv"});
+let link=document.createElement("a");
+
+link.href=URL.createObjectURL(blob);
+link.download="stolpekontroll.csv";
+link.click();
 }
 
-if(type==="Indre råte"){
-    img.src="indre.svg";
-    div.innerHTML=felt("A")+felt("B")+felt("E");
-}
+// 🧠 ENKEL REN-TENKNING
+function beregn(){
 
-if(type==="Sirkulær råte"){
-    img.src="sirk.svg";
-    div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
-}
+let D=Number(document.getElementById("D").value);
+let A=Number(document.getElementById("A").value);
+let B=Number(document.getElementById("B").value);
+let type=document.getElementById("type").value;
+
+let rest=100;
 
 if(type==="Softråte"){
-    img.src="soft.svg";
-    div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
+let reduksjon=(2*A)/D;
+rest=(1-reduksjon)*100;
 }
 
-if(type==="Spettsmie"){
-    img.src="spett.svg";
-    div.innerHTML=felt("A")+felt("B");
+if(type==="Innvendig råte"){
+let reduksjon=(B/D);
+rest=(1-reduksjon)*100;
 }
 
 if(type==="Sprekk"){
-    img.src="sprekk.svg";
-    div.innerHTML=felt("A")+felt("B");
+let reduksjon=(B/D)*0.5;
+rest=(1-reduksjon)*100;
 }
 
-if(type==="Hakkespetthull"){
-    img.src="hakk.svg";
-    div.innerHTML=felt("A")+felt("B")+felt("C")+felt("D");
-}
-}
-
-/* Vis skade 2 */
-function visSkade2(){
-    document.getElementById("skade2").style.display="block";
-    visSkade(2);
+if(type==="Sirkulær råte"){
+let reduksjon=(A/D);
+rest=(1-reduksjon)*100;
 }
 
-/* Lagre */
-function lagre(){
+let status="OK";
+if(rest<75) status="UNDER KRAV";
 
-data.push({
-    netteier:netteier.value,
-    linje:linje.value,
-    mast:mast.value,
-    vert:vert.value,
-    type1:skadetype1.value,
-    hoyde1:hoyde1.value,
-    diameter1:diameter1.value,
-    merknad1:merknad1.value,
-    type2:skadetype2.value,
-    hoyde2:hoyde2.value,
-    diameter2:diameter2.value,
-    merknad2:merknad2.value
-});
-
-alert("Lagret");
+document.getElementById("res").innerHTML=
+"Restverdi: "+rest.toFixed(1)+"%<br>Status: "+status;
 }
 
-/* Excel */
-function lastNed(){
-let wb=XLSX.utils.book_new();
-let ws=XLSX.utils.json_to_sheet(data);
-XLSX.utils.book_append_sheet(wb,ws,"Data");
+// 🔄 NY MAST
+function nyMast(){
 
-let navn = linje.value || "Stolpekontroll";
-XLSX.writeFile(wb, navn + ".xlsx");
-}
+let n=netteier.value;
+let l=linje.value;
 
-/* INIT */
-window.onload=function(){
-    visSkade(1);
-    velgVert(document.querySelectorAll('.vert-btn')[1],'Normal');
+document.querySelectorAll("input").forEach(i=>i.value="");
+res.innerHTML="";
+
+netteier.value=n;
+linje.value=l;
 }
 
 </script>
