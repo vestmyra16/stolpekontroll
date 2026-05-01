@@ -7,31 +7,38 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
 
-<title>Stolpekontroll v2.1</title>
+<title>Stolpekontroll v2.2</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
 .container { max-width:600px; margin:auto; padding:10px; background:white; }
 
+h2 { text-align:center; }
+
 label { display:block; margin-top:10px; font-weight:bold; }
-input, select, textarea { width:100%; padding:10px; margin-top:4px; }
+input, select, textarea {
+    width:100%;
+    padding:12px;
+    margin-top:4px;
+    font-size:16px;
+}
 
 button {
     width:100%;
-    padding:12px;
+    padding:14px;
     margin-top:10px;
     border:none;
     background:#2e7d32;
     color:white;
+    font-size:16px;
 }
 
 img {
-    width:100%;
-    margin-top:10px;
+    width:70%;
+    display:block;
+    margin:10px auto;
     border:1px solid #ccc;
 }
-
-.hidden { display:none; }
 </style>
 </head>
 
@@ -39,7 +46,7 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.1</h2>
+<h2>Stolpekontroll v2.2</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -49,10 +56,9 @@ img {
 
 <button onclick="nyMast()">Ny mast</button>
 
-<!-- SKADE 1 -->
-<h3>Registrer skade 1</h3>
+<h3>Registrer skade</h3>
 
-<select onchange="byttSkade(this.value,'1')">
+<select onchange="byttSkade(this.value)">
 <option value="indre">Indre råte (ABE)</option>
 <option value="sirk">Sirkulær råte (ABCD)</option>
 <option value="soft">Softråte (ABCD)</option>
@@ -61,29 +67,18 @@ img {
 <option value="hakk">Hakkespetthull (ABCD)</option>
 </select>
 
-<img id="img1" src="indre.svg">
+<!-- Felles illustrasjon -->
+<img id="hovedBilde" src="indre.svg">
 
+<!-- SKADE 1 -->
+<h3>Registrering 1</h3>
 <div id="felt1"></div>
-
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
 
 <!-- SKADE 2 -->
-<h3>Registrer skade 2</h3>
-
-<select onchange="byttSkade(this.value,'2')">
-<option value="indre">Indre råte (ABE)</option>
-<option value="sirk">Sirkulær råte (ABCD)</option>
-<option value="soft">Softråte (ABCD)</option>
-<option value="sprekk">Sprekk (AB)</option>
-<option value="spett">Spettsmie (AB)</option>
-<option value="hakk">Hakkespetthull (ABCD)</option>
-</select>
-
-<img id="img2" src="indre.svg">
-
+<h3>Registrering 2</h3>
 <div id="felt2"></div>
-
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
 
@@ -98,7 +93,7 @@ function nyMast(){
     document.querySelectorAll("input, textarea").forEach(e=>e.value="");
 }
 
-/* Skadetyper og felt */
+/* Skadetyper */
 const feltMap = {
     indre: ["A","B","E"],
     sirk: ["A","B","C","D"],
@@ -108,16 +103,23 @@ const feltMap = {
     hakk: ["A","B","C","D"]
 };
 
-function byttSkade(type, nr){
+function byttSkade(type){
 
-    // Bytt bilde (SVG fra repo)
-    document.getElementById("img"+nr).src = type + ".svg";
+    // Oppdater bilde
+    document.getElementById("hovedBilde").src = type + ".svg";
 
-    // Lag riktige inputfelt
-    let container = document.getElementById("felt"+nr);
+    // Lag felt for begge registreringer
+    lagFelt(type, "felt1");
+    lagFelt(type, "felt2");
+}
+
+function lagFelt(type, id){
+
+    let container = document.getElementById(id);
     container.innerHTML = "";
 
-    feltMap[type].forEach(bokstav=>{
+    feltMap[type].forEach(bokstav => {
+
         let label = document.createElement("label");
         label.innerText = bokstav + " (mm)";
 
@@ -128,9 +130,8 @@ function byttSkade(type, nr){
     });
 }
 
-/* Start med Indre råte */
-byttSkade("indre","1");
-byttSkade("indre","2");
+// Start med Indre råte
+byttSkade("indre");
 
 </script>
 
