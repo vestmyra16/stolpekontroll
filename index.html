@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
 
-<title>Stolpekontroll v2.2</title>
+<title>Stolpekontroll v2.3</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
@@ -46,13 +46,24 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.2</h2>
+<h2>Stolpekontroll v2.3</h2>
 
 <h3>Grunnlagsdata</h3>
 
 <label>Netteier</label><input>
 <label>LinjeID</label><input>
 <label>Mastnr</label><input>
+
+<label>Stolpehøyde (m)</label><input>
+
+<label>Jordbånddiameter (mm)</label><input>
+
+<label>Vertikallast</label>
+<select>
+<option>Lav</option>
+<option>Normal</option>
+<option>Høy</option>
+</select>
 
 <button onclick="nyMast()">Ny mast</button>
 
@@ -67,18 +78,31 @@ img {
 <option value="hakk">Hakkespetthull (ABCD)</option>
 </select>
 
-<!-- Felles illustrasjon -->
 <img id="hovedBilde" src="indre.svg">
 
 <!-- SKADE 1 -->
 <h3>Registrering 1</h3>
+
+<label>Stolpenr</label><input>
+<label>Skadehøyde (m)</label><input>
+<label>Diameter på skadested (mm)</label><input>
+<label>Toppdiameter (mm)</label><input>
+
 <div id="felt1"></div>
+
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
 
 <!-- SKADE 2 -->
 <h3>Registrering 2</h3>
+
+<label>Stolpenr</label><input>
+<label>Skadehøyde (m)</label><input>
+<label>Diameter på skadested (mm)</label><input>
+<label>Toppdiameter (mm)</label><input>
+
 <div id="felt2"></div>
+
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
 
@@ -105,10 +129,8 @@ const feltMap = {
 
 function byttSkade(type){
 
-    // Oppdater bilde
     document.getElementById("hovedBilde").src = type + ".svg";
 
-    // Lag felt for begge registreringer
     lagFelt(type, "felt1");
     lagFelt(type, "felt2");
 }
@@ -130,7 +152,6 @@ function lagFelt(type, id){
     });
 }
 
-// Start med Indre råte
 byttSkade("indre");
 
 </script>
