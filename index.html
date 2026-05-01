@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
 
-<title>Stolpekontroll v2.4</title>
+<title>Stolpekontroll v2.5</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
@@ -49,13 +49,19 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.4</h2>
+<h2>Stolpekontroll v2.5</h2>
 
 <h3>Grunnlagsdata</h3>
 
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
+
+<label>GPS (Lat, Lon)</label>
+<input id="gps" readonly>
+
+<button onclick="startGPS()">Slå på GPS</button>
+<button onclick="stopGPS()">Slå av GPS</button>
 
 <label>Stolpehøyde (m)</label><input>
 <label>Jordbånddiameter (mm)</label><input>
@@ -82,7 +88,6 @@ img {
 
 <img id="img1" src="indre.svg">
 
-<!-- SKADE 1 -->
 <div id="skade1blok">
 <label>Stolpenr</label><input>
 <label>Skadehøyde (m)</label><input>
@@ -95,10 +100,8 @@ img {
 <textarea placeholder="Merknad"></textarea>
 </div>
 
-<!-- KNAPP FOR SKADE 2 -->
 <button onclick="visSkade2()">Legg til skade 2</button>
 
-<!-- SKADE 2 -->
 <div id="skade2blok" class="hidden">
 
 <select id="skade2" onchange="byttSkade(this.value,'2')">
@@ -130,6 +133,24 @@ img {
 </div>
 
 <script>
+
+let gpsWatch = null;
+
+function startGPS(){
+    if(navigator.geolocation){
+        gpsWatch = navigator.geolocation.watchPosition(pos=>{
+            let lat = pos.coords.latitude.toFixed(6);
+            let lon = pos.coords.longitude.toFixed(6);
+            document.getElementById("gps").value = lat + ", " + lon;
+        });
+    }
+}
+
+function stopGPS(){
+    if(gpsWatch){
+        navigator.geolocation.clearWatch(gpsWatch);
+    }
+}
 
 const feltMap = {
     indre: ["A","B","E"],
@@ -163,7 +184,6 @@ function visSkade2(){
 }
 
 function nyMast(){
-
     let netteier = document.getElementById("netteier").value;
     let linje = document.getElementById("linje").value;
 
