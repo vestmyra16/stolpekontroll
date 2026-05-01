@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
 
-<title>Stolpekontroll v2.0</title>
+<title>Stolpekontroll v2.1</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
@@ -30,6 +30,8 @@ img {
     margin-top:10px;
     border:1px solid #ccc;
 }
+
+.hidden { display:none; }
 </style>
 </head>
 
@@ -37,54 +39,50 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.0</h2>
+<h2>Stolpekontroll v2.1</h2>
 
 <h3>Grunnlagsdata</h3>
 
 <label>Netteier</label><input>
 <label>LinjeID</label><input>
 <label>Mastnr</label><input>
-<label>Stolpehøyde (m)</label><input>
-<label>Jordbåndsdiameter (mm)</label><input>
 
 <button onclick="nyMast()">Ny mast</button>
 
+<!-- SKADE 1 -->
 <h3>Registrer skade 1</h3>
 
-<select onchange="byttBilde(this.value,'img1')">
-<option value="indre">Indre råte</option>
-<option value="sirk">Sirkulær råte</option>
-<option value="soft">Softråte</option>
-<option value="sprekk">Sprekk</option>
-<option value="spett">Spettsmie</option>
-<option value="hakk">Hakkespetthull</option>
+<select onchange="byttSkade(this.value,'1')">
+<option value="indre">Indre råte (ABE)</option>
+<option value="sirk">Sirkulær råte (ABCD)</option>
+<option value="soft">Softråte (ABCD)</option>
+<option value="sprekk">Sprekk (AB)</option>
+<option value="spett">Spettsmie (AB)</option>
+<option value="hakk">Hakkespetthull (ABCD)</option>
 </select>
 
-<img id="img1" src="indre.png">
+<img id="img1" src="indre.svg">
 
-<label>A (mm)</label><input>
-<label>B (mm)</label><input>
-<label>E (mm)</label><input>
+<div id="felt1"></div>
 
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
 
+<!-- SKADE 2 -->
 <h3>Registrer skade 2</h3>
 
-<select onchange="byttBilde(this.value,'img2')">
-<option value="indre">Indre råte</option>
-<option value="sirk">Sirkulær råte</option>
-<option value="soft">Softråte</option>
-<option value="sprekk">Sprekk</option>
-<option value="spett">Spettsmie</option>
-<option value="hakk">Hakkespetthull</option>
+<select onchange="byttSkade(this.value,'2')">
+<option value="indre">Indre råte (ABE)</option>
+<option value="sirk">Sirkulær råte (ABCD)</option>
+<option value="soft">Softråte (ABCD)</option>
+<option value="sprekk">Sprekk (AB)</option>
+<option value="spett">Spettsmie (AB)</option>
+<option value="hakk">Hakkespetthull (ABCD)</option>
 </select>
 
-<img id="img2" src="indre.png">
+<img id="img2" src="indre.svg">
 
-<label>A (mm)</label><input>
-<label>B (mm)</label><input>
-<label>E (mm)</label><input>
+<div id="felt2"></div>
 
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
@@ -100,19 +98,39 @@ function nyMast(){
     document.querySelectorAll("input, textarea").forEach(e=>e.value="");
 }
 
-function byttBilde(type, imgId){
+/* Skadetyper og felt */
+const feltMap = {
+    indre: ["A","B","E"],
+    sirk: ["A","B","C","D"],
+    soft: ["A","B","C","D"],
+    sprekk: ["A","B"],
+    spett: ["A","B"],
+    hakk: ["A","B","C","D"]
+};
 
-    let bilder = {
-        indre: "indre.png",
-        sirk: "sirk.png",
-        soft: "soft.png",
-        sprekk: "sprekk.png",
-        spett: "spett.png",
-        hakk: "hakk.png"
-    };
+function byttSkade(type, nr){
 
-    document.getElementById(imgId).src = bilder[type];
+    // Bytt bilde (SVG fra repo)
+    document.getElementById("img"+nr).src = type + ".svg";
+
+    // Lag riktige inputfelt
+    let container = document.getElementById("felt"+nr);
+    container.innerHTML = "";
+
+    feltMap[type].forEach(bokstav=>{
+        let label = document.createElement("label");
+        label.innerText = bokstav + " (mm)";
+
+        let input = document.createElement("input");
+
+        container.appendChild(label);
+        container.appendChild(input);
+    });
 }
+
+/* Start med Indre råte */
+byttSkade("indre","1");
+byttSkade("indre","2");
 
 </script>
 
