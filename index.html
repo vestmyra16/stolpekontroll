@@ -4,168 +4,128 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll – Stabil v1</title>
-
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
+<meta name="theme-color" content="#2e7d32">
+
+<title>Stolpekontroll</title>
 
 <style>
 body {
     font-family: Arial;
-    max-width: 700px;
-    margin: auto;
-    padding: 15px;
-    background: #f5f5f5;
+    background:#f4f4f4;
+}
+
+.container {
+    max-width:600px;
+    margin:auto;
+    padding:10px;
+    background:white;
+}
+
+h2 {
+    text-align:center;
 }
 
 label {
-    font-weight: bold;
-    display: block;
-    margin-top: 10px;
+    display:block;
+    margin-top:10px;
+    font-weight:bold;
 }
 
-input, select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 4px;
+input, select, textarea {
+    width:100%;
+    padding:10px;
+    margin-top:4px;
 }
 
 button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    background: #1f7a1f;
-    color: white;
-    border: none;
-}
-
-.result {
-    margin-top: 15px;
-    padding: 10px;
-    background: #dde7f0;
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    background:#2e7d32;
+    color:white;
+    font-size:16px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Stolpekontroll – Stabil versjon</h2>
+<div class="container">
+
+<h2>Stolpekontroll v1.4</h2>
+
+<h3>Grunnlagsdata</h3>
 
 <label>Netteier</label>
-<input id="netteier">
+<input>
 
 <label>LinjeID</label>
-<input id="linje">
+<input>
 
 <label>Mastnr</label>
-<input id="mast">
-
-<label>Stolpenr</label>
-<input id="stolpe">
+<input>
 
 <label>Stolpehøyde (m)</label>
-<input id="h" type="number">
+<input>
 
-<label>Jorddiameter (mm)</label>
-<input id="d" type="number">
+<label>Jordbåndsdiameter (mm)</label>
+<input>
 
-<label>Avtrapping (cm/m)</label>
-<input id="a" type="number" value="0.75">
-
-<label>Skadehøyde (m)</label>
-<input id="sh" type="number">
-
-<label>Vertikalkraft</label>
-<select id="vk">
-<option value="0.8">Lav</option>
-<option value="1" selected>Normal</option>
-<option value="1.3">Høy</option>
+<label>Vertikallast</label>
+<select>
+<option>Lav</option>
+<option>Normal</option>
+<option>Høy</option>
 </select>
 
-<button onclick="beregn()">Beregn</button>
-<button onclick="lagre()">Lagre mast</button>
-<button onclick="excel()">Last ned Excel</button>
-<button onclick="ny()">Ny mast</button>
+<button onclick="nyMast()">Ny mast</button>
 
-<div class="result" id="resultat"></div>
+<h3>Registrer skade</h3>
+
+<label>Skadetype</label>
+<select>
+<option>Indre råte</option>
+<option>Sirkulær råte</option>
+<option>Softråte</option>
+<option>Sprekk</option>
+</select>
+
+<label>Stolpenr</label>
+<input>
+
+<label>Skadehøyde (m)</label>
+<input>
+
+<label>Diameter på skadested (mm)</label>
+<input>
+
+<label>A (mm)</label>
+<input>
+
+<label>B (mm)</label>
+<input>
+
+<label>E (mm)</label>
+<input>
+
+<button>📷 Ta bilde</button>
+
+<label>Merknad</label>
+<textarea></textarea>
+
+<button>Ny registrering (skade)</button>
+<button>Lagre</button>
+<button>Last ned Excel</button>
+
+</div>
 
 <script>
-
-let lagrede = [];
-
-function beregn(){
-
-let h = +document.getElementById("h").value;
-let d = +document.getElementById("d").value;
-let a = +document.getElementById("a").value;
-let vk = +document.getElementById("vk").value;
-
-// Enkel foreløpig vurdering (placeholder for REN senere)
-let kapasitet = d * 0.8;
-let last = h * vk * 10;
-
-let sikkerhetsfaktor = kapasitet / last;
-
-let status = sikkerhetsfaktor < 1 ? "TILTAK / BYTT" : "OK";
-
-document.getElementById("resultat").innerHTML = `
-Sikkerhetsfaktor: ${sikkerhetsfaktor.toFixed(2)}<br>
-Status: ${status}
-`;
-
+function nyMast(){
+    document.querySelectorAll("input, textarea").forEach(e=>e.value="");
 }
-
-function lagre(){
-
-let data = {
-netteier: document.getElementById("netteier").value,
-linje: document.getElementById("linje").value,
-mast: document.getElementById("mast").value,
-stolpe: document.getElementById("stolpe").value,
-h: document.getElementById("h").value,
-d: document.getElementById("d").value,
-sh: document.getElementById("sh").value,
-vk: document.getElementById("vk").value
-};
-
-lagrede.push(data);
-
-alert("Mast lagret");
-
-}
-
-function excel(){
-
-let csv = "Netteier,LinjeID,Mastnr,Stolpenr,Høyde,Diameter,Skadehøyde,Vertikalkraft\n";
-
-lagrede.forEach(r => {
-csv += `${r.netteier},${r.linje},${r.mast},${r.stolpe},${r.h},${r.d},${r.sh},${r.vk}\n`;
-});
-
-let blob = new Blob([csv], {type:"text/csv"});
-let a = document.createElement("a");
-a.href = URL.createObjectURL(blob);
-a.download = "stolpekontroll.csv";
-a.click();
-
-}
-
-function ny(){
-
-let n = document.getElementById("netteier").value;
-let l = document.getElementById("linje").value;
-
-document.querySelectorAll("input").forEach(i => i.value = "");
-
-document.getElementById("netteier").value = n;
-document.getElementById("linje").value = l;
-
-document.getElementById("vk").value = "1";
-document.getElementById("resultat").innerHTML = "";
-
-}
-
 </script>
 
 </body>
