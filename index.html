@@ -6,38 +6,15 @@
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
-<meta name="theme-color" content="#2e7d32">
 
-<title>Stolpekontroll</title>
+<title>Stolpekontroll v2.0</title>
 
 <style>
-body {
-    font-family: Arial;
-    background:#f4f4f4;
-}
+body { font-family: Arial; background:#f4f4f4; }
+.container { max-width:600px; margin:auto; padding:10px; background:white; }
 
-.container {
-    max-width:600px;
-    margin:auto;
-    padding:10px;
-    background:white;
-}
-
-h2 {
-    text-align:center;
-}
-
-label {
-    display:block;
-    margin-top:10px;
-    font-weight:bold;
-}
-
-input, select, textarea {
-    width:100%;
-    padding:10px;
-    margin-top:4px;
-}
+label { display:block; margin-top:10px; font-weight:bold; }
+input, select, textarea { width:100%; padding:10px; margin-top:4px; }
 
 button {
     width:100%;
@@ -46,7 +23,12 @@ button {
     border:none;
     background:#2e7d32;
     color:white;
-    font-size:16px;
+}
+
+img {
+    width:100%;
+    margin-top:10px;
+    border:1px solid #ccc;
 }
 </style>
 </head>
@@ -55,77 +37,83 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v1.4</h2>
+<h2>Stolpekontroll v2.0</h2>
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label>
-<input>
-
-<label>LinjeID</label>
-<input>
-
-<label>Mastnr</label>
-<input>
-
-<label>Stolpehøyde (m)</label>
-<input>
-
-<label>Jordbåndsdiameter (mm)</label>
-<input>
-
-<label>Vertikallast</label>
-<select>
-<option>Lav</option>
-<option>Normal</option>
-<option>Høy</option>
-</select>
+<label>Netteier</label><input>
+<label>LinjeID</label><input>
+<label>Mastnr</label><input>
+<label>Stolpehøyde (m)</label><input>
+<label>Jordbåndsdiameter (mm)</label><input>
 
 <button onclick="nyMast()">Ny mast</button>
 
-<h3>Registrer skade</h3>
+<h3>Registrer skade 1</h3>
 
-<label>Skadetype</label>
-<select>
-<option>Indre råte</option>
-<option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Sprekk</option>
+<select onchange="byttBilde(this.value,'img1')">
+<option value="indre">Indre råte</option>
+<option value="sirk">Sirkulær råte</option>
+<option value="soft">Softråte</option>
+<option value="sprekk">Sprekk</option>
+<option value="spett">Spettsmie</option>
+<option value="hakk">Hakkespetthull</option>
 </select>
 
-<label>Stolpenr</label>
-<input>
+<img id="img1" src="indre.png">
 
-<label>Skadehøyde (m)</label>
-<input>
-
-<label>Diameter på skadested (mm)</label>
-<input>
-
-<label>A (mm)</label>
-<input>
-
-<label>B (mm)</label>
-<input>
-
-<label>E (mm)</label>
-<input>
+<label>A (mm)</label><input>
+<label>B (mm)</label><input>
+<label>E (mm)</label><input>
 
 <button>📷 Ta bilde</button>
+<textarea placeholder="Merknad"></textarea>
 
-<label>Merknad</label>
-<textarea></textarea>
+<h3>Registrer skade 2</h3>
 
-<button>Ny registrering (skade)</button>
+<select onchange="byttBilde(this.value,'img2')">
+<option value="indre">Indre råte</option>
+<option value="sirk">Sirkulær råte</option>
+<option value="soft">Softråte</option>
+<option value="sprekk">Sprekk</option>
+<option value="spett">Spettsmie</option>
+<option value="hakk">Hakkespetthull</option>
+</select>
+
+<img id="img2" src="indre.png">
+
+<label>A (mm)</label><input>
+<label>B (mm)</label><input>
+<label>E (mm)</label><input>
+
+<button>📷 Ta bilde</button>
+<textarea placeholder="Merknad"></textarea>
+
 <button>Lagre</button>
 <button>Last ned Excel</button>
 
 </div>
 
 <script>
+
 function nyMast(){
     document.querySelectorAll("input, textarea").forEach(e=>e.value="");
 }
+
+function byttBilde(type, imgId){
+
+    let bilder = {
+        indre: "indre.png",
+        sirk: "sirk.png",
+        soft: "soft.png",
+        sprekk: "sprekk.png",
+        spett: "spett.png",
+        hakk: "hakk.png"
+    };
+
+    document.getElementById(imgId).src = bilder[type];
+}
+
 </script>
 
 </body>
