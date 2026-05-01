@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
 
-<title>Stolpekontroll v2.3</title>
+<title>Stolpekontroll v2.4</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
@@ -34,12 +34,14 @@ button {
 }
 
 img {
-    width:40%;
-    max-width:180px;
+    width:38%;
+    max-width:160px;
     display:block;
     margin:8px auto;
     border:1px solid #ccc;
 }
+
+.hidden { display:none; }
 </style>
 </head>
 
@@ -47,22 +49,21 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.3</h2>
+<h2>Stolpekontroll v2.4</h2>
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label><input>
-<label>LinjeID</label><input>
-<label>Mastnr</label><input>
+<label>Netteier</label><input id="netteier">
+<label>LinjeID</label><input id="linje">
+<label>Mastnr</label><input id="mast">
 
 <label>Stolpehøyde (m)</label><input>
-
 <label>Jordbånddiameter (mm)</label><input>
 
 <label>Vertikallast</label>
 <select>
 <option>Lav</option>
-<option>Normal</option>
+<option selected>Normal</option>
 <option>Høy</option>
 </select>
 
@@ -70,7 +71,7 @@ img {
 
 <h3>Registrer skade</h3>
 
-<select onchange="byttSkade(this.value)">
+<select id="skade1" onchange="byttSkade(this.value,'1')">
 <option value="indre">Indre råte (ABE)</option>
 <option value="sirk">Sirkulær råte (ABCD)</option>
 <option value="soft">Softråte (ABCD)</option>
@@ -79,11 +80,10 @@ img {
 <option value="hakk">Hakkespetthull (ABCD)</option>
 </select>
 
-<img id="hovedBilde" src="indre.svg">
+<img id="img1" src="indre.svg">
 
 <!-- SKADE 1 -->
-<h3>Registrering 1</h3>
-
+<div id="skade1blok">
 <label>Stolpenr</label><input>
 <label>Skadehøyde (m)</label><input>
 <label>Diameter på skadested (mm)</label><input>
@@ -93,9 +93,24 @@ img {
 
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
+</div>
+
+<!-- KNAPP FOR SKADE 2 -->
+<button onclick="visSkade2()">Legg til skade 2</button>
 
 <!-- SKADE 2 -->
-<h3>Registrering 2</h3>
+<div id="skade2blok" class="hidden">
+
+<select id="skade2" onchange="byttSkade(this.value,'2')">
+<option value="indre">Indre råte (ABE)</option>
+<option value="sirk">Sirkulær råte (ABCD)</option>
+<option value="soft">Softråte (ABCD)</option>
+<option value="sprekk">Sprekk (AB)</option>
+<option value="spett">Spettsmie (AB)</option>
+<option value="hakk">Hakkespetthull (ABCD)</option>
+</select>
+
+<img id="img2" src="indre.svg">
 
 <label>Stolpenr</label><input>
 <label>Skadehøyde (m)</label><input>
@@ -107,6 +122,8 @@ img {
 <button>📷 Ta bilde</button>
 <textarea placeholder="Merknad"></textarea>
 
+</div>
+
 <button>Lagre</button>
 <button>Last ned Excel</button>
 
@@ -114,11 +131,6 @@ img {
 
 <script>
 
-function nyMast(){
-    document.querySelectorAll("input, textarea").forEach(e=>e.value="");
-}
-
-/* Skadetyper */
 const feltMap = {
     indre: ["A","B","E"],
     sirk: ["A","B","C","D"],
@@ -128,32 +140,42 @@ const feltMap = {
     hakk: ["A","B","C","D"]
 };
 
-function byttSkade(type){
-
-    document.getElementById("hovedBilde").src = type + ".svg";
-
-    lagFelt(type, "felt1");
-    lagFelt(type, "felt2");
+function byttSkade(type, nr){
+    document.getElementById("img"+nr).src = type + ".svg";
+    lagFelt(type, "felt"+nr);
 }
 
 function lagFelt(type, id){
+    let c = document.getElementById(id);
+    c.innerHTML = "";
 
-    let container = document.getElementById(id);
-    container.innerHTML = "";
-
-    feltMap[type].forEach(bokstav => {
-
-        let label = document.createElement("label");
-        label.innerText = bokstav + " (mm)";
-
-        let input = document.createElement("input");
-
-        container.appendChild(label);
-        container.appendChild(input);
+    feltMap[type].forEach(b => {
+        let l = document.createElement("label");
+        l.innerText = b + " (mm)";
+        let i = document.createElement("input");
+        c.appendChild(l);
+        c.appendChild(i);
     });
 }
 
-byttSkade("indre");
+function visSkade2(){
+    document.getElementById("skade2blok").classList.remove("hidden");
+}
+
+function nyMast(){
+
+    let netteier = document.getElementById("netteier").value;
+    let linje = document.getElementById("linje").value;
+
+    document.querySelectorAll("input, textarea").forEach(e=>e.value="");
+
+    document.getElementById("netteier").value = netteier;
+    document.getElementById("linje").value = linje;
+
+    document.getElementById("skade2blok").classList.add("hidden");
+}
+
+byttSkade("indre","1");
 
 </script>
 
