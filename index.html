@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="/Stolpekontroll/icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 
-<title>Stolpekontroll v2.5</title>
+<title>Stolpekontroll v2.6</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
@@ -49,7 +49,7 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.5</h2>
+<h2>Stolpekontroll v2.6</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -63,11 +63,8 @@ img {
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
-<label>Stolpehøyde (m)</label><input>
-<label>Jordbånddiameter (mm)</label><input>
-
 <label>Vertikallast</label>
-<select>
+<select id="last">
 <option>Lav</option>
 <option selected>Normal</option>
 <option>Høy</option>
@@ -89,15 +86,13 @@ img {
 <img id="img1" src="indre.svg">
 
 <div id="skade1blok">
-<label>Stolpenr</label><input>
-<label>Skadehøyde (m)</label><input>
-<label>Diameter på skadested (mm)</label><input>
-<label>Toppdiameter (mm)</label><input>
+<label>Stolpenr</label><input id="stolpe1">
+<label>Skadehøyde (m)</label><input id="h1">
+<label>Diameter på skadested (mm)</label><input id="d1">
 
 <div id="felt1"></div>
 
-<button>📷 Ta bilde</button>
-<textarea placeholder="Merknad"></textarea>
+<textarea id="kommentar1" placeholder="Merknad"></textarea>
 </div>
 
 <button onclick="visSkade2()">Legg til skade 2</button>
@@ -115,24 +110,56 @@ img {
 
 <img id="img2" src="indre.svg">
 
-<label>Stolpenr</label><input>
-<label>Skadehøyde (m)</label><input>
-<label>Diameter på skadested (mm)</label><input>
-<label>Toppdiameter (mm)</label><input>
+<label>Stolpenr</label><input id="stolpe2">
+<label>Skadehøyde (m)</label><input id="h2">
+<label>Diameter på skadested (mm)</label><input id="d2">
 
 <div id="felt2"></div>
 
-<button>📷 Ta bilde</button>
-<textarea placeholder="Merknad"></textarea>
+<textarea id="kommentar2" placeholder="Merknad"></textarea>
 
 </div>
 
-<button>Lagre</button>
-<button>Last ned Excel</button>
+<button onclick="lagre()">Lagre mast</button>
+<button onclick="lastNed()">Last ned Excel (CSV)</button>
 
 </div>
 
 <script>
+
+let data = [];
+
+function lagre(){
+
+data.push([
+document.getElementById("linje").value,
+document.getElementById("mast").value,
+"Stolpe",
+document.getElementById("skade1").value,
+document.getElementById("d1").value,
+document.getElementById("h1").value,
+document.getElementById("kommentar1").value
+]);
+
+alert("Mast lagret");
+
+}
+
+function lastNed(){
+
+let csv = "LinjeID,Mastnr,Type,Skade,Diameter,Skadehøyde,Kommentar\n";
+
+data.forEach(r => {
+csv += r.join(",") + "\n";
+});
+
+let blob = new Blob([csv], {type:"text/csv"});
+let link = document.createElement("a");
+link.href = URL.createObjectURL(blob);
+link.download = "stolpekontroll.csv";
+link.click();
+
+}
 
 let gpsWatch = null;
 
