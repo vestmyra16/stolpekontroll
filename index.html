@@ -4,18 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<title>Stolpekontroll v2.7</title>
 
-<title>Stolpekontroll v2.6</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 
 <style>
-body { font-family: Arial; background:#f4f4f4; }
-.container { max-width:600px; margin:auto; padding:10px; background:white; }
+body { font-family: Arial; background:#f4f4f4; margin:0; }
+.container { max-width:600px; margin:auto; padding:12px; background:white; }
 
 h2 { text-align:center; }
 
 label { display:block; margin-top:10px; font-weight:bold; }
+
 input, select, textarea {
     width:100%;
     padding:12px;
@@ -28,20 +29,17 @@ button {
     padding:14px;
     margin-top:10px;
     border:none;
+    border-radius:8px;
     background:#2e7d32;
     color:white;
     font-size:16px;
 }
 
-img {
-    width:38%;
-    max-width:160px;
-    display:block;
-    margin:8px auto;
-    border:1px solid #ccc;
+.result {
+    background:#eef;
+    padding:10px;
+    margin-top:10px;
 }
-
-.hidden { display:none; }
 </style>
 </head>
 
@@ -49,19 +47,21 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.6</h2>
+<h2>Stolpekontroll v2.7</h2>
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label><input id="netteier">
-<label>LinjeID</label><input id="linje">
-<label>Mastnr</label><input id="mast">
+<label>Netteier</label>
+<input id="netteier">
 
-<label>GPS (Lat, Lon)</label>
-<input id="gps" readonly>
+<label>LinjeID</label>
+<input id="linje">
 
-<button onclick="startGPS()">Slå på GPS</button>
-<button onclick="stopGPS()">Slå av GPS</button>
+<label>Mastnr</label>
+<input id="mast">
+
+<label>Diameter på skadested (mm)</label>
+<input id="diameter">
 
 <label>Vertikallast</label>
 <select id="last">
@@ -72,157 +72,85 @@ img {
 
 <button onclick="nyMast()">Ny mast</button>
 
-<h3>Registrer skade</h3>
+<h3>Indre råte</h3>
 
-<select id="skade1" onchange="byttSkade(this.value,'1')">
-<option value="indre">Indre råte (ABE)</option>
-<option value="sirk">Sirkulær råte (ABCD)</option>
-<option value="soft">Softråte (ABCD)</option>
-<option value="sprekk">Sprekk (AB)</option>
-<option value="spett">Spettsmie (AB)</option>
-<option value="hakk">Hakkespetthull (ABCD)</option>
-</select>
+<label>A (mm)</label>
+<input id="A">
 
-<img id="img1" src="indre.svg">
+<label>E (restskall mm)</label>
+<input id="E">
 
-<div id="skade1blok">
-<label>Stolpenr</label><input id="stolpe1">
-<label>Skadehøyde (m)</label><input id="h1">
-<label>Diameter på skadested (mm)</label><input id="d1">
+<textarea id="merknad" placeholder="Merknad"></textarea>
 
-<div id="felt1"></div>
+<button onclick="beregn()">Beregn</button>
 
-<textarea id="kommentar1" placeholder="Merknad"></textarea>
-</div>
-
-<button onclick="visSkade2()">Legg til skade 2</button>
-
-<div id="skade2blok" class="hidden">
-
-<select id="skade2" onchange="byttSkade(this.value,'2')">
-<option value="indre">Indre råte (ABE)</option>
-<option value="sirk">Sirkulær råte (ABCD)</option>
-<option value="soft">Softråte (ABCD)</option>
-<option value="sprekk">Sprekk (AB)</option>
-<option value="spett">Spettsmie (AB)</option>
-<option value="hakk">Hakkespetthull (ABCD)</option>
-</select>
-
-<img id="img2" src="indre.svg">
-
-<label>Stolpenr</label><input id="stolpe2">
-<label>Skadehøyde (m)</label><input id="h2">
-<label>Diameter på skadested (mm)</label><input id="d2">
-
-<div id="felt2"></div>
-
-<textarea id="kommentar2" placeholder="Merknad"></textarea>
-
-</div>
-
-<button onclick="lagre()">Lagre mast</button>
-<button onclick="lastNed()">Last ned Excel (CSV)</button>
+<div id="resultat" class="result"></div>
 
 </div>
 
 <script>
 
-let data = [];
+function beregn(){
 
-function lagre(){
+    let D = parseFloat(document.getElementById("diameter").value);
+    let A = parseFloat(document.getElementById("A").value);
+    let E = parseFloat(document.getElementById("E").value);
+    let last = document.getElementById("last").value;
 
-data.push([
-document.getElementById("linje").value,
-document.getElementById("mast").value,
-"Stolpe",
-document.getElementById("skade1").value,
-document.getElementById("d1").value,
-document.getElementById("h1").value,
-document.getElementById("kommentar1").value
-]);
-
-alert("Mast lagret");
-
-}
-
-function lastNed(){
-
-let csv = "LinjeID,Mastnr,Type,Skade,Diameter,Skadehøyde,Kommentar\n";
-
-data.forEach(r => {
-csv += r.join(",") + "\n";
-});
-
-let blob = new Blob([csv], {type:"text/csv"});
-let link = document.createElement("a");
-link.href = URL.createObjectURL(blob);
-link.download = "stolpekontroll.csv";
-link.click();
-
-}
-
-let gpsWatch = null;
-
-function startGPS(){
-    if(navigator.geolocation){
-        gpsWatch = navigator.geolocation.watchPosition(pos=>{
-            let lat = pos.coords.latitude.toFixed(6);
-            let lon = pos.coords.longitude.toFixed(6);
-            document.getElementById("gps").value = lat + ", " + lon;
-        });
+    if(!D || !E){
+        alert("Legg inn diameter og restskall (E)");
+        return;
     }
+
+    let radius = D / 2;
+
+    // 🔥 Reststyrke (justert realistisk)
+    let rest = Math.pow((E / radius), 1.5) * 100;
+    if(rest > 100) rest = 100;
+
+    // 🔥 Justering for last
+    let lastFaktor = 1;
+    if(last === "Høy") lastFaktor = 0.85;
+    if(last === "Lav") lastFaktor = 1.1;
+
+    rest = rest * lastFaktor;
+
+    // 🔥 Sikkerhetsfaktor
+    let sf30 = rest / 75;
+    let sf40 = sf30 * (40/30);
+
+    // 🔥 Status
+    let status30 = sf30 >= 1 ? "OK" : "Tiltak vurderes";
+    let status40 = sf40 >= 1 ? "OK" : "Lav reserve";
+
+    // 🔥 Levetid
+    let levetid = "";
+    if(rest > 85) levetid = "15–25 år";
+    else if(rest > 75) levetid = "8–15 år";
+    else if(rest > 65) levetid = "3–10 år";
+    else levetid = "0–5 år";
+
+    document.getElementById("resultat").innerHTML = `
+        <b>Reststyrke:</b> ${rest.toFixed(1)} %<br>
+        <b>SF (30):</b> ${sf30.toFixed(2)} → ${status30}<br>
+        <b>SF (40):</b> ${sf40.toFixed(2)} → ${status40}<br>
+        <b>Restlevetid:</b> ${levetid}
+    `;
 }
 
-function stopGPS(){
-    if(gpsWatch){
-        navigator.geolocation.clearWatch(gpsWatch);
-    }
-}
-
-const feltMap = {
-    indre: ["A","E"],  // 🔥 fjernet B
-    sirk: ["A","B","C","D"],
-    soft: ["A","B","C","D"],
-    sprekk: ["A","B"],
-    spett: ["A","B"],
-    hakk: ["A","B","C","D"]
-};
-
-function byttSkade(type, nr){
-    document.getElementById("img"+nr).src = type + ".svg";
-    lagFelt(type, "felt"+nr);
-}
-
-function lagFelt(type, id){
-    let c = document.getElementById(id);
-    c.innerHTML = "";
-
-    feltMap[type].forEach(b => {
-        let l = document.createElement("label");
-        l.innerText = b + " (mm)";
-        let i = document.createElement("input");
-        c.appendChild(l);
-        c.appendChild(i);
-    });
-}
-
-function visSkade2(){
-    document.getElementById("skade2blok").classList.remove("hidden");
-}
-
+// 🔄 Ny mast (beholder netteier og linje)
 function nyMast(){
+
     let netteier = document.getElementById("netteier").value;
     let linje = document.getElementById("linje").value;
 
-    document.querySelectorAll("input, textarea").forEach(e=>e.value="");
+    document.querySelectorAll("input, textarea").forEach(e => e.value = "");
 
     document.getElementById("netteier").value = netteier;
     document.getElementById("linje").value = linje;
 
-    document.getElementById("skade2blok").classList.add("hidden");
+    document.getElementById("resultat").innerHTML = "";
 }
-
-byttSkade("indre","1");
 
 </script>
 
