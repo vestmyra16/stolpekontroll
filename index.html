@@ -3,29 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v3.0</title>
+
+<title>Stolpekontroll v2.9</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 
 <style>
-body {font-family: Arial; background:#f4f4f4; margin:0;}
-.container {max-width:420px; margin:auto; background:white; padding:12px;}
-label {font-weight:bold; display:block; margin-top:8px;}
-input {width:100%; padding:10px; margin-top:4px; font-size:16px;}
-button {width:100%; padding:12px; margin-top:6px; font-size:16px; border:none; border-radius:6px;}
-.green {background:#2e7d32; color:white;}
-.choice {background:#2e7d32; color:white; padding:12px; text-align:center; margin-top:6px; border-radius:6px;}
-.hidden {display:none;}
-img {width:100%; max-width:120px; display:block; margin:auto;}
-.section {margin-top:15px; border-top:1px solid #ddd; padding-top:10px;}
+body { font-family: Arial; background:#f4f4f4; margin:0; }
+.container { max-width:420px; margin:auto; padding:10px; background:white; }
+
+label { font-weight:bold; display:block; margin-top:8px; }
+input { width:100%; padding:10px; margin-top:4px; font-size:16px; }
+
+button {
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  font-size:16px;
+  border:none;
+  border-radius:6px;
+  background:#2e7d32;
+  color:white;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+
+img {
+  width:40%;
+  display:block;
+  margin:auto;
+}
+
+.hidden { display:none; }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h2>Stolpekontroll v3.0</h2>
+<h2>Stolpekontroll v2.9</h2>
 
 <label>Netteier</label>
 <input id="netteier">
@@ -36,11 +57,11 @@ img {width:100%; max-width:120px; display:block; margin:auto;}
 <label>Mastnr</label>
 <input id="mast">
 
-<label>GPS</label>
+<label>GPS (lat, lon)</label>
 <input id="gps" readonly>
 
-<button class="green" onclick="startGPS()">Slå på GPS</button>
-<button class="green" onclick="stopGPS()">Slå av GPS</button>
+<button onclick="startGPS()">Slå på GPS</button>
+<button onclick="stopGPS()">Slå av GPS</button>
 
 <label>Stolpehøyde (m)</label>
 <input id="hoyde">
@@ -51,87 +72,86 @@ img {width:100%; max-width:120px; display:block; margin:auto;}
 <label>Nedgravd (m)</label>
 <input id="nedgravd">
 
-<label>Jordsmonn</label>
-<div class="choice" onclick="toggle('jordvalg')" id="jordValg">Skogsmark</div>
-<div id="jordvalg" class="hidden">
-<button onclick="setValg('jordValg','Innmark')">Innmark</button>
-<button onclick="setValg('jordValg','Fjell')">Fjell</button>
+<!-- SKADEKNAPPER -->
+<h3>Registrer skade</h3>
+
+<div class="grid">
+<button onclick="visSkade('indre')">Indre råte</button>
+<button onclick="visSkade('sirk')">Sirkulær råte</button>
+
+<button onclick="visSkade('soft')">Softråte</button>
+<button onclick="visSkade('spett')">Spettsmie</button>
+
+<button onclick="visSkade('hakk')">Hakkespetthull</button>
+<button onclick="visSkade('sprekk')">Sprekk</button>
 </div>
 
-<label>Klima</label>
-<div class="choice" onclick="toggle('klimavalg')" id="klimaValg">Kyst</div>
-<div id="klimavalg" class="hidden">
-<button onclick="setValg('klimaValg','Innland')">Innland</button>
-<button onclick="setValg('klimaValg','Fjell')">Fjell</button>
+<!-- INDRE -->
+<div id="indre" class="hidden">
+<img src="indre.svg">
+<label>A</label><input id="A">
+<label>B</label><input id="B">
+<label>E</label><input id="E">
 </div>
 
-<label>Vertikallast</label>
-<div class="choice" onclick="toggle('lastvalg')" id="lastValg">Normal</div>
-<div id="lastvalg" class="hidden">
-<button onclick="setValg('lastValg','Lav')">Lav</button>
-<button onclick="setValg('lastValg','Høy')">Høy</button>
+<!-- SIRK -->
+<div id="sirk" class="hidden">
+<img src="sirk.svg">
+<label>A</label><input>
+<label>B</label><input>
+<label>C</label><input>
+<label>D</label><input>
 </div>
 
-<button class="green" onclick="nyMast()">Ny mast</button>
-
-<!-- SKADE 1 -->
-<div class="section">
-<h3>Skade 1</h3>
-
-<label>Type</label>
-<select id="type1" onchange="visSkade(1)">
-<option>Indre råte</option>
-<option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Spettsmie</option>
-<option>Hakkespetthull</option>
-<option>Sprekk</option>
-</select>
-
-<label>Stolpenr</label>
-<input id="stolpe1">
-
-<label>Skadehøyde (m)</label>
-<input id="h1">
-
-<label>Diameter (mm)</label>
-<input id="d1">
-
-<img id="img1" src="indre.svg">
+<!-- SOFT -->
+<div id="soft" class="hidden">
+<img src="soft.svg">
+<label>A</label><input>
+<label>B</label><input>
+<label>C</label><input>
+<label>D</label><input>
 </div>
 
-<!-- SKADE 2 -->
-<div class="section">
-<h3>Skade 2</h3>
-
-<label>Type</label>
-<select id="type2" onchange="visSkade(2)">
-<option>Indre råte</option>
-<option>Sirkulær råte</option>
-<option>Softråte</option>
-<option>Spettsmie</option>
-<option>Hakkespetthull</option>
-<option>Sprekk</option>
-</select>
-
-<label>Stolpenr</label>
-<input id="stolpe2">
-
-<label>Skadehøyde (m)</label>
-<input id="h2">
-
-<label>Diameter (mm)</label>
-<input id="d2">
-
-<img id="img2" src="indre.svg">
+<!-- SPETT -->
+<div id="spett" class="hidden">
+<img src="spett.svg">
+<label>A</label><input>
+<label>B</label><input>
 </div>
 
-<button class="green" onclick="lagre()">Lagre mast</button>
-<button class="green" onclick="lastned()">Last ned CSV</button>
+<!-- HAKK -->
+<div id="hakk" class="hidden">
+<img src="hakk.svg">
+<label>A</label><input>
+<label>B</label><input>
+<label>C</label><input>
+<label>D</label><input>
+</div>
+
+<!-- SPREKK -->
+<div id="sprekk" class="hidden">
+<img src="sprekk.svg">
+<label>Start</label><input>
+<label>Slutt</label><input>
+<label>Dybde</label><input>
+</div>
+
+<label>Merknad</label>
+<input id="merknad">
+
+<button onclick="lagre()">Lagre mast</button>
+<button onclick="lastned()">Last ned CSV</button>
 
 </div>
 
 <script>
+
+// VIS SKADE
+function visSkade(type){
+  let typer = ["indre","sirk","soft","spett","hakk","sprekk"];
+  typer.forEach(t => document.getElementById(t).classList.add("hidden"));
+  document.getElementById(type).classList.remove("hidden");
+}
 
 // GPS
 let gpsWatch = null;
@@ -142,7 +162,7 @@ function startGPS(){
             let lat = pos.coords.latitude.toFixed(6);
             let lon = pos.coords.longitude.toFixed(6);
             document.getElementById("gps").value = lat + ", " + lon;
-        });
+        }, null, { enableHighAccuracy: true });
     }
 }
 
@@ -153,56 +173,37 @@ function stopGPS(){
     }
 }
 
-// valg
-function toggle(id){
-    document.getElementById(id).classList.toggle("hidden");
-}
-
-function setValg(id,val){
-    document.getElementById(id).innerText = val;
-    document.getElementById(id.replace("Valg","valg")).classList.add("hidden");
-}
-
-// skadebilder
-function visSkade(nr){
-    let type = document.getElementById("type"+nr).value;
-    let img = document.getElementById("img"+nr);
-
-    if(type==="Indre råte") img.src="indre.svg";
-    if(type==="Sirkulær råte") img.src="sirk.svg";
-    if(type==="Softråte") img.src="soft.svg";
-    if(type==="Spettsmie") img.src="spett.svg";
-    if(type==="Hakkespetthull") img.src="hakk.svg";
-    if(type==="Sprekk") img.src="sprekk.svg";
-}
-
-// ny mast
-function nyMast(){
-    document.querySelectorAll("input").forEach(i=>{
-        if(i.id!=="netteier" && i.id!=="linje"){
-            i.value="";
-        }
-    });
-}
-
-// lagring
+// DATA
 let data = [];
 
 function lagre(){
     let row = [
-        netteier.value, linje.value, mast.value, gps.value,
-        hoyde.value, jordband.value, nedgravd.value,
-        jordValg.innerText, klimaValg.innerText, lastValg.innerText,
-        type1.value, stolpe1.value, h1.value, d1.value,
-        type2.value, stolpe2.value, h2.value, d2.value
+        document.getElementById("netteier").value,
+        document.getElementById("linje").value,
+        document.getElementById("mast").value,
+        document.getElementById("gps").value,
+        document.getElementById("hoyde").value,
+        document.getElementById("jordband").value,
+        document.getElementById("nedgravd").value,
+        document.getElementById("A").value,
+        document.getElementById("B").value,
+        document.getElementById("E").value,
+        document.getElementById("merknad").value
     ];
+
     data.push(row);
     alert("Lagret");
 }
 
 // CSV
 function lastned(){
-    let csv = data.map(r=>r.join(",")).join("\n");
+
+    let csv = "Netteier,LinjeID,Mastnr,GPS,Høyde,Jordband,Nedgravd,A,B,E,Merknad\n";
+
+    data.forEach(r => {
+        csv += r.join(",") + "\n";
+    });
+
     let blob = new Blob([csv], {type:"text/csv"});
     let a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
