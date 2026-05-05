@@ -14,6 +14,7 @@
 <style>
 body {font-family: Arial; background:#f4f4f4; margin:0;}
 .container {max-width:420px; margin:auto; padding:10px; background:white;}
+
 label {font-weight:bold; display:block; margin-top:8px;}
 input {width:100%; padding:10px; margin-top:4px;}
 
@@ -41,6 +42,7 @@ margin:auto;
 }
 
 .hidden {display:none;}
+.section {margin-top:12px;}
 </style>
 </head>
 
@@ -79,8 +81,8 @@ margin:auto;
 </div>
 
 <!-- SKADE 1 -->
+<div class="section">
 <h3>Skade 1</h3>
-<div id="skade1">
 
 <img id="img1">
 
@@ -90,9 +92,12 @@ margin:auto;
 
 </div>
 
+<!-- NY SKADE -->
+<button onclick="visSkade2()">Ny skade (2)</button>
+
 <!-- SKADE 2 -->
-<h3>Skade 2</h3>
-<div id="skade2">
+<h3 id="skade2Tittel" class="hidden">Skade 2</h3>
+<div id="skade2" class="hidden section">
 
 <img id="img2">
 
@@ -106,6 +111,7 @@ margin:auto;
 <input id="merknad">
 
 <button onclick="lagre()">Lagre mast</button>
+<button onclick="nyMast()">Ny mast</button>
 <button onclick="lastnedExcel()">Last ned Excel</button>
 
 </div>
@@ -114,12 +120,14 @@ margin:auto;
 
 // VIS SKADE
 function visSkade(type){
+    document.getElementById("img1").src = type + ".svg";
+    document.getElementById("img2").src = type + ".svg";
+}
 
-let img1 = document.getElementById("img1");
-let img2 = document.getElementById("img2");
-
-img1.src = type + ".svg";
-img2.src = type + ".svg";
+// VIS SKADE 2
+function visSkade2(){
+    document.getElementById("skade2").classList.remove("hidden");
+    document.getElementById("skade2Tittel").classList.remove("hidden");
 }
 
 // GPS
@@ -146,30 +154,50 @@ function stopGPS(){
 let data = [];
 
 function lagre(){
-data.push({
-Netteier: netteier.value,
-Linje: linje.value,
-Mast: mast.value,
-GPS: gps.value,
-A1: A1.value,
-B1: B1.value,
-E1: E1.value,
-A2: A2.value,
-B2: B2.value,
-E2: E2.value,
-Merknad: merknad.value
-});
-alert("Lagret");
+    data.push({
+        Netteier: netteier.value,
+        LinjeID: linje.value,
+        Mastnr: mast.value,
+        GPS: gps.value,
+
+        A1: A1.value,
+        B1: B1.value,
+        E1: E1.value,
+
+        A2: A2.value,
+        B2: B2.value,
+        E2: E2.value,
+
+        Merknad: merknad.value
+    });
+
+    alert("Lagret");
+}
+
+// NY MAST
+function nyMast(){
+
+    let n = netteier.value;
+    let l = linje.value;
+
+    document.querySelectorAll("input").forEach(i => i.value="");
+
+    netteier.value = n;
+    linje.value = l;
+
+    document.getElementById("skade2").classList.add("hidden");
+    document.getElementById("skade2Tittel").classList.add("hidden");
 }
 
 // EXCEL
 function lastnedExcel(){
 
-let ws = XLSX.utils.json_to_sheet(data);
-let wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, "Stolper");
+    let ws = XLSX.utils.json_to_sheet(data);
+    let wb = XLSX.utils.book_new();
 
-XLSX.writeFile(wb, "stolpekontroll.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Stolper");
+
+    XLSX.writeFile(wb, "stolpekontroll.xlsx");
 }
 
 </script>
