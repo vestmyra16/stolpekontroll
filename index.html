@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v2.8</title>
+<title>Stolpekontroll v2.9</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -47,7 +47,7 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.8</h2>
+<h2>Stolpekontroll v2.9</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -115,25 +115,31 @@ function beregn(){
 
     let radius = D / 2;
 
-    let rest = Math.pow((E / radius), 1.5) * 100;
+    // 🔥 KALIBRERT RESTSTYRKE (felt + REN)
+    let rest = (E / radius) * 100 * 3.5;
+
+    if(E > 25 && rest < 65) rest = 65;
     if(rest > 100) rest = 100;
 
+    // 🔥 RIKTIG SIKKERHETSFAKTOR
+    let baseSF = 1.6 * (rest / 100);
+
     let lastFaktor = 1;
-    if(last === "Høy") lastFaktor = 0.85;
-    if(last === "Lav") lastFaktor = 1.1;
+    if(last === "Høy") lastFaktor = 0.8;
+    if(last === "Lav") lastFaktor = 1.2;
 
-    rest *= lastFaktor;
+    let sf30 = baseSF * lastFaktor;
+    let sf40 = sf30 * (40 / 30);
 
-    let sf30 = rest / 75;
-    let sf40 = sf30 * (40/30);
-
+    // 🔥 STATUS
     let status30 = sf30 >= 1 ? "OK" : "Tiltak vurderes";
     let status40 = sf40 >= 1 ? "OK" : "Lav reserve";
 
+    // 🔥 LEVETID BASERT PÅ SF (riktig!)
     let levetid = "";
-    if(rest > 85) levetid = "15–25 år";
-    else if(rest > 75) levetid = "8–15 år";
-    else if(rest > 65) levetid = "3–10 år";
+    if(sf30 > 1.3) levetid = "15–25 år";
+    else if(sf30 > 1.1) levetid = "8–15 år";
+    else if(sf30 > 1.0) levetid = "5–10 år";
     else levetid = "0–5 år";
 
     document.getElementById("resultat").innerHTML = `
@@ -144,6 +150,7 @@ function beregn(){
     `;
 }
 
+// 🔄 Ny mast
 function nyMast(){
 
     let netteier = document.getElementById("netteier").value;
