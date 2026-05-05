@@ -6,31 +6,52 @@
 <title>Stolpekontroll v3.7</title>
 
 <style>
-body { font-family: Arial; background:#f4f4f4; margin:0; }
-.container { max-width:600px; margin:auto; background:white; padding:12px; }
-h2 { text-align:center; }
-h3 { margin-top:20px; }
+body {
+    font-family: Arial;
+    background: #f2f2f2;
+    margin: 0;
+}
 
-label { font-weight:bold; display:block; margin-top:10px; }
-input, select, textarea {
-width:100%; padding:10px; margin-top:5px; font-size:16px;
+.container {
+    max-width: 420px;
+    margin: auto;
+    background: white;
+    padding: 15px;
+}
+
+h2 {
+    text-align: center;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 3px;
 }
 
 button {
-width:100%; padding:14px; margin-top:10px;
-background:#2e7d32; color:white; border:none; border-radius:8px;
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    background: green;
+    color: white;
+    border: none;
 }
 
 .result {
-background:#eef;
-padding:12px;
-margin-top:10px;
-border-radius:8px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #eee;
 }
 
-.ok { background:#c8e6c9; }
-.warn { background:#fff3cd; }
-.bad { background:#f8d7da; }
+.red { background:#f8d7da; }
+.green { background:#d4edda; }
 </style>
 </head>
 
@@ -40,7 +61,6 @@ border-radius:8px;
 
 <h2>Stolpekontroll v3.7</h2>
 
-<!-- 🔹 GRUNNLAGSDATA -->
 <h3>Grunnlagsdata</h3>
 
 <label>Netteier</label>
@@ -53,10 +73,10 @@ border-radius:8px;
 <input id="mast">
 
 <label>Stolpehøyde (m)</label>
-<input id="h">
+<input id="h" value="15">
 
 <label>Jordbanddiameter (mm)</label>
-<input id="jb">
+<input id="jb" value="350">
 
 <label>Mastetype</label>
 <select id="mastetype">
@@ -67,52 +87,55 @@ border-radius:8px;
 
 <label>Vertikallast</label>
 <select id="last">
-<option>Lav</option>
-<option selected>Normal</option>
+<option>Normal</option>
 <option>Høy</option>
 </select>
 
 <label>Klima</label>
 <select id="klima">
-<option>Fjell</option>
-<option selected>Innland</option>
+<option>Innland</option>
 <option>Kyst</option>
+<option>Fjell</option>
 </select>
 
 <label>Jordsmonn</label>
 <select id="jord">
-<option>Fjell</option>
-<option selected>Skogsmark</option>
+<option>Skogsmark</option>
 <option>Innmark</option>
+<option>Fjell</option>
 </select>
 
-<!-- 🔹 SKADE -->
+<button onclick="nyMast()">Ny mast</button>
+
 <h3>Indre råte</h3>
 
 <label>Stolpenr</label>
-<input id="stolpenr">
+<input>
 
-<label>Skadehøyde (m)</label>
-<input id="start">
+<label>Skade starter (m)</label>
+<input id="start" value="3">
+
+<label>Skade slutter (m)</label>
+<input id="slutt" value="4">
 
 <label>Diameter på skadested (mm)</label>
-<input id="d">
+<input id="d" value="330">
 
 <label>A (mm)</label>
-<input id="A">
+<input id="A" value="100">
 
 <label>E (restskall mm)</label>
-<input id="E">
+<input id="E" value="30">
 
 <label>Lengde langs stolpen</label>
 <select id="lengde">
-<option value="kort">0–0,5 m</option>
-<option value="middels">0,5–2 m</option>
-<option value="lang">Over 2 m</option>
+<option value="kort">0–0,5 m (Kort)</option>
+<option value="middels">0,5–2 m (Middels)</option>
+<option value="lang">Over 2 m (Lang)</option>
 </select>
 
 <label>Merknad</label>
-<textarea id="merknad"></textarea>
+<input>
 
 <button onclick="beregn()">Beregn</button>
 
@@ -130,83 +153,84 @@ let A = parseFloat(document.getElementById("A").value);
 let h = parseFloat(document.getElementById("h").value);
 let start = parseFloat(document.getElementById("start").value);
 
-if(!d || !E || !A || !h){
-document.getElementById("res").innerHTML = "Fyll ut alle felt";
-return;
-}
+let R = d/2;
 
-// 🔵 Radius
-let R = d / 2;
+// =====================
+// RESTSTYRKE (REN/FELT)
+// =====================
 
-// 🔵 RESTSTYRKE (felt + REN kalibrert)
-let rest = 100 * Math.pow(E / R, 0.55);
+// Flat kurve (kalibrert mot virkelighet)
+let rest = 100 * Math.pow(E / R, 0.35);
 
-// 🔵 A påvirkning (kun én gang!)
+// A påvirkning (moderat)
 let skadegrad = A / d;
 rest *= (1 - skadegrad * 0.15);
 
-// 🔵 Lengde (kun én gang!)
+// Lengdeeffekt (mild)
 let lengde = document.getElementById("lengde").value;
-if(lengde == "middels") rest *= 0.9;
-if(lengde == "lang") rest *= 0.8;
+if(lengde === "middels") rest *= 0.95;
+if(lengde === "lang") rest *= 0.85;
 
-// 🔵 Knekkpunkt (lett effekt)
+// Knekkpunkt (~1/3 av høyde)
 let knekk = h * 0.33;
 if(Math.abs(start - knekk) < 1){
-rest *= 0.9;
+    rest *= 0.9;
 }
 
-// 🔵 Mastetype
-let mastetype = document.getElementById("mastetype").value;
-if(mastetype == "A-mast") rest *= 0.9;
-if(mastetype == "Bardunert") rest *= 0.85;
-
-// 🔵 Begrensning
+// Begrensning
 if(rest > 95) rest = 95;
 if(rest < 25) rest = 25;
 
-// 🔒 SIKKERHETSFAKTOR (REN)
+// =====================
+// SIKKERHETSFAKTOR (REN)
+// =====================
 let sf = rest / 75;
 
-// 🔵 LEVETID (enkel modell)
-let klima = document.getElementById("klima").value;
-let jord = document.getElementById("jord").value;
+// =====================
+// RESTLEVETID
+// =====================
+let levetid = "";
 
-let lev = 20;
+if(rest > 80) levetid = "10–20 år";
+else if(rest > 70) levetid = "8–15 år";
+else if(rest > 60) levetid = "5–10 år";
+else if(rest > 50) levetid = "3–8 år";
+else levetid = "0–5 år";
 
-if(rest < 80) lev = 15;
-if(rest < 70) lev = 10;
-if(rest < 60) lev = 7;
-if(rest < 50) lev = 5;
+// =====================
+// RESULTAT
+// =====================
+let res = document.getElementById("res");
 
-if(klima == "Kyst") lev -= 3;
-if(jord == "Innmark") lev -= 2;
+let vurdering = "";
 
-if(lev < 2) lev = 2;
-
-// 🔵 VURDERING
-let klasse = "ok";
-let tekst = "OK";
-
-if(rest < 75){
-klasse = "warn";
-tekst = "Tiltak bør vurderes";
+if(sf < 1){
+    res.className = "result red";
+    vurdering = "Tiltak anbefales";
+} else {
+    res.className = "result green";
+    vurdering = "OK";
 }
 
-if(rest < 60){
-klasse = "bad";
-tekst = "Tiltak anbefales";
-}
-
-// 🔵 RESULTAT
-document.getElementById("res").className = "result " + klasse;
-document.getElementById("res").innerHTML = `
-Reststyrke: <b>${rest.toFixed(1)} %</b><br>
-Sikkerhetsfaktor: <b>${sf.toFixed(2)}</b><br>
-Restlevetid: <b>${lev} år</b><br>
-Vurdering: <b>${tekst}</b>
+res.innerHTML = `
+Reststyrke: ${rest.toFixed(1)} %<br>
+Sikkerhetsfaktor: ${sf.toFixed(2)}<br>
+Restlevetid: ${levetid}<br>
+Vurdering: ${vurdering}
 `;
 
+}
+
+// =====================
+// NY MAST
+// =====================
+function nyMast(){
+document.getElementById("start").value="";
+document.getElementById("slutt").value="";
+document.getElementById("d").value="";
+document.getElementById("A").value="";
+document.getElementById("E").value="";
+document.getElementById("res").innerHTML="";
 }
 
 </script>
