@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Stolpekontroll v2.9</title>
 
 <link rel="manifest" href="manifest.json">
@@ -35,12 +34,7 @@ grid-template-columns:1fr 1fr;
 gap:6px;
 }
 
-img {
-width:40%;
-display:block;
-margin:auto;
-}
-
+img {width:40%; display:block; margin:auto;}
 .hidden {display:none;}
 .section {margin-top:12px;}
 </style>
@@ -66,45 +60,33 @@ margin:auto;
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
-<!-- SKADEKNAPPER -->
 <h3>Registrer skade</h3>
 
 <div class="grid">
-<button onclick="visSkade('indre')">Indre råte</button>
-<button onclick="visSkade('sirk')">Sirkulær råte</button>
+<button onclick="velgSkade('indre')">Indre råte</button>
+<button onclick="velgSkade('sirk')">Sirkulær råte</button>
 
-<button onclick="visSkade('soft')">Softråte</button>
-<button onclick="visSkade('spett')">Spettsmie</button>
+<button onclick="velgSkade('soft')">Softråte</button>
+<button onclick="velgSkade('spett')">Spettsmie</button>
 
-<button onclick="visSkade('hakk')">Hakkespetthull</button>
-<button onclick="visSkade('sprekk')">Sprekk</button>
+<button onclick="velgSkade('hakk')">Hakkespetthull</button>
+<button onclick="velgSkade('sprekk')">Sprekk</button>
 </div>
 
 <!-- SKADE 1 -->
 <div class="section">
 <h3>Skade 1</h3>
-
 <img id="img1">
-
-<label>A</label><input id="A1">
-<label>B</label><input id="B1">
-<label>E</label><input id="E1">
-
+<div id="felt1"></div>
 </div>
 
-<!-- NY SKADE -->
 <button onclick="visSkade2()">Ny skade (2)</button>
 
 <!-- SKADE 2 -->
 <h3 id="skade2Tittel" class="hidden">Skade 2</h3>
 <div id="skade2" class="hidden section">
-
 <img id="img2">
-
-<label>A</label><input id="A2">
-<label>B</label><input id="B2">
-<label>E</label><input id="E2">
-
+<div id="felt2"></div>
 </div>
 
 <label>Merknad</label>
@@ -118,86 +100,91 @@ margin:auto;
 
 <script>
 
-// VIS SKADE
-function visSkade(type){
-    document.getElementById("img1").src = type + ".svg";
-    document.getElementById("img2").src = type + ".svg";
+// FELTMAPPING
+const feltMap = {
+indre:["A","B","E"],
+sirk:["A","B","C","D"],
+soft:["A","B","C","D"],
+spett:["A","B"],
+hakk:["A","B","C","D"],
+sprekk:["Start","Slutt","Dybde"]
+};
+
+// VELG SKADE
+function velgSkade(type){
+
+document.getElementById("img1").src = type + ".svg";
+document.getElementById("img2").src = type + ".svg";
+
+lagFelt(type,"felt1");
+lagFelt(type,"felt2");
+}
+
+// LAG FELT
+function lagFelt(type,id){
+
+let div = document.getElementById(id);
+div.innerHTML = "";
+
+feltMap[type].forEach(f=>{
+div.innerHTML += `<label>${f}</label><input>`;
+});
 }
 
 // VIS SKADE 2
 function visSkade2(){
-    document.getElementById("skade2").classList.remove("hidden");
-    document.getElementById("skade2Tittel").classList.remove("hidden");
+document.getElementById("skade2").classList.remove("hidden");
+document.getElementById("skade2Tittel").classList.remove("hidden");
 }
 
 // GPS
-let gpsWatch = null;
+let gpsWatch=null;
 
 function startGPS(){
-    if(navigator.geolocation){
-        gpsWatch = navigator.geolocation.watchPosition(function(pos){
-            let lat = pos.coords.latitude.toFixed(6);
-            let lon = pos.coords.longitude.toFixed(6);
-            document.getElementById("gps").value = lat + ", " + lon;
-        }, null, {enableHighAccuracy:true});
-    }
+gpsWatch=navigator.geolocation.watchPosition(p=>{
+gps.value=p.coords.latitude.toFixed(6)+", "+p.coords.longitude.toFixed(6);
+});
 }
 
 function stopGPS(){
-    if(gpsWatch){
-        navigator.geolocation.clearWatch(gpsWatch);
-        gpsWatch = null;
-    }
+navigator.geolocation.clearWatch(gpsWatch);
 }
 
 // DATA
-let data = [];
+let data=[];
 
 function lagre(){
-    data.push({
-        Netteier: netteier.value,
-        LinjeID: linje.value,
-        Mastnr: mast.value,
-        GPS: gps.value,
-
-        A1: A1.value,
-        B1: B1.value,
-        E1: E1.value,
-
-        A2: A2.value,
-        B2: B2.value,
-        E2: E2.value,
-
-        Merknad: merknad.value
-    });
-
-    alert("Lagret");
+data.push({
+netteier:netteier.value,
+linje:linje.value,
+mast:mast.value,
+gps:gps.value,
+merknad:merknad.value
+});
+alert("Lagret");
 }
 
 // NY MAST
 function nyMast(){
 
-    let n = netteier.value;
-    let l = linje.value;
+let n=netteier.value;
+let l=linje.value;
 
-    document.querySelectorAll("input").forEach(i => i.value="");
+document.querySelectorAll("input").forEach(i=>i.value="");
 
-    netteier.value = n;
-    linje.value = l;
+netteier.value=n;
+linje.value=l;
 
-    document.getElementById("skade2").classList.add("hidden");
-    document.getElementById("skade2Tittel").classList.add("hidden");
+document.getElementById("skade2").classList.add("hidden");
+document.getElementById("skade2Tittel").classList.add("hidden");
 }
 
 // EXCEL
 function lastnedExcel(){
-
-    let ws = XLSX.utils.json_to_sheet(data);
-    let wb = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(wb, ws, "Stolper");
-
-    XLSX.writeFile(wb, "stolpekontroll.xlsx");
+let ws=XLSX.utils.json_to_sheet(data);
+let wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,"Stolper");
+XLSX.writeFile(wb,"stolpekontroll.xlsx");
 }
 
 </script>
