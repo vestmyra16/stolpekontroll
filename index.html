@@ -4,78 +4,46 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v2.7</title>
+<title>Stolpekontroll v2.8</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 
 <style>
-body {
-    font-family: Arial;
-    background:#f4f4f4;
-    margin:0;
-    text-align:center;
-}
+body { font-family: Arial; background:#f4f4f4; margin:0; text-align:center; }
 
-.container {
-    max-width:420px;
-    margin:auto;
-    padding:10px;
-}
+.container { max-width:420px; margin:auto; padding:10px; }
 
-h2 {
-    margin-top:10px;
-}
+.section { background:white; padding:10px; margin-top:10px; border-radius:6px; }
 
-label {
-    display:block;
-    text-align:left;
-    font-weight:bold;
-    margin-top:10px;
-}
+label { display:block; text-align:left; font-weight:bold; margin-top:10px; }
 
-input, select {
-    width:100%;
-    padding:12px;
-    margin-top:5px;
-    font-size:16px;
-}
+input { width:100%; padding:12px; margin-top:5px; font-size:16px; }
 
 button {
-    width:100%;
-    padding:15px;
-    margin-top:10px;
-    font-size:18px;
+    width:100%; padding:15px; margin-top:10px;
+    font-size:18px; background:#2e7d32;
+    color:white; border:none; border-radius:5px;
+}
+
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+.hidden { display:none; }
+
+img { width:100%; margin-top:10px; border-radius:5px; }
+
+.choice {
     background:#2e7d32;
     color:white;
-    border:none;
+    padding:12px;
+    margin-top:5px;
     border-radius:5px;
 }
 
-.grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-}
-
-.smallgrid {
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr;
-    gap:6px;
-}
-
-.section {
-    background:white;
+.smallBtn {
     padding:10px;
-    margin-top:10px;
-    border-radius:6px;
-}
-
-.result {
-    background:#e8f5e9;
-    padding:10px;
-    margin-top:10px;
+    font-size:14px;
 }
 </style>
 </head>
@@ -84,7 +52,7 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.7</h2>
+<h2>Stolpekontroll v2.8</h2>
 
 <!-- GRUNNLAG -->
 <div class="section">
@@ -100,33 +68,39 @@ button {
 <input id="mast">
 
 <label>Stolpehøyde (m)</label>
-<input id="hoyde">
+<input>
 
 <label>Jordband (mm)</label>
-<input id="jordband">
+<input>
 
 <label>Nedgravd (m)</label>
-<input id="nedgravd">
+<input>
 
+<!-- Jordsmonn -->
 <label>Jordsmonn</label>
-<div class="grid">
-<button onclick="sett('jord','Innmark')">Innmark</button>
-<button onclick="sett('jord','Skogsmark')">Skogsmark</button>
-<button onclick="sett('jord','Fjell')">Fjell</button>
+<div class="choice" onclick="toggle('jordvalg')" id="jordValg">Skogsmark</div>
+
+<div id="jordvalg" class="hidden grid">
+<button onclick="settValg('jordValg','Innmark')">Innmark</button>
+<button onclick="settValg('jordValg','Fjell')">Fjell</button>
 </div>
 
+<!-- Klima -->
 <label>Klima</label>
-<div class="grid">
-<button onclick="sett('klima','Kyst')">Kyst</button>
-<button onclick="sett('klima','Innland')">Innland</button>
-<button onclick="sett('klima','Fjell')">Fjell</button>
+<div class="choice" onclick="toggle('klimavalg')" id="klimaValg">Kyst</div>
+
+<div id="klimavalg" class="hidden grid">
+<button onclick="settValg('klimaValg','Innland')">Innland</button>
+<button onclick="settValg('klimaValg','Fjell')">Fjell</button>
 </div>
 
+<!-- Vertikallast -->
 <label>Vertikallast</label>
-<div class="grid">
-<button onclick="sett('last','Lav')">Lav</button>
-<button onclick="sett('last','Normal')">Normal</button>
-<button onclick="sett('last','Høy')">Høy</button>
+<div class="choice" onclick="toggle('lastvalg')" id="lastValg">Normal</div>
+
+<div id="lastvalg" class="hidden grid">
+<button onclick="settValg('lastValg','Lav')">Lav</button>
+<button onclick="settValg('lastValg','Høy')">Høy</button>
 </div>
 
 <button onclick="nyMast()">Ny mast</button>
@@ -147,8 +121,11 @@ button {
 </div>
 
 <!-- SKADE -->
-<div class="section" id="skadeDiv" style="display:none;">
+<div class="section hidden" id="skadeDiv">
+
 <h3 id="skadetittel"></h3>
+
+<img id="bilde">
 
 <label>Stolpenr</label>
 <input>
@@ -172,7 +149,6 @@ button {
 <!-- EXPORT -->
 <div class="section">
 <h3>Eksport</h3>
-
 <button onclick="lastNed()">Last ned CSV</button>
 </div>
 
@@ -180,47 +156,77 @@ button {
 
 <script>
 
-let data = [];
-
-function sett(type, verdi){
-    console.log(type, verdi);
+// 🔹 Behold Netteier + LinjeID
+window.onload = function(){
+    document.getElementById("netteier").value = localStorage.getItem("netteier") || "";
+    document.getElementById("linje").value = localStorage.getItem("linje") || "";
 }
 
+function lagreGrunnlag(){
+    localStorage.setItem("netteier", document.getElementById("netteier").value);
+    localStorage.setItem("linje", document.getElementById("linje").value);
+}
+
+// 🔹 Toggle valg
+function toggle(id){
+    let el = document.getElementById(id);
+    el.classList.toggle("hidden");
+}
+
+// 🔹 Sett valg
+function settValg(id, verdi){
+    document.getElementById(id).innerText = verdi;
+    document.getElementById(id.replace("Valg","valg")).classList.add("hidden");
+}
+
+// 🔹 Ny mast
 function nyMast(){
-    document.querySelectorAll("input").forEach(i => i.value="");
+    lagreGrunnlag();
+    document.querySelectorAll("input").forEach(i=>{
+        if(i.id!="netteier" && i.id!="linje") i.value="";
+    });
 }
 
+// 🔹 Velg skade
 function velgSkade(type){
+
     let div = document.getElementById("skadeDiv");
-    div.style.display="block";
+    div.classList.remove("hidden");
 
     let felt = document.getElementById("felt");
     let tittel = document.getElementById("skadetittel");
+    let bilde = document.getElementById("bilde");
 
     felt.innerHTML = "";
 
     if(type=="indre"){
-        tittel.innerText="Indre råte (A B E)";
+        tittel.innerText="Indre råte (ABE)";
+        bilde.src="indre.svg";
         lagFelt(["A","B","E"]);
     }
     if(type=="sirk"){
-        tittel.innerText="Sirkulær råte (A B C D)";
+        tittel.innerText="Sirkulær råte (ABCD)";
+        bilde.src="sirk.svg";
         lagFelt(["A","B","C","D"]);
     }
     if(type=="soft"){
-        tittel.innerText="Softråte (A B C D)";
+        tittel.innerText="Softråte (ABCD)";
+        bilde.src="soft.svg";
         lagFelt(["A","B","C","D"]);
     }
     if(type=="spett"){
-        tittel.innerText="Spettsmie (A B)";
+        tittel.innerText="Spettsmie (AB)";
+        bilde.src="spett.svg";
         lagFelt(["A","B"]);
     }
     if(type=="hakk"){
-        tittel.innerText="Hakkespetthull (A B C D)";
+        tittel.innerText="Hakkespetthull (ABCD)";
+        bilde.src="hakk.svg";
         lagFelt(["A","B","C","D"]);
     }
     if(type=="sprekk"){
         tittel.innerText="Sprekk";
+        bilde.src="sprekk.svg";
         felt.innerHTML = `
         <label>Start (m)</label><input>
         <label>Slutt (m)</label><input>
@@ -231,6 +237,7 @@ function velgSkade(type){
     }
 }
 
+// 🔹 Lag felt
 function lagFelt(arr){
     let felt = document.getElementById("felt");
     arr.forEach(a=>{
@@ -238,21 +245,24 @@ function lagFelt(arr){
     });
 }
 
+// 🔹 Lagre
 function lagre(){
+    lagreGrunnlag();
     alert("Lagret");
 }
 
+// 🔹 CSV
 function lastNed(){
-    let csv = "data";
-    let blob = new Blob([csv], {type:"text/csv"});
+    let blob = new Blob(["data"], {type:"text/csv"});
     let a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "stolper.csv";
     a.click();
 }
 
+// 🔹 Kamera
 function taBilde(){
-    alert("Åpner kamera (kommer)");
+    alert("Kamera kommer i neste steg");
 }
 
 </script>
