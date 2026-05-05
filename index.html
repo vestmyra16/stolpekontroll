@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v3.5</title>
+<title>Stolpekontroll v3.6</title>
 
 <style>
 body { font-family: Arial; background:#f4f4f4; }
@@ -18,29 +18,16 @@ button { width:100%; padding:12px; margin-top:10px; background:#2e7d32; color:wh
 <body>
 <div class="container">
 
-<h2>Stolpekontroll v3.5</h2>
+<h2>Stolpekontroll v3.6</h2>
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label><input>
-<label>LinjeID</label><input>
-<label>Mastnr</label><input>
-
 <label>Stolpehøyde (m)</label><input id="h">
-<label>Jordbånddiameter (mm)</label><input id="jord">
-
 <label>Mastetype</label>
 <select id="mastetype">
 <option>Enkel stolpe</option>
 <option>A-mast</option>
 <option>Bardunert</option>
-</select>
-
-<label>Vertikallast</label>
-<select>
-<option>Lav</option>
-<option selected>Normal</option>
-<option>Høy</option>
 </select>
 
 <label>Klima</label>
@@ -51,7 +38,7 @@ button { width:100%; padding:12px; margin-top:10px; background:#2e7d32; color:wh
 </select>
 
 <label>Jordsmonn</label>
-<select id="jordtype">
+<select id="jord">
 <option>Fjell</option>
 <option selected>Skogsmark</option>
 <option>Innmark</option>
@@ -59,18 +46,15 @@ button { width:100%; padding:12px; margin-top:10px; background:#2e7d32; color:wh
 
 <h3>Indre råte</h3>
 
-<label>Stolpenr</label><input>
 <label>Skade starter (m)</label><input id="start">
-<label>Skade slutter (m)</label><input id="slutt">
-
 <label>Diameter på skadested (mm)</label><input id="d">
-<label>A (mm)</label><input>
+<label>A (mm)</label><input id="A">
 <label>E (restskall mm)</label><input id="E">
 
 <label>Lengde langs stolpen</label>
 <select id="lengde">
-<option value="kort">0 – 0,5 m</option>
-<option value="middels">0,5 – 2 m</option>
+<option value="kort">0–0,5 m</option>
+<option value="middels">0,5–2 m</option>
 <option value="lang">Over 2 m</option>
 </select>
 
@@ -86,57 +70,63 @@ function beregn(){
 
 let d = parseFloat(document.getElementById("d").value);
 let E = parseFloat(document.getElementById("E").value);
+let A = parseFloat(document.getElementById("A").value);
 let h = parseFloat(document.getElementById("h").value);
 let start = parseFloat(document.getElementById("start").value);
 
-if(!d || !E || !h){
+if(!d || !E || !A || !h){
 document.getElementById("res").innerHTML = "Fyll ut alle felt";
 return;
 }
 
-// ✅ FELTKALIBRERT RESTSTYRKE
-let rest = 100 * Math.sqrt(E / d) * 3.2;
-if(rest > 100) rest = 100;
-if(rest < 5) rest = 5;
+// 🔹 1. RESTSTYRKE (feltkalibrert)
+let rest = 40 + (E * 0.5);
 
-// ✅ SIKKERHETSFAKTOR
+// 🔹 2. A påvirker
+let skadegrad = A / d;
+rest *= (1 - skadegrad * 0.5);
+
+// 🔹 3. Lengde påvirker
+let lengde = document.getElementById("lengde").value;
+if(lengde == "middels") rest *= 0.9;
+if(lengde == "lang") rest *= 0.75;
+
+// 🔹 4. Knekkpunkt
+let knekk = h * 0.33;
+if(Math.abs(start - knekk) < 1){
+rest *= 0.9;
+}
+
+// 🔹 5. Mastetype
+let mastetype = document.getElementById("mastetype").value;
+if(mastetype == "A-mast") rest *= 0.9;
+if(mastetype == "Bardunert") rest *= 0.85;
+
+// Begrensning
+if(rest > 95) rest = 95;
+if(rest < 20) rest = 20;
+
+// 🔹 6. SIKKERHETSFAKTOR
 let sf30 = rest / 70;
 let sf40 = rest / 85;
 
-// 🔧 Mastetype
-let mastetype = document.getElementById("mastetype").value;
-if(mastetype == "A-mast") sf30 *= 0.9;
-if(mastetype == "Bardunert") sf30 *= 0.85;
-
-// 🔧 Knekkpunkt (~1/3 høyde)
-let knekk = h * 0.33;
-if(Math.abs(start - knekk) < 1){
-sf30 *= 0.9;
-sf40 *= 0.9;
-}
-
-// 🔧 Lengdeeffekt
-let lengde = document.getElementById("lengde").value;
-if(lengde == "middels") sf30 *= 0.9;
-if(lengde == "lang") sf30 *= 0.75;
-
-// 🌍 Levetid
+// 🔹 7. LEVETID
 let klima = document.getElementById("klima").value;
-let jord = document.getElementById("jordtype").value;
+let jord = document.getElementById("jord").value;
 
-let lev = 15;
+let lev = 20;
 
-if(rest < 70) lev = 12;
-if(rest < 60) lev = 10;
-if(rest < 50) lev = 7;
-if(rest < 40) lev = 5;
+if(rest < 80) lev = 15;
+if(rest < 70) lev = 10;
+if(rest < 60) lev = 7;
+if(rest < 50) lev = 5;
 
-if(klima == "Kyst") lev -= 2;
+if(klima == "Kyst") lev -= 3;
 if(jord == "Innmark") lev -= 2;
 
 if(lev < 2) lev = 2;
 
-// 📊 RESULTAT
+// RESULTAT
 document.getElementById("res").innerHTML = `
 Reststyrke: ${rest.toFixed(1)} %<br>
 SF (30): ${sf30.toFixed(2)}<br>
