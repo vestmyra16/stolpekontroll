@@ -3,53 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v3.7</title>
+<title>Stolpekontroll v3.8</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: #f2f2f2;
-    margin: 0;
-}
-
-.container {
-    max-width: 420px;
-    margin: auto;
-    background: white;
-    padding: 15px;
-}
-
-h2 {
-    text-align: center;
-}
-
-label {
-    font-weight: bold;
-    display: block;
-    margin-top: 10px;
-}
-
-input, select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 3px;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 15px;
-    background: green;
-    color: white;
-    border: none;
-}
-
-.result {
-    margin-top: 15px;
-    padding: 10px;
-    background: #eee;
-}
-
+body { font-family: Arial; background:#f2f2f2; margin:0; }
+.container { max-width:420px; margin:auto; background:white; padding:15px; }
+h2 { text-align:center; }
+label { font-weight:bold; display:block; margin-top:10px; }
+input, select { width:100%; padding:8px; margin-top:3px; }
+button { width:100%; padding:10px; margin-top:15px; background:green; color:white; border:none; }
+.result { margin-top:15px; padding:10px; }
 .red { background:#f8d7da; }
 .green { background:#d4edda; }
 </style>
@@ -59,83 +22,47 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v3.7</h2>
+<h2>Stolpekontroll v3.8</h2>
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label>
-<input id="netteier">
+<label>Netteier</label><input>
+<label>LinjeID</label><input>
+<label>Mastnr</label><input>
 
-<label>LinjeID</label>
-<input id="linje">
-
-<label>Mastnr</label>
-<input id="mast">
-
-<label>Stolpehøyde (m)</label>
-<input id="h" value="15">
-
-<label>Jordbanddiameter (mm)</label>
-<input id="jb" value="350">
+<label>Stolpehøyde (m)</label><input id="h" value="15">
+<label>Jordbanddiameter (mm)</label><input id="jb" value="350">
 
 <label>Mastetype</label>
-<select id="mastetype">
-<option>Enkel stolpe</option>
-<option>A-mast</option>
-<option>Bardunert</option>
-</select>
+<select><option>Enkel stolpe</option><option>A-mast</option><option>Bardunert</option></select>
 
 <label>Vertikallast</label>
-<select id="last">
-<option>Normal</option>
-<option>Høy</option>
-</select>
+<select><option>Normal</option><option>Høy</option></select>
 
 <label>Klima</label>
-<select id="klima">
-<option>Innland</option>
-<option>Kyst</option>
-<option>Fjell</option>
-</select>
+<select><option>Innland</option><option>Kyst</option><option>Fjell</option></select>
 
 <label>Jordsmonn</label>
-<select id="jord">
-<option>Skogsmark</option>
-<option>Innmark</option>
-<option>Fjell</option>
-</select>
+<select><option>Skogsmark</option><option>Innmark</option><option>Fjell</option></select>
 
 <button onclick="nyMast()">Ny mast</button>
 
 <h3>Indre råte</h3>
 
-<label>Stolpenr</label>
-<input>
+<label>Stolpenr</label><input>
+<label>Skade starter (m)</label><input id="start" value="3">
+<label>Skade slutter (m)</label><input id="slutt" value="4">
 
-<label>Skade starter (m)</label>
-<input id="start" value="3">
-
-<label>Skade slutter (m)</label>
-<input id="slutt" value="4">
-
-<label>Diameter på skadested (mm)</label>
-<input id="d" value="330">
-
-<label>A (mm)</label>
-<input id="A" value="100">
-
-<label>E (restskall mm)</label>
-<input id="E" value="30">
+<label>Diameter på skadested (mm)</label><input id="d" value="330">
+<label>A (mm)</label><input id="A" value="100">
+<label>E (restskall mm)</label><input id="E" value="30">
 
 <label>Lengde langs stolpen</label>
 <select id="lengde">
-<option value="kort">0–0,5 m (Kort)</option>
-<option value="middels">0,5–2 m (Middels)</option>
-<option value="lang">Over 2 m (Lang)</option>
+<option value="kort">0–0,5 m</option>
+<option value="middels">0,5–2 m</option>
+<option value="lang">Over 2 m</option>
 </select>
-
-<label>Merknad</label>
-<input>
 
 <button onclick="beregn()">Beregn</button>
 
@@ -155,40 +82,41 @@ let start = parseFloat(document.getElementById("start").value);
 
 let R = d/2;
 
-// =====================
-// RESTSTYRKE (REN/FELT)
-// =====================
+// ======================
+// NY FELTKALIBRERT MODELL
+// ======================
 
-// Flat kurve (kalibrert mot virkelighet)
-let rest = 100 * Math.pow(E / R, 0.35);
+// lineær + svak kurve (stabil i felt)
+let ratio = E / R;
+let rest = 100 * (0.6 * ratio + 0.4 * Math.sqrt(ratio));
 
-// A påvirkning (moderat)
+// moderat A påvirkning
 let skadegrad = A / d;
-rest *= (1 - skadegrad * 0.15);
+rest *= (1 - skadegrad * 0.10);
 
-// Lengdeeffekt (mild)
+// lengdeeffekt (rolig)
 let lengde = document.getElementById("lengde").value;
-if(lengde === "middels") rest *= 0.95;
-if(lengde === "lang") rest *= 0.85;
+if(lengde === "middels") rest *= 0.97;
+if(lengde === "lang") rest *= 0.90;
 
-// Knekkpunkt (~1/3 av høyde)
+// knekkpunkt
 let knekk = h * 0.33;
 if(Math.abs(start - knekk) < 1){
-    rest *= 0.9;
+    rest *= 0.92;
 }
 
-// Begrensning
+// begrensning
 if(rest > 95) rest = 95;
-if(rest < 25) rest = 25;
+if(rest < 30) rest = 30;
 
-// =====================
+// ======================
 // SIKKERHETSFAKTOR (REN)
-// =====================
+// ======================
 let sf = rest / 75;
 
-// =====================
+// ======================
 // RESTLEVETID
-// =====================
+// ======================
 let levetid = "";
 
 if(rest > 80) levetid = "10–20 år";
@@ -197,39 +125,24 @@ else if(rest > 60) levetid = "5–10 år";
 else if(rest > 50) levetid = "3–8 år";
 else levetid = "0–5 år";
 
-// =====================
-// RESULTAT
-// =====================
+// ======================
 let res = document.getElementById("res");
-
-let vurdering = "";
 
 if(sf < 1){
     res.className = "result red";
-    vurdering = "Tiltak anbefales";
 } else {
     res.className = "result green";
-    vurdering = "OK";
 }
 
 res.innerHTML = `
 Reststyrke: ${rest.toFixed(1)} %<br>
 Sikkerhetsfaktor: ${sf.toFixed(2)}<br>
-Restlevetid: ${levetid}<br>
-Vurdering: ${vurdering}
+Restlevetid: ${levetid}
 `;
 
 }
 
-// =====================
-// NY MAST
-// =====================
 function nyMast(){
-document.getElementById("start").value="";
-document.getElementById("slutt").value="";
-document.getElementById("d").value="";
-document.getElementById("A").value="";
-document.getElementById("E").value="";
 document.getElementById("res").innerHTML="";
 }
 
