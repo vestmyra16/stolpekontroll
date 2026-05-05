@@ -12,31 +12,22 @@
 
 <style>
 body {font-family: Arial; background:#f4f4f4; margin:0;}
-.container {max-width:420px; margin:auto; padding:10px; background:white;}
-
+.container {max-width:420px; margin:auto; background:white; padding:10px;}
 label {font-weight:bold; display:block; margin-top:8px;}
-input {width:100%; padding:10px; margin-top:4px;}
-
+input {width:100%; padding:10px;}
 button {
 width:100%;
 padding:12px;
 margin-top:6px;
-font-size:16px;
-border:none;
-border-radius:6px;
 background:#2e7d32;
 color:white;
+border:none;
+border-radius:6px;
+font-size:16px;
 }
-
-.grid {
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:6px;
-}
-
-img {width:40%; display:block; margin:auto;}
+.grid {display:grid; grid-template-columns:1fr 1fr; gap:6px;}
 .hidden {display:none;}
-.section {margin-top:12px;}
+img {width:35%; margin:auto; display:block;}
 </style>
 </head>
 
@@ -45,46 +36,68 @@ img {width:40%; display:block; margin:auto;}
 
 <h2>Stolpekontroll v2.9</h2>
 
+<!-- GRUNNLAGSDATA -->
 <label>Netteier</label>
 <input id="netteier">
 
 <label>LinjeID</label>
 <input id="linje">
 
-<label>Mastnr</label>
+<label>Mast nr</label>
 <input id="mast">
+
+<label>Stolpehøyde over bakken (m)</label>
+<input id="hoyde">
+
+<label>Jordband (mm)</label>
+<input id="jordband">
+
+<label>Nedgravd (m)</label>
+<input id="nedgravd">
 
 <label>GPS</label>
 <input id="gps" readonly>
-
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
+<label>Jordsmonn</label>
+<input id="jord" value="Skogsmark">
+
+<label>Klima</label>
+<input id="klima" value="Kyst">
+
+<label>Avtrapping</label>
+<input id="avtrapping" value="0.75">
+
+<label>Vertikallast</label>
+<input id="last" value="Normal">
+
+<button onclick="nyMast()">Ny mast</button>
+
+<!-- SKADEKNAPPER -->
 <h3>Registrer skade</h3>
 
 <div class="grid">
-<button onclick="velgSkade('indre')">Indre råte</button>
-<button onclick="velgSkade('sirk')">Sirkulær råte</button>
+<button onclick="velg('indre')">Indre råte</button>
+<button onclick="velg('sirk')">Sirkulær råte</button>
 
-<button onclick="velgSkade('soft')">Softråte</button>
-<button onclick="velgSkade('spett')">Spettsmie</button>
+<button onclick="velg('soft')">Softråte</button>
+<button onclick="velg('spett')">Spettsmie</button>
 
-<button onclick="velgSkade('hakk')">Hakkespetthull</button>
-<button onclick="velgSkade('sprekk')">Sprekk</button>
+<button onclick="velg('hakk')">Hakkespetthull</button>
+<button onclick="velg('sprekk')">Sprekk</button>
 </div>
 
 <!-- SKADE 1 -->
-<div class="section">
 <h3>Skade 1</h3>
 <img id="img1">
 <div id="felt1"></div>
-</div>
 
-<button onclick="visSkade2()">Ny skade (2)</button>
+<button onclick="visSkade2()">Legg til skade 2</button>
 
 <!-- SKADE 2 -->
-<h3 id="skade2Tittel" class="hidden">Skade 2</h3>
-<div id="skade2" class="hidden section">
+<div id="skade2" class="hidden">
+<h3>Skade 2</h3>
 <img id="img2">
 <div id="felt2"></div>
 </div>
@@ -93,26 +106,29 @@ img {width:40%; display:block; margin:auto;}
 <input id="merknad">
 
 <button onclick="lagre()">Lagre mast</button>
-<button onclick="nyMast()">Ny mast</button>
-<button onclick="lastnedExcel()">Last ned Excel</button>
+<button onclick="excel()">Last ned Excel</button>
 
 </div>
 
 <script>
 
-// FELTMAPPING
-const feltMap = {
-indre:["A","B","E"],
-sirk:["A","B","C","D"],
-soft:["A","B","C","D"],
-spett:["A","B"],
-hakk:["A","B","C","D"],
-sprekk:["Start","Slutt","Dybde"]
+const felt = {
+indre:["A mm","B mm","E mm"],
+sirk:["A mm","B mm","C mm","D mm"],
+soft:["A mm","B mm","C mm","D mm"],
+spett:["A mm","B mm"],
+hakk:["A mm","B mm","C mm","D mm"],
+sprekk:[
+"Diam på skadested",
+"Sprekk starter (m)",
+"Sprekk slutter (m)",
+"Sprekkdybde (A)",
+"Sprekkbredde (B)",
+"Sprekklengde (m)"
+]
 };
 
-// VELG SKADE
-function velgSkade(type){
-
+function velg(type){
 document.getElementById("img1").src = type + ".svg";
 document.getElementById("img2").src = type + ".svg";
 
@@ -120,29 +136,24 @@ lagFelt(type,"felt1");
 lagFelt(type,"felt2");
 }
 
-// LAG FELT
 function lagFelt(type,id){
+let d=document.getElementById(id);
+d.innerHTML="";
 
-let div = document.getElementById(id);
-div.innerHTML = "";
-
-feltMap[type].forEach(f=>{
-div.innerHTML += `<label>${f}</label><input>`;
+felt[type].forEach(f=>{
+d.innerHTML+=`<label>${f}</label><input>`;
 });
 }
 
-// VIS SKADE 2
 function visSkade2(){
 document.getElementById("skade2").classList.remove("hidden");
-document.getElementById("skade2Tittel").classList.remove("hidden");
 }
 
-// GPS
 let gpsWatch=null;
 
 function startGPS(){
 gpsWatch=navigator.geolocation.watchPosition(p=>{
-gps.value=p.coords.latitude.toFixed(6)+", "+p.coords.longitude.toFixed(6);
+gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
 });
 }
 
@@ -150,7 +161,6 @@ function stopGPS(){
 navigator.geolocation.clearWatch(gpsWatch);
 }
 
-// DATA
 let data=[];
 
 function lagre(){
@@ -158,15 +168,19 @@ data.push({
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
+hoyde:hoyde.value,
+jordband:jordband.value,
+nedgravd:nedgravd.value,
 gps:gps.value,
+jord:jord.value,
+klima:klima.value,
+last:last.value,
 merknad:merknad.value
 });
 alert("Lagret");
 }
 
-// NY MAST
 function nyMast(){
-
 let n=netteier.value;
 let l=linje.value;
 
@@ -176,11 +190,9 @@ netteier.value=n;
 linje.value=l;
 
 document.getElementById("skade2").classList.add("hidden");
-document.getElementById("skade2Tittel").classList.add("hidden");
 }
 
-// EXCEL
-function lastnedExcel(){
+function excel(){
 let ws=XLSX.utils.json_to_sheet(data);
 let wb=XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(wb,ws,"Stolper");
