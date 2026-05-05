@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v3.1</title>
+<title>Stolpekontroll v3.2</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -47,7 +47,7 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v3.1</h2>
+<h2>Stolpekontroll v3.2</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -155,22 +155,22 @@ function beregn(){
 
     let radius = D / 2;
 
-    // 🔥 RESTSTYRKE – riktig følsomhet
-    let rest = 100 * Math.pow((E / radius), 0.6);
+    // 🔥 NY RESTSTYRKE (MER FØLSOM)
+    let rest = 100 * Math.pow((E / radius), 0.8);
 
-    // 🔧 A påvirkning
+    // 🔧 A påvirkning (mildere)
     let faktorA = 1 - Math.pow((A / D), 1.2);
-    if(faktorA < 0.3) faktorA = 0.3;
+    if(faktorA < 0.4) faktorA = 0.4;
 
     // 🔧 Lengde
     let faktorLengde = 1;
-    if(lengdeklasse === "middels") faktorLengde = 0.8;
-    if(lengdeklasse === "lang") faktorLengde = 0.6;
+    if(lengdeklasse === "middels") faktorLengde = 0.85;
+    if(lengdeklasse === "lang") faktorLengde = 0.7;
 
     // 🔧 Mastetype
     let faktorMast = 1;
-    if(mastetype === "bardun") faktorMast = 1.15;
-    if(mastetype === "a") faktorMast = 1.25;
+    if(mastetype === "bardun") faktorMast = 1.1;
+    if(mastetype === "a") faktorMast = 1.2;
 
     // 🔧 Knekkpunkt
     let knekk = hoyde * 0.33;
@@ -183,10 +183,15 @@ function beregn(){
 
     let faktorKnekk = (treff > 0) ? 0.8 : 1;
 
-    rest = rest * faktorA * faktorLengde * faktorMast * faktorKnekk;
+    // 🔥 Justert multiplikasjon (ikke drepe E-effekt)
+    rest = rest * (0.6 + 0.4 * faktorA);
+    rest = rest * (0.7 + 0.3 * faktorLengde);
+    rest = rest * (0.8 + 0.2 * faktorMast);
+    rest = rest * (0.7 + 0.3 * faktorKnekk);
 
+    // 🔥 Begrensning (ikke låsing!)
     if(rest > 100) rest = 100;
-    if(rest < 40) rest = 40;
+    if(rest < 20) rest = 20;
 
     // 🔥 Sikkerhetsfaktor
     let baseSF = 1.8 * (rest / 100);
@@ -198,9 +203,10 @@ function beregn(){
     let sf30 = baseSF * lastFaktor;
     let sf40 = sf30 * (40 / 30);
 
-    // 🔥 Levetid (med klima + jord)
-    let levetid = 15;
+    // 🔥 Levetid
+    let levetid = 20;
 
+    if(sf30 < 1.2) levetid = 12;
     if(sf30 < 1.1) levetid = 8;
     if(sf30 < 1.0) levetid = 4;
 
