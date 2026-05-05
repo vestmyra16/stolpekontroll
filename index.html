@@ -3,33 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v3.6</title>
+<title>Stolpekontroll v3.7</title>
 
 <style>
-body { font-family: Arial; background:#f4f4f4; }
-.container { max-width:600px; margin:auto; padding:10px; background:white; }
-label { font-weight:bold; display:block; margin-top:10px; }
-input, select, textarea { width:100%; padding:10px; margin-top:5px; }
-button { width:100%; padding:12px; margin-top:10px; background:#2e7d32; color:white; border:none; }
-.result { background:#eef; padding:10px; margin-top:10px; }
+body { font-family: Arial; background:#f4f4f4; margin:0; }
+.container { max-width:600px; margin:auto; background:white; padding:12px; }
+h2 { text-align:center; }
 h3 { margin-top:20px; }
+
+label { font-weight:bold; display:block; margin-top:10px; }
+input, select, textarea {
+width:100%; padding:10px; margin-top:5px; font-size:16px;
+}
+
+button {
+width:100%; padding:14px; margin-top:10px;
+background:#2e7d32; color:white; border:none; border-radius:8px;
+}
+
+.result {
+background:#eef;
+padding:12px;
+margin-top:10px;
+border-radius:8px;
+}
+
+.ok { background:#c8e6c9; }
+.warn { background:#fff3cd; }
+.bad { background:#f8d7da; }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
-<h2>Stolpekontroll v3.6</h2>
+<h2>Stolpekontroll v3.7</h2>
 
 <!-- 🔹 GRUNNLAGSDATA -->
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label><input id="netteier">
-<label>LinjeID</label><input id="linje">
-<label>Mastnr</label><input id="mast">
+<label>Netteier</label>
+<input id="netteier">
 
-<label>Stolpehøyde (m)</label><input id="h">
-<label>Jordbanddiameter (mm)</label><input id="jb">
+<label>LinjeID</label>
+<input id="linje">
+
+<label>Mastnr</label>
+<input id="mast">
+
+<label>Stolpehøyde (m)</label>
+<input id="h">
+
+<label>Jordbanddiameter (mm)</label>
+<input id="jb">
 
 <label>Mastetype</label>
 <select id="mastetype">
@@ -62,12 +89,20 @@ h3 { margin-top:20px; }
 <!-- 🔹 SKADE -->
 <h3>Indre råte</h3>
 
-<label>Stolpenr</label><input id="stolpenr">
-<label>Skadehøyde (m)</label><input id="start">
+<label>Stolpenr</label>
+<input id="stolpenr">
 
-<label>Diameter på skadested (mm)</label><input id="d">
-<label>A (mm)</label><input id="A">
-<label>E (restskall mm)</label><input id="E">
+<label>Skadehøyde (m)</label>
+<input id="start">
+
+<label>Diameter på skadested (mm)</label>
+<input id="d">
+
+<label>A (mm)</label>
+<input id="A">
+
+<label>E (restskall mm)</label>
+<input id="E">
 
 <label>Lengde langs stolpen</label>
 <select id="lengde">
@@ -76,9 +111,12 @@ h3 { margin-top:20px; }
 <option value="lang">Over 2 m</option>
 </select>
 
+<label>Merknad</label>
+<textarea id="merknad"></textarea>
+
 <button onclick="beregn()">Beregn</button>
 
-<div class="result" id="res"></div>
+<div id="res" class="result"></div>
 
 </div>
 
@@ -97,38 +135,40 @@ document.getElementById("res").innerHTML = "Fyll ut alle felt";
 return;
 }
 
-// 🔹 RESTSTYRKE (feltkalibrert)
-let rest = 40 + (E * 0.5);
+// 🔵 Radius
+let R = d / 2;
 
-// 🔹 A påvirker
+// 🔵 RESTSTYRKE (felt + REN kalibrert)
+let rest = 100 * Math.pow(E / R, 0.55);
+
+// 🔵 A påvirkning (kun én gang!)
 let skadegrad = A / d;
-rest *= (1 - skadegrad * 0.5);
+rest *= (1 - skadegrad * 0.15);
 
-// 🔹 Lengde
+// 🔵 Lengde (kun én gang!)
 let lengde = document.getElementById("lengde").value;
 if(lengde == "middels") rest *= 0.9;
-if(lengde == "lang") rest *= 0.75;
+if(lengde == "lang") rest *= 0.8;
 
-// 🔹 Knekkpunkt
+// 🔵 Knekkpunkt (lett effekt)
 let knekk = h * 0.33;
 if(Math.abs(start - knekk) < 1){
 rest *= 0.9;
 }
 
-// 🔹 Mastetype
+// 🔵 Mastetype
 let mastetype = document.getElementById("mastetype").value;
 if(mastetype == "A-mast") rest *= 0.9;
 if(mastetype == "Bardunert") rest *= 0.85;
 
-// Begrensning
+// 🔵 Begrensning
 if(rest > 95) rest = 95;
-if(rest < 20) rest = 20;
+if(rest < 25) rest = 25;
 
-// 🔹 SF
-let sf30 = rest / 70;
-let sf40 = rest / 85;
+// 🔒 SIKKERHETSFAKTOR (REN)
+let sf = rest / 75;
 
-// 🔹 LEVETID
+// 🔵 LEVETID (enkel modell)
 let klima = document.getElementById("klima").value;
 let jord = document.getElementById("jord").value;
 
@@ -144,12 +184,27 @@ if(jord == "Innmark") lev -= 2;
 
 if(lev < 2) lev = 2;
 
-// RESULTAT
+// 🔵 VURDERING
+let klasse = "ok";
+let tekst = "OK";
+
+if(rest < 75){
+klasse = "warn";
+tekst = "Tiltak bør vurderes";
+}
+
+if(rest < 60){
+klasse = "bad";
+tekst = "Tiltak anbefales";
+}
+
+// 🔵 RESULTAT
+document.getElementById("res").className = "result " + klasse;
 document.getElementById("res").innerHTML = `
-Reststyrke: ${rest.toFixed(1)} %<br>
-SF (30): ${sf30.toFixed(2)}<br>
-SF (40): ${sf40.toFixed(2)}<br>
-Restlevetid: ${lev} år
+Reststyrke: <b>${rest.toFixed(1)} %</b><br>
+Sikkerhetsfaktor: <b>${sf.toFixed(2)}</b><br>
+Restlevetid: <b>${lev} år</b><br>
+Vurdering: <b>${tekst}</b>
 `;
 
 }
