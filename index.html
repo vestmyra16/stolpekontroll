@@ -4,22 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v2.8</title>
+<title>Stolpekontroll v2.9</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 
 <style>
-body { font-family: Arial; background:#f4f4f4; margin:0; text-align:center; }
+body { font-family: Arial; background:#f4f4f4; margin:0; }
 
 .container { max-width:420px; margin:auto; padding:10px; }
 
 .section { background:white; padding:10px; margin-top:10px; border-radius:6px; }
 
-label { display:block; text-align:left; font-weight:bold; margin-top:10px; }
+h2, h3 { text-align:center; }
 
-input { width:100%; padding:12px; margin-top:5px; font-size:16px; }
+label { display:block; font-weight:bold; margin-top:10px; }
+
+input {
+    width:100%;
+    padding:12px;
+    margin-top:5px;
+    font-size:16px;
+}
 
 button {
     width:100%;
@@ -32,35 +39,25 @@ button {
     border-radius:6px;
 }
 
-/* grid knapper samme størrelse */
-.grid button {
-    height:55px;
-    font-size:18px;
-}
-
 .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-
-.hidden { display:none; }
-
-img {
-    width:55%;
-    margin:10px auto;
-    display:block;
-    border-radius:5px;
-}
 
 .choice {
     background:#2e7d32;
     color:white;
     padding:12px;
     margin-top:5px;
-    border-radius:5px;
+    border-radius:6px;
+    text-align:center;
 }
 
-.smallBtn {
-    padding:10px;
-    font-size:14px;
+.hidden { display:none; }
+
+img {
+    width:40%;
+    display:block;
+    margin:8px auto;
 }
+
 </style>
 </head>
 
@@ -68,10 +65,11 @@ img {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.8</h2>
+<h2>Stolpekontroll v2.9</h2>
 
 <!-- GRUNNLAG -->
 <div class="section">
+
 <h3>Grunnlagsdata</h3>
 
 <label>Netteier</label>
@@ -92,7 +90,7 @@ img {
 <label>Nedgravd (m)</label>
 <input>
 
-<!-- Jordsmonn -->
+<!-- JORD -->
 <label>Jordsmonn</label>
 <div class="choice" onclick="toggle('jordvalg')" id="jordValg">Skogsmark</div>
 
@@ -101,7 +99,7 @@ img {
 <button onclick="settValg('jordValg','Fjell')">Fjell</button>
 </div>
 
-<!-- Klima -->
+<!-- KLIMA -->
 <label>Klima</label>
 <div class="choice" onclick="toggle('klimavalg')" id="klimaValg">Kyst</div>
 
@@ -110,7 +108,7 @@ img {
 <button onclick="settValg('klimaValg','Fjell')">Fjell</button>
 </div>
 
-<!-- Vertikallast -->
+<!-- LAST -->
 <label>Vertikallast</label>
 <div class="choice" onclick="toggle('lastvalg')" id="lastValg">Normal</div>
 
@@ -120,10 +118,12 @@ img {
 </div>
 
 <button onclick="nyMast()">Ny mast</button>
+
 </div>
 
 <!-- SKADEVALG -->
 <div class="section">
+
 <h3>Registrer skade</h3>
 
 <div class="grid">
@@ -134,6 +134,7 @@ img {
 <button onclick="velgSkade('hakk')">Hakkespetthull</button>
 <button onclick="velgSkade('spett')">Spettsmie</button>
 </div>
+
 </div>
 
 <!-- SKADE -->
@@ -160,6 +161,8 @@ img {
 <input>
 
 <button onclick="lagre()">Lagre mast</button>
+<button onclick="tilbake()" style="background:#555;">⬅️ Velg ny skade</button>
+
 </div>
 
 <!-- EXPORT -->
@@ -172,30 +175,30 @@ img {
 
 <script>
 
-// 🔹 Behold Netteier + LinjeID
+// 🔹 LAST LAGRING
 window.onload = function(){
     document.getElementById("netteier").value = localStorage.getItem("netteier") || "";
     document.getElementById("linje").value = localStorage.getItem("linje") || "";
 }
 
+// 🔹 LAGRE GRUNNLAG
 function lagreGrunnlag(){
     localStorage.setItem("netteier", document.getElementById("netteier").value);
     localStorage.setItem("linje", document.getElementById("linje").value);
 }
 
-// 🔹 Toggle valg
+// 🔹 TOGGLE
 function toggle(id){
-    let el = document.getElementById(id);
-    el.classList.toggle("hidden");
+    document.getElementById(id).classList.toggle("hidden");
 }
 
-// 🔹 Sett valg
+// 🔹 SETT VALG
 function settValg(id, verdi){
     document.getElementById(id).innerText = verdi;
     document.getElementById(id.replace("Valg","valg")).classList.add("hidden");
 }
 
-// 🔹 Ny mast
+// 🔹 NY MAST
 function nyMast(){
     lagreGrunnlag();
     document.querySelectorAll("input").forEach(i=>{
@@ -203,11 +206,20 @@ function nyMast(){
     });
 }
 
-// 🔹 Velg skade
+// 🔹 SCROLL
+function scrollTilSkade(){
+    document.getElementById("skadeDiv").scrollIntoView({
+        behavior:"smooth"
+    });
+}
+
+// 🔹 VELG SKADE
 function velgSkade(type){
 
     let div = document.getElementById("skadeDiv");
     div.classList.remove("hidden");
+
+    scrollTilSkade();
 
     let felt = document.getElementById("felt");
     let tittel = document.getElementById("skadetittel");
@@ -253,7 +265,7 @@ function velgSkade(type){
     }
 }
 
-// 🔹 Lag felt
+// 🔹 FELT
 function lagFelt(arr){
     let felt = document.getElementById("felt");
     arr.forEach(a=>{
@@ -261,7 +273,12 @@ function lagFelt(arr){
     });
 }
 
-// 🔹 Lagre
+// 🔹 TILBAKE
+function tilbake(){
+    document.getElementById("skadeDiv").classList.add("hidden");
+}
+
+// 🔹 LAGRE
 function lagre(){
     lagreGrunnlag();
     alert("Lagret");
@@ -276,9 +293,9 @@ function lastNed(){
     a.click();
 }
 
-// 🔹 Kamera
+// 🔹 KAMERA
 function taBilde(){
-    alert("Kamera kommer i neste steg");
+    alert("Kamera kommer");
 }
 
 </script>
