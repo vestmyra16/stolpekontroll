@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v2.9</title>
+<title>Stolpekontroll v3.0</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -12,7 +12,6 @@
 <style>
 body { font-family: Arial; background:#f4f4f4; margin:0; }
 .container { max-width:600px; margin:auto; padding:12px; background:white; }
-
 h2 { text-align:center; }
 
 label { display:block; margin-top:10px; font-weight:bold; }
@@ -47,7 +46,7 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.9</h2>
+<h2>Stolpekontroll v3.0</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -66,6 +65,13 @@ button {
 <label>Jordbånddiameter (mm)</label>
 <input id="jordband">
 
+<label>Mastetype</label>
+<select id="mastetype">
+<option value="enkel" selected>Enkel stolpe</option>
+<option value="bardun">Bardunert mast</option>
+<option value="a">A-mast</option>
+</select>
+
 <label>Vertikallast</label>
 <select id="last">
 <option>Lav</option>
@@ -80,8 +86,11 @@ button {
 <label>Stolpenr</label>
 <input id="stolpenr">
 
-<label>Skadehøyde (m)</label>
-<input id="skadehoyde">
+<label>Skade starter (m)</label>
+<input id="start">
+
+<label>Skade slutter (m)</label>
+<input id="slutt">
 
 <label>Diameter på skadested (mm)</label>
 <input id="diameter">
@@ -91,6 +100,13 @@ button {
 
 <label>E (restskall mm)</label>
 <input id="E">
+
+<label>Lengdeklasse</label>
+<select id="lengde">
+<option value="kort">Kort (<0.5 m)</option>
+<option value="middels" selected>Middels (0.5–2 m)</option>
+<option value="lang">Lang (>2 m)</option>
+</select>
 
 <textarea id="merknad" placeholder="Merknad"></textarea>
 
@@ -106,22 +122,61 @@ function beregn(){
 
     let D = parseFloat(document.getElementById("diameter").value);
     let E = parseFloat(document.getElementById("E").value);
-    let last = document.getElementById("last").value;
+    let A = parseFloat(document.getElementById("A").value || 0);
+    let hoyde = parseFloat(document.getElementById("hoyde").value);
+    let start = parseFloat(document.getElementById("start").value);
+    let slutt = parseFloat(document.getElementById("slutt").value);
 
-    if(!D || !E){
-        alert("Legg inn diameter og restskall");
+    let mastetype = document.getElementById("mastetype").value;
+    let last = document.getElementById("last").value;
+    let lengdeklasse = document.getElementById("lengde").value;
+
+    if(!D || !E || !hoyde){
+        alert("Fyll inn diameter, restskall og stolpehøyde");
         return;
     }
 
     let radius = D / 2;
 
-    // 🔥 KALIBRERT RESTSTYRKE (felt + REN)
-    let rest = (E / radius) * 100 * 3.5;
+    // 🔴 Juster E (usikkerhet)
+    let E_eff = E * 0.8;
+
+    // 🔴 A faktor
+    let faktorA = 1 - (A / D);
+    if(faktorA < 0.3) faktorA = 0.3;
+
+    // 🔴 Lengdefaktor
+    let faktorLengde = 1;
+    if(lengdeklasse === "middels") faktorLengde = 0.85;
+    if(lengdeklasse === "lang") faktorLengde = 0.7;
+
+    // 🔴 Mastetype faktor
+    let faktorMast = 1;
+    if(mastetype === "bardun") faktorMast = 1.2;
+    if(mastetype === "a") faktorMast = 1.3;
+
+    // 🔴 Knekkpunkt
+    let knekk = hoyde * 0.33;
+
+    let treff = 0;
+
+    if(start && slutt){
+        if(start <= knekk && slutt >= knekk){
+            treff = 1;
+        } else if(Math.abs(start - knekk) < 2 || Math.abs(slutt - knekk) < 2){
+            treff = 0.5;
+        }
+    }
+
+    let faktorKnekk = 1 - (treff * (1 - faktorLengde));
+
+    // 🔥 Reststyrke
+    let rest = (E_eff / radius) * 100 * 3.5 * faktorA * faktorLengde * faktorMast * faktorKnekk;
 
     if(E > 25 && rest < 65) rest = 65;
     if(rest > 100) rest = 100;
 
-    // 🔥 RIKTIG SIKKERHETSFAKTOR
+    // 🔥 SF
     let baseSF = 1.6 * (rest / 100);
 
     let lastFaktor = 1;
@@ -131,11 +186,7 @@ function beregn(){
     let sf30 = baseSF * lastFaktor;
     let sf40 = sf30 * (40 / 30);
 
-    // 🔥 STATUS
-    let status30 = sf30 >= 1 ? "OK" : "Tiltak vurderes";
-    let status40 = sf40 >= 1 ? "OK" : "Lav reserve";
-
-    // 🔥 LEVETID BASERT PÅ SF (riktig!)
+    // 🔥 Levetid
     let levetid = "";
     if(sf30 > 1.3) levetid = "15–25 år";
     else if(sf30 > 1.1) levetid = "8–15 år";
@@ -144,13 +195,12 @@ function beregn(){
 
     document.getElementById("resultat").innerHTML = `
         <b>Reststyrke:</b> ${rest.toFixed(1)} %<br>
-        <b>SF (30):</b> ${sf30.toFixed(2)} → ${status30}<br>
-        <b>SF (40):</b> ${sf40.toFixed(2)} → ${status40}<br>
+        <b>SF (30):</b> ${sf30.toFixed(2)}<br>
+        <b>SF (40):</b> ${sf40.toFixed(2)}<br>
         <b>Restlevetid:</b> ${levetid}
     `;
 }
 
-// 🔄 Ny mast
 function nyMast(){
 
     let netteier = document.getElementById("netteier").value;
