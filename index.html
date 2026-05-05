@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v2.7</title>
+<title>Stolpekontroll v2.8</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -47,7 +47,7 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v2.7</h2>
+<h2>Stolpekontroll v2.8</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -60,8 +60,11 @@ button {
 <label>Mastnr</label>
 <input id="mast">
 
-<label>Diameter på skadested (mm)</label>
-<input id="diameter">
+<label>Stolpehøyde (m)</label>
+<input id="hoyde">
+
+<label>Jordbånddiameter (mm)</label>
+<input id="jordband">
 
 <label>Vertikallast</label>
 <select id="last">
@@ -73,6 +76,15 @@ button {
 <button onclick="nyMast()">Ny mast</button>
 
 <h3>Indre råte</h3>
+
+<label>Stolpenr</label>
+<input id="stolpenr">
+
+<label>Skadehøyde (m)</label>
+<input id="skadehoyde">
+
+<label>Diameter på skadested (mm)</label>
+<input id="diameter">
 
 <label>A (mm)</label>
 <input id="A">
@@ -93,37 +105,31 @@ button {
 function beregn(){
 
     let D = parseFloat(document.getElementById("diameter").value);
-    let A = parseFloat(document.getElementById("A").value);
     let E = parseFloat(document.getElementById("E").value);
     let last = document.getElementById("last").value;
 
     if(!D || !E){
-        alert("Legg inn diameter og restskall (E)");
+        alert("Legg inn diameter og restskall");
         return;
     }
 
     let radius = D / 2;
 
-    // 🔥 Reststyrke (justert realistisk)
     let rest = Math.pow((E / radius), 1.5) * 100;
     if(rest > 100) rest = 100;
 
-    // 🔥 Justering for last
     let lastFaktor = 1;
     if(last === "Høy") lastFaktor = 0.85;
     if(last === "Lav") lastFaktor = 1.1;
 
-    rest = rest * lastFaktor;
+    rest *= lastFaktor;
 
-    // 🔥 Sikkerhetsfaktor
     let sf30 = rest / 75;
     let sf40 = sf30 * (40/30);
 
-    // 🔥 Status
     let status30 = sf30 >= 1 ? "OK" : "Tiltak vurderes";
     let status40 = sf40 >= 1 ? "OK" : "Lav reserve";
 
-    // 🔥 Levetid
     let levetid = "";
     if(rest > 85) levetid = "15–25 år";
     else if(rest > 75) levetid = "8–15 år";
@@ -138,7 +144,6 @@ function beregn(){
     `;
 }
 
-// 🔄 Ny mast (beholder netteier og linje)
 function nyMast(){
 
     let netteier = document.getElementById("netteier").value;
