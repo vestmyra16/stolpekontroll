@@ -3,18 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stolpekontroll v3.8</title>
+
+<title>Stolpekontroll v2.7</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
 
 <style>
-body { font-family: Arial; background:#f2f2f2; margin:0; }
-.container { max-width:420px; margin:auto; background:white; padding:15px; }
-h2 { text-align:center; }
-label { font-weight:bold; display:block; margin-top:10px; }
-input, select { width:100%; padding:8px; margin-top:3px; }
-button { width:100%; padding:10px; margin-top:15px; background:green; color:white; border:none; }
-.result { margin-top:15px; padding:10px; }
-.red { background:#f8d7da; }
-.green { background:#d4edda; }
+body {
+    font-family: Arial;
+    background:#f4f4f4;
+    margin:0;
+    text-align:center;
+}
+
+.container {
+    max-width:420px;
+    margin:auto;
+    padding:10px;
+}
+
+h2 {
+    margin-top:10px;
+}
+
+label {
+    display:block;
+    text-align:left;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+input, select {
+    width:100%;
+    padding:12px;
+    margin-top:5px;
+    font-size:16px;
+}
+
+button {
+    width:100%;
+    padding:15px;
+    margin-top:10px;
+    font-size:18px;
+    background:#2e7d32;
+    color:white;
+    border:none;
+    border-radius:5px;
+}
+
+.grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+
+.smallgrid {
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:6px;
+}
+
+.section {
+    background:white;
+    padding:10px;
+    margin-top:10px;
+    border-radius:6px;
+}
+
+.result {
+    background:#e8f5e9;
+    padding:10px;
+    margin-top:10px;
+}
 </style>
 </head>
 
@@ -22,128 +84,175 @@ button { width:100%; padding:10px; margin-top:15px; background:green; color:whit
 
 <div class="container">
 
-<h2>Stolpekontroll v3.8</h2>
+<h2>Stolpekontroll v2.7</h2>
 
+<!-- GRUNNLAG -->
+<div class="section">
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label><input>
-<label>LinjeID</label><input>
-<label>Mastnr</label><input>
+<label>Netteier</label>
+<input id="netteier">
 
-<label>Stolpehøyde (m)</label><input id="h" value="15">
-<label>Jordbanddiameter (mm)</label><input id="jb" value="350">
+<label>LinjeID</label>
+<input id="linje">
 
-<label>Mastetype</label>
-<select><option>Enkel stolpe</option><option>A-mast</option><option>Bardunert</option></select>
+<label>Mastnr</label>
+<input id="mast">
 
-<label>Vertikallast</label>
-<select><option>Normal</option><option>Høy</option></select>
+<label>Stolpehøyde (m)</label>
+<input id="hoyde">
 
-<label>Klima</label>
-<select><option>Innland</option><option>Kyst</option><option>Fjell</option></select>
+<label>Jordband (mm)</label>
+<input id="jordband">
+
+<label>Nedgravd (m)</label>
+<input id="nedgravd">
 
 <label>Jordsmonn</label>
-<select><option>Skogsmark</option><option>Innmark</option><option>Fjell</option></select>
+<div class="grid">
+<button onclick="sett('jord','Innmark')">Innmark</button>
+<button onclick="sett('jord','Skogsmark')">Skogsmark</button>
+<button onclick="sett('jord','Fjell')">Fjell</button>
+</div>
+
+<label>Klima</label>
+<div class="grid">
+<button onclick="sett('klima','Kyst')">Kyst</button>
+<button onclick="sett('klima','Innland')">Innland</button>
+<button onclick="sett('klima','Fjell')">Fjell</button>
+</div>
+
+<label>Vertikallast</label>
+<div class="grid">
+<button onclick="sett('last','Lav')">Lav</button>
+<button onclick="sett('last','Normal')">Normal</button>
+<button onclick="sett('last','Høy')">Høy</button>
+</div>
 
 <button onclick="nyMast()">Ny mast</button>
+</div>
 
-<h3>Indre råte</h3>
+<!-- SKADEVALG -->
+<div class="section">
+<h3>Registrer skade</h3>
 
-<label>Stolpenr</label><input>
-<label>Skade starter (m)</label><input id="start" value="3">
-<label>Skade slutter (m)</label><input id="slutt" value="4">
+<div class="grid">
+<button onclick="velgSkade('indre')">Indre råte</button>
+<button onclick="velgSkade('sirk')">Sirkulær råte</button>
+<button onclick="velgSkade('soft')">Softråte</button>
+<button onclick="velgSkade('sprekk')">Sprekk</button>
+<button onclick="velgSkade('hakk')">Hakkespetthull</button>
+<button onclick="velgSkade('spett')">Spettsmie</button>
+</div>
+</div>
 
-<label>Diameter på skadested (mm)</label><input id="d" value="330">
-<label>A (mm)</label><input id="A" value="100">
-<label>E (restskall mm)</label><input id="E" value="30">
+<!-- SKADE -->
+<div class="section" id="skadeDiv" style="display:none;">
+<h3 id="skadetittel"></h3>
 
-<label>Lengde langs stolpen</label>
-<select id="lengde">
-<option value="kort">0–0,5 m</option>
-<option value="middels">0,5–2 m</option>
-<option value="lang">Over 2 m</option>
-</select>
+<label>Stolpenr</label>
+<input>
 
-<button onclick="beregn()">Beregn</button>
+<label>Høyde skade (m)</label>
+<input>
 
-<div id="res" class="result"></div>
+<label>Diameter (mm)</label>
+<input>
+
+<div id="felt"></div>
+
+<button onclick="taBilde()">📷 Ta bilde</button>
+
+<label>Merknad</label>
+<input>
+
+<button onclick="lagre()">Lagre mast</button>
+</div>
+
+<!-- EXPORT -->
+<div class="section">
+<h3>Eksport</h3>
+
+<button onclick="lastNed()">Last ned CSV</button>
+</div>
 
 </div>
 
 <script>
 
-function beregn(){
+let data = [];
 
-let d = parseFloat(document.getElementById("d").value);
-let E = parseFloat(document.getElementById("E").value);
-let A = parseFloat(document.getElementById("A").value);
-let h = parseFloat(document.getElementById("h").value);
-let start = parseFloat(document.getElementById("start").value);
-
-let R = d/2;
-
-// ======================
-// NY FELTKALIBRERT MODELL
-// ======================
-
-// lineær + svak kurve (stabil i felt)
-let ratio = E / R;
-let rest = 100 * (0.6 * ratio + 0.4 * Math.sqrt(ratio));
-
-// moderat A påvirkning
-let skadegrad = A / d;
-rest *= (1 - skadegrad * 0.10);
-
-// lengdeeffekt (rolig)
-let lengde = document.getElementById("lengde").value;
-if(lengde === "middels") rest *= 0.97;
-if(lengde === "lang") rest *= 0.90;
-
-// knekkpunkt
-let knekk = h * 0.33;
-if(Math.abs(start - knekk) < 1){
-    rest *= 0.92;
-}
-
-// begrensning
-if(rest > 95) rest = 95;
-if(rest < 30) rest = 30;
-
-// ======================
-// SIKKERHETSFAKTOR (REN)
-// ======================
-let sf = rest / 75;
-
-// ======================
-// RESTLEVETID
-// ======================
-let levetid = "";
-
-if(rest > 80) levetid = "10–20 år";
-else if(rest > 70) levetid = "8–15 år";
-else if(rest > 60) levetid = "5–10 år";
-else if(rest > 50) levetid = "3–8 år";
-else levetid = "0–5 år";
-
-// ======================
-let res = document.getElementById("res");
-
-if(sf < 1){
-    res.className = "result red";
-} else {
-    res.className = "result green";
-}
-
-res.innerHTML = `
-Reststyrke: ${rest.toFixed(1)} %<br>
-Sikkerhetsfaktor: ${sf.toFixed(2)}<br>
-Restlevetid: ${levetid}
-`;
-
+function sett(type, verdi){
+    console.log(type, verdi);
 }
 
 function nyMast(){
-document.getElementById("res").innerHTML="";
+    document.querySelectorAll("input").forEach(i => i.value="");
+}
+
+function velgSkade(type){
+    let div = document.getElementById("skadeDiv");
+    div.style.display="block";
+
+    let felt = document.getElementById("felt");
+    let tittel = document.getElementById("skadetittel");
+
+    felt.innerHTML = "";
+
+    if(type=="indre"){
+        tittel.innerText="Indre råte (A B E)";
+        lagFelt(["A","B","E"]);
+    }
+    if(type=="sirk"){
+        tittel.innerText="Sirkulær råte (A B C D)";
+        lagFelt(["A","B","C","D"]);
+    }
+    if(type=="soft"){
+        tittel.innerText="Softråte (A B C D)";
+        lagFelt(["A","B","C","D"]);
+    }
+    if(type=="spett"){
+        tittel.innerText="Spettsmie (A B)";
+        lagFelt(["A","B"]);
+    }
+    if(type=="hakk"){
+        tittel.innerText="Hakkespetthull (A B C D)";
+        lagFelt(["A","B","C","D"]);
+    }
+    if(type=="sprekk"){
+        tittel.innerText="Sprekk";
+        felt.innerHTML = `
+        <label>Start (m)</label><input>
+        <label>Slutt (m)</label><input>
+        <label>Dybde (mm)</label><input>
+        <label>Bredde (mm)</label><input>
+        <label>Lengde (m)</label><input>
+        `;
+    }
+}
+
+function lagFelt(arr){
+    let felt = document.getElementById("felt");
+    arr.forEach(a=>{
+        felt.innerHTML += `<label>${a} (mm)</label><input>`;
+    });
+}
+
+function lagre(){
+    alert("Lagret");
+}
+
+function lastNed(){
+    let csv = "data";
+    let blob = new Blob([csv], {type:"text/csv"});
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "stolper.csv";
+    a.click();
+}
+
+function taBilde(){
+    alert("Åpner kamera (kommer)");
 }
 
 </script>
