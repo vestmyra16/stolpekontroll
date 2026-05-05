@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Stolpekontroll v3.2</title>
+<title>Stolpekontroll v3.3</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -47,7 +47,7 @@ button {
 
 <div class="container">
 
-<h2>Stolpekontroll v3.2</h2>
+<h2>Stolpekontroll v3.3</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -155,10 +155,10 @@ function beregn(){
 
     let radius = D / 2;
 
-    // 🔥 NY RESTSTYRKE (MER FØLSOM)
+    // 🔥 Reststyrke (følsom)
     let rest = 100 * Math.pow((E / radius), 0.8);
 
-    // 🔧 A påvirkning (mildere)
+    // 🔧 A
     let faktorA = 1 - Math.pow((A / D), 1.2);
     if(faktorA < 0.4) faktorA = 0.4;
 
@@ -183,24 +183,22 @@ function beregn(){
 
     let faktorKnekk = (treff > 0) ? 0.8 : 1;
 
-    // 🔥 Justert multiplikasjon (ikke drepe E-effekt)
+    // 🔥 Justert påvirkning
     rest = rest * (0.6 + 0.4 * faktorA);
     rest = rest * (0.7 + 0.3 * faktorLengde);
     rest = rest * (0.8 + 0.2 * faktorMast);
     rest = rest * (0.7 + 0.3 * faktorKnekk);
 
-    // 🔥 Begrensning (ikke låsing!)
     if(rest > 100) rest = 100;
     if(rest < 20) rest = 20;
 
-    // 🔥 Sikkerhetsfaktor
-    let baseSF = 1.8 * (rest / 100);
+    // 🔥 NY SF-KURVE (KORRIGERT)
+    let sf30 = 1.4 * Math.pow((rest / 100), 1.3);
 
-    let lastFaktor = 1;
-    if(last === "Høy") lastFaktor = 0.8;
-    if(last === "Lav") lastFaktor = 1.2;
+    // Lastpåvirkning
+    if(last === "Høy") sf30 *= 0.85;
+    if(last === "Lav") sf30 *= 1.15;
 
-    let sf30 = baseSF * lastFaktor;
     let sf40 = sf30 * (40 / 30);
 
     // 🔥 Levetid
@@ -210,11 +208,9 @@ function beregn(){
     if(sf30 < 1.1) levetid = 8;
     if(sf30 < 1.0) levetid = 4;
 
-    // Klima
     if(klima === "kyst") levetid *= 0.7;
     if(klima === "fjell") levetid *= 1.2;
 
-    // Jord
     if(jord === "innmark") levetid *= 0.8;
     if(jord === "fjell") levetid *= 1.1;
 
@@ -229,7 +225,6 @@ function beregn(){
 }
 
 function nyMast(){
-
     let netteier = document.getElementById("netteier").value;
     let linje = document.getElementById("linje").value;
 
