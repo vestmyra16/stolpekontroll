@@ -9,37 +9,38 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 
-<style>
-body { font-family: Arial; background:#f4f4f4; margin:0; }
-.container { max-width:420px; margin:auto; padding:10px; background:white; }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-label { font-weight:bold; display:block; margin-top:8px; }
-input { width:100%; padding:10px; margin-top:4px; font-size:16px; }
+<style>
+body {font-family: Arial; background:#f4f4f4; margin:0;}
+.container {max-width:420px; margin:auto; padding:10px; background:white;}
+label {font-weight:bold; display:block; margin-top:8px;}
+input {width:100%; padding:10px; margin-top:4px;}
 
 button {
-  width:100%;
-  padding:12px;
-  margin-top:6px;
-  font-size:16px;
-  border:none;
-  border-radius:6px;
-  background:#2e7d32;
-  color:white;
+width:100%;
+padding:12px;
+margin-top:6px;
+font-size:16px;
+border:none;
+border-radius:6px;
+background:#2e7d32;
+color:white;
 }
 
 .grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:6px;
 }
 
 img {
-  width:40%;
-  display:block;
-  margin:auto;
+width:40%;
+display:block;
+margin:auto;
 }
 
-.hidden { display:none; }
+.hidden {display:none;}
 </style>
 </head>
 
@@ -57,20 +58,11 @@ img {
 <label>Mastnr</label>
 <input id="mast">
 
-<label>GPS (lat, lon)</label>
+<label>GPS</label>
 <input id="gps" readonly>
 
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
-
-<label>Stolpehøyde (m)</label>
-<input id="hoyde">
-
-<label>Jordband (mm)</label>
-<input id="jordband">
-
-<label>Nedgravd (m)</label>
-<input id="nedgravd">
 
 <!-- SKADEKNAPPER -->
 <h3>Registrer skade</h3>
@@ -86,61 +78,35 @@ img {
 <button onclick="visSkade('sprekk')">Sprekk</button>
 </div>
 
-<!-- INDRE -->
-<div id="indre" class="hidden">
-<img src="indre.svg">
-<label>A</label><input id="A">
-<label>B</label><input id="B">
-<label>E</label><input id="E">
+<!-- SKADE 1 -->
+<h3>Skade 1</h3>
+<div id="skade1">
+
+<img id="img1">
+
+<label>A</label><input id="A1">
+<label>B</label><input id="B1">
+<label>E</label><input id="E1">
+
 </div>
 
-<!-- SIRK -->
-<div id="sirk" class="hidden">
-<img src="sirk.svg">
-<label>A</label><input>
-<label>B</label><input>
-<label>C</label><input>
-<label>D</label><input>
-</div>
+<!-- SKADE 2 -->
+<h3>Skade 2</h3>
+<div id="skade2">
 
-<!-- SOFT -->
-<div id="soft" class="hidden">
-<img src="soft.svg">
-<label>A</label><input>
-<label>B</label><input>
-<label>C</label><input>
-<label>D</label><input>
-</div>
+<img id="img2">
 
-<!-- SPETT -->
-<div id="spett" class="hidden">
-<img src="spett.svg">
-<label>A</label><input>
-<label>B</label><input>
-</div>
+<label>A</label><input id="A2">
+<label>B</label><input id="B2">
+<label>E</label><input id="E2">
 
-<!-- HAKK -->
-<div id="hakk" class="hidden">
-<img src="hakk.svg">
-<label>A</label><input>
-<label>B</label><input>
-<label>C</label><input>
-<label>D</label><input>
-</div>
-
-<!-- SPREKK -->
-<div id="sprekk" class="hidden">
-<img src="sprekk.svg">
-<label>Start</label><input>
-<label>Slutt</label><input>
-<label>Dybde</label><input>
 </div>
 
 <label>Merknad</label>
 <input id="merknad">
 
 <button onclick="lagre()">Lagre mast</button>
-<button onclick="lastned()">Last ned CSV</button>
+<button onclick="lastnedExcel()">Last ned Excel</button>
 
 </div>
 
@@ -148,9 +114,12 @@ img {
 
 // VIS SKADE
 function visSkade(type){
-  let typer = ["indre","sirk","soft","spett","hakk","sprekk"];
-  typer.forEach(t => document.getElementById(t).classList.add("hidden"));
-  document.getElementById(type).classList.remove("hidden");
+
+let img1 = document.getElementById("img1");
+let img2 = document.getElementById("img2");
+
+img1.src = type + ".svg";
+img2.src = type + ".svg";
 }
 
 // GPS
@@ -162,7 +131,7 @@ function startGPS(){
             let lat = pos.coords.latitude.toFixed(6);
             let lon = pos.coords.longitude.toFixed(6);
             document.getElementById("gps").value = lat + ", " + lon;
-        }, null, { enableHighAccuracy: true });
+        }, null, {enableHighAccuracy:true});
     }
 }
 
@@ -177,38 +146,30 @@ function stopGPS(){
 let data = [];
 
 function lagre(){
-    let row = [
-        document.getElementById("netteier").value,
-        document.getElementById("linje").value,
-        document.getElementById("mast").value,
-        document.getElementById("gps").value,
-        document.getElementById("hoyde").value,
-        document.getElementById("jordband").value,
-        document.getElementById("nedgravd").value,
-        document.getElementById("A").value,
-        document.getElementById("B").value,
-        document.getElementById("E").value,
-        document.getElementById("merknad").value
-    ];
-
-    data.push(row);
-    alert("Lagret");
+data.push({
+Netteier: netteier.value,
+Linje: linje.value,
+Mast: mast.value,
+GPS: gps.value,
+A1: A1.value,
+B1: B1.value,
+E1: E1.value,
+A2: A2.value,
+B2: B2.value,
+E2: E2.value,
+Merknad: merknad.value
+});
+alert("Lagret");
 }
 
-// CSV
-function lastned(){
+// EXCEL
+function lastnedExcel(){
 
-    let csv = "Netteier,LinjeID,Mastnr,GPS,Høyde,Jordband,Nedgravd,A,B,E,Merknad\n";
+let ws = XLSX.utils.json_to_sheet(data);
+let wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Stolper");
 
-    data.forEach(r => {
-        csv += r.join(",") + "\n";
-    });
-
-    let blob = new Blob([csv], {type:"text/csv"});
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "stolper.csv";
-    a.click();
+XLSX.writeFile(wb, "stolpekontroll.xlsx");
 }
 
 </script>
