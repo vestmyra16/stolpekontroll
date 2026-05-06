@@ -134,7 +134,7 @@ margin:auto;
 
 <!-- SKADE 1 -->
 
-<h3 id="tittel1">Skade 1</h3>
+<h3 id="tittel1"></h3>
 
 <label>Stolpenr</label>
 <input id="stolpe1">
@@ -154,7 +154,7 @@ margin:auto;
 
 <div id="skade2" class="hidden">
 
-<h3 id="tittel2">Skade 2</h3>
+<h3 id="tittel2"></h3>
 
 <label>Stolpenr</label>
 <input id="stolpe2">
@@ -304,8 +304,8 @@ function nyMast(){
     document.getElementById("img2").src = "";
 
     // Reset titler
-    document.getElementById("tittel1").innerText = "Skade 1";
-    document.getElementById("tittel2").innerText = "Skade 2";
+    document.getElementById("tittel1").innerText = "";
+document.getElementById("tittel2").innerText = "";
 
     // Skjul skade 2
     skade2.classList.add("hidden");
