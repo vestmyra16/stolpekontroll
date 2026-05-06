@@ -8,57 +8,56 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <style>
-body {font-family: Arial; background:#f4f4f4; margin:0;}
-.container {max-width:420px; margin:auto; background:white; padding:10px;}
+body {
+  font-family: Arial;
+  background:#f2f2f2;
+  max-width:420px;
+  margin:auto;
+}
 
-label {font-weight:bold; display:block; margin-top:8px;}
-input {width:100%; padding:10px; margin-top:4px;}
+h2 {text-align:center;}
+
+label {font-weight:bold;}
+
+input {
+  width:100%;
+  padding:8px;
+  margin-bottom:10px;
+}
 
 button {
-width:100%;
-padding:12px;
-margin-top:6px;
-font-size:16px;
-border:none;
-border-radius:6px;
-background:#2e7d32;
-color:white;
+  width:100%;
+  padding:14px;
+  margin:6px 0;
+  background:#2e7d32;
+  color:white;
+  border:none;
+  border-radius:6px;
+  font-size:16px;
 }
 
 .grid {
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:6px;
-}
-
-.choice {
-background:#2e7d32;
-color:white;
-padding:12px;
-border-radius:6px;
-text-align:center;
-margin-top:4px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
 }
 
 .hidden {display:none;}
 
 img {
-width:35%;
-display:block;
-margin:auto;
+  width:160px;
+  display:block;
+  margin:auto;
 }
 </style>
 </head>
 
 <body>
-<div class="container">
 
 <h2>Stolpekontroll v2.9</h2>
 
-<!-- GRUNNLAG -->
+<h3>Grunnlagsdata</h3>
 
 <label>Netteier</label>
 <input id="netteier">
@@ -69,188 +68,144 @@ margin:auto;
 <label>Mastnr</label>
 <input id="mast">
 
-<label>Stolpehøyde (m)</label>
-<input id="hoyde" oninput="beregnTopp()">
-
-<label>Jordband (mm)</label>
-<input id="jordband" oninput="beregnTopp()">
-
-<label>Nedgravd (m)</label>
-<input id="nedgravd">
-
-<label>Toppdiameter (mm)</label>
-<input id="toppdiameter" oninput="manuellTopp=true">
-
-<label>Avtrapping (cm/m)</label>
-<input id="avtrapping" value="0.75" oninput="beregnTopp()">
-
-<!-- GPS -->
-
 <label>GPS</label>
 <input id="gps" readonly>
 
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
-<!-- VALG -->
+<label>Stolpehøyde (m)</label>
+<input>
 
-<label>Jordsmonn</label>
-<div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
-<div id="jordvalg" class="hidden grid">
-<button onclick="setVal('jordTxt','Innmark')">Innmark</button>
-<button onclick="setVal('jordTxt','Fjell')">Fjell</button>
-</div>
-
-<label>Klima</label>
-<div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
-<div id="klimavalg" class="hidden grid">
-<button onclick="setVal('klimaTxt','Innland')">Innland</button>
-<button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
-</div>
-
-<label>Vertikallast</label>
-<div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
-<div id="lastvalg" class="hidden grid">
-<button onclick="setVal('lastTxt','Lav')">Lav</button>
-<button onclick="setVal('lastTxt','Høy')">Høy</button>
-</div>
+<label>Jordbånddiameter (mm)</label>
+<input>
 
 <button onclick="nyMast()">Ny mast</button>
-
-<!-- SKADEKNAPPER -->
 
 <h3>Registrer skade</h3>
 
 <div class="grid">
-<button onclick="velg('indre','Indre råte')">Indre råte</button>
-<button onclick="velg('sirk','Sirkulær råte')">Sirkulær råte</button>
-
-<button onclick="velg('soft','Softråte')">Softråte</button>
-<button onclick="velg('spett','Spettsmie')">Spettsmie</button>
-
-<button onclick="velg('hakk','Hakkespetthull')">Hakkespetthull</button>
-<button onclick="velg('sprekk','Sprekk')">Sprekk</button>
+<button onclick="velg('indre')">Indre råte</button>
+<button onclick="velg('sirk')">Sirkulær råte</button>
+<button onclick="velg('soft')">Softråte</button>
+<button onclick="velg('spett')">Spettsmie</button>
+<button onclick="velg('hakk')">Hakkespetthull</button>
+<button onclick="velg('sprekk')">Sprekk</button>
 </div>
 
-<!-- SKADE 1 -->
-
+<div id="skade1" class="hidden">
 <h3 id="tittel1"></h3>
 
 <label>Stolpenr</label>
-<input id="stolpe1">
+<input>
 
 <label>Høyde skadested (m)</label>
-<input id="h1">
+<input>
 
 <label>Diameter skadested (mm)</label>
-<input id="d1">
+<input>
 
 <img id="img1">
-<div id="felt1"></div>
 
-<!-- SKADE 2 -->
+<div id="felt1"></div>
+</div>
 
 <button id="btnSkade2" onclick="toggleSkade2()">Legg til skade 2</button>
 
 <div id="skade2" class="hidden">
-
 <h3 id="tittel2"></h3>
 
-<label>Stolpenr</label>
-<input id="stolpe2">
-
-<label>Høyde skadested (m)</label>
-<input id="h2">
-
-<label>Diameter skadested (mm)</label>
-<input id="d2">
-
 <img id="img2">
+
 <div id="felt2"></div>
-
 </div>
-
-<label>Merknad</label>
-<input id="merknad">
 
 <button onclick="lagre()">Lagre mast</button>
-<button onclick="excel()">Last ned Excel</button>
-
-</div>
+<button onclick="lastCSV()">Last ned CSV</button>
 
 <script>
 
-let manuellTopp=false;
-
-// Toppdiameter
-function beregnTopp(){
-
-if(manuellTopp) return;
-
-let jord=parseFloat(jordband.value);
-let h=parseFloat(hoyde.value);
-let av=parseFloat(avtrapping.value);
-
-if(!jord||!h||!av) return;
-
-let topp = jord - (av*h*10);
-
-if(topp>0){
-toppdiameter.value=Math.round(topp);
-}
-}
-
-// Skadefelt
-const felt={
+// FELT DEFINISJONER
+let felt = {
 indre:["A mm","B mm","E mm"],
 sirk:["A mm","B mm","C mm","D mm"],
 soft:["A mm","B mm","C mm","D mm"],
 spett:["A mm","B mm"],
 hakk:["A mm","B mm","C mm","D mm"],
-sprekk:["Start","Slutt","Dybde","Bredde","Lengde"]
-};
-
-function velg(type,navn){
-
-img1.src=type+".svg";
-img2.src=type+".svg";
-
-tittel1.innerText=navn+" 1";
-tittel2.innerText=navn+" 2";
-
-lagFelt(type,"felt1");
-lagFelt(type,"felt2");
+sprekk:["Start (m)","Slutt (m)","A mm","B mm","Lengde (m)"]
 }
 
-function lagFelt(type,id){
-let d=document.getElementById(id);
-d.innerHTML="";
+// VELG SKADE
+function velg(type){
+
+let s1 = document.getElementById("skade1");
+let img1 = document.getElementById("img1");
+let felt1 = document.getElementById("felt1");
+
+s1.classList.remove("hidden");
+
+// tittel
+document.getElementById("tittel1").innerText = type + " 1";
+
+// bilde
+img1.src = type + ".svg";
+img1.style.display="block";
+
+// felter
+felt1.innerHTML="";
 felt[type].forEach(f=>{
-d.innerHTML+=`<label>${f}</label><input>`;
+felt1.innerHTML += "<label>"+f+"</label><input>";
 });
+
 }
 
-// Toggle skade 2
+// SKADE 2 TOGGLE
 function toggleSkade2(){
 
-    let skade2 = document.getElementById("skade2");
-    let btn = document.getElementById("btnSkade2");
+let s2 = document.getElementById("skade2");
 
-    if(skade2.classList.contains("hidden")){
-        skade2.classList.remove("hidden");
-        btn.innerText = "Skjul skade 2";
-    } else {
-        skade2.classList.add("hidden");
-        btn.innerText = "Legg til skade 2";
-    }
+if(s2.classList.contains("hidden")){
+s2.classList.remove("hidden");
+document.getElementById("btnSkade2").innerText="Skjul skade 2";
+}else{
+s2.classList.add("hidden");
+document.getElementById("btnSkade2").innerText="Legg til skade 2";
+}
+
+}
+
+// NY MAST
+function nyMast(){
+
+let n = document.getElementById("netteier").value;
+let l = document.getElementById("linje").value;
+
+document.querySelectorAll("input").forEach(i=>i.value="");
+
+document.getElementById("netteier").value=n;
+document.getElementById("linje").value=l;
+
+// skjul ALT
+document.getElementById("skade1").classList.add("hidden");
+document.getElementById("skade2").classList.add("hidden");
+
+document.getElementById("img1").style.display="none";
+document.getElementById("img2").style.display="none";
+
+document.getElementById("felt1").innerHTML="";
+document.getElementById("felt2").innerHTML="";
+
+document.getElementById("btnSkade2").innerText="Legg til skade 2";
+
 }
 
 // GPS
 let gpsWatch=null;
 
 function startGPS(){
-gpsWatch=navigator.geolocation.watchPosition(p=>{
-gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
+gpsWatch = navigator.geolocation.watchPosition(p=>{
+document.getElementById("gps").value =
+p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
 });
 }
 
@@ -258,69 +213,45 @@ function stopGPS(){
 navigator.geolocation.clearWatch(gpsWatch);
 }
 
-// valg
-function toggle(id){
-document.getElementById(id).classList.toggle("hidden");
-}
-
-function setVal(id,val){
-document.getElementById(id).innerText=val;
-document.getElementById(id.replace("Txt","valg")).classList.add("hidden");
-}
-
-// data
+// LAGRING
 let data=[];
 
 function lagre(){
+
 data.push({
-netteier:netteier.value,
-linje:linje.value,
-mast:mast.value,
-topp:toppdiameter.value
+netteier: document.getElementById("netteier").value,
+linje: document.getElementById("linje").value,
+mast: document.getElementById("mast").value,
+gps: document.getElementById("gps").value
 });
+
 alert("Lagret");
+
 }
 
-// ny mast
-function nyMast(){
+// CSV
+function lastCSV(){
 
-    // Behold disse
-    let n = netteier.value;
-    let l = linje.value;
+let csv="Netteier,Linje,Mast,GPS\n";
 
-    // Nullstill alle input
-    document.querySelectorAll("input").forEach(i => i.value="");
+data.forEach(d=>{
+csv+=d.netteier+","+d.linje+","+d.mast+","+d.gps+"\n";
+});
 
-    // Sett tilbake
-    netteier.value = n;
-    linje.value = l;
+let blob=new Blob([csv]);
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="stolpe.csv";
+a.click();
 
-    // Nullstill skadefelt
-    document.getElementById("felt1").innerHTML = "";
-    document.getElementById("felt2").innerHTML = "";
-
-    // Fjern bilder
-    document.getElementById("img1").src = "";
-    document.getElementById("img2").src = "";
-
-    // Reset titler
-    document.getElementById("tittel1").innerText = "";
-document.getElementById("tittel2").innerText = "";
-
-    // Skjul skade 2
-    skade2.classList.add("hidden");
-    btnSkade2.innerText = "Legg til skade 2";
-
-    // Reset toppdiameter logikk
-    manuellTopp = false;
 }
 
-// excel
-function excel(){
-let ws=XLSX.utils.json_to_sheet(data);
-let wb=XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb,ws,"Stolper");
-XLSX.writeFile(wb,"stolpekontroll.xlsx");
+// START: skjul alt
+window.onload=function(){
+document.getElementById("skade1").classList.add("hidden");
+document.getElementById("skade2").classList.add("hidden");
+document.getElementById("img1").style.display="none";
+document.getElementById("img2").style.display="none";
 }
 
 </script>
