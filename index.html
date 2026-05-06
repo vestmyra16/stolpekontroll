@@ -1,60 +1,347 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Stolpekontroll v2.9</title>
+
+<!-- IKON (iPhone) -->
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<style>
+body{
+font-family:Arial;
+max-width:420px;
+margin:auto;
+background:#f2f2f2;
+padding:10px;
+box-sizing:border-box;
+}
+*{box-sizing:border-box;}
+
+h2{text-align:center;}
+
+input, button{
+width:100%;
+padding:12px;
+margin:6px 0;
+border-radius:6px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+button{
+background:#2e7d32;
+color:white;
+border:none;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
+}
+
+.choice{
+background:#2e7d32;
+color:white;
+padding:12px;
+border-radius:6px;
+text-align:center;
+}
+
+.hidden{display:none;}
+
+img{
+width:110px;
+margin:auto;
+display:none;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Stolpekontroll v2.9</h2>
+
+<h3>Grunnlagsdata</h3>
+
+<label>Netteier</label>
+<input id="netteier">
+
+<label>LinjeID</label>
+<input id="linje">
+
+<label>Mastnr</label>
+<input id="mast">
+
+<label>Stolpehøyde (m)</label>
+<input id="hoyde">
+
+<label>Nedgravingsdybde (m)</label>
+<input id="nedgravd">
+
+<label>Jordbånddiameter (mm)</label>
+<input id="jord">
+
+<label>Avtrapping (cm/m)</label>
+<input id="avtr" value="0.75">
+
+<label>Toppdiameter (mm)</label>
+<input id="topp" oninput="manuellTopp=true">
+
+<button onclick="beregnTopp()">Beregn toppdiameter</button>
+
+<label>GPS</label>
+<input id="gps" readonly>
+
+<button onclick="startGPS()">Slå på GPS</button>
+<button onclick="stopGPS()">Slå av GPS</button>
+
+<button onclick="nyMast()">Ny mast</button>
+
+<h3>Registrer skade</h3>
+
+<div class="grid">
+<button onclick="velg('indre')">Indre råte</button>
+<button onclick="velg('sirk')">Sirkulær råte</button>
+<button onclick="velg('soft')">Softråte</button>
+<button onclick="velg('spett')">Spettsmie</button>
+<button onclick="velg('hakk')">Hakkespetthull</button>
+<button onclick="velg('sprekk')">Sprekk</button>
+</div>
+
+<!-- SKADE 1 -->
+<div id="skade1" class="hidden">
+<h3 id="tittel1"></h3>
+
+<label>Stolpenr</label>
+<input id="stolpe1">
+
+<label>Høyde skadested (m)</label>
+<input id="h1">
+
+<label>Diameter skadested (mm)</label>
+<input id="d1">
+
+<img id="img1">
+<div id="felt1"></div>
+</div>
+
+<!-- SKADE 2 -->
+<button id="btn2" onclick="toggle2()">Legg til skade 2</button>
+
+<div id="skade2" class="hidden">
+<h3 id="tittel2"></h3>
+
+<label>Stolpenr</label>
+<input id="stolpe2">
+
+<label>Høyde skadested (m)</label>
+<input id="h2">
+
+<label>Diameter skadested (mm)</label>
+<input id="d2">
+
+<img id="img2">
+<div id="felt2"></div>
+</div>
+
+<button onclick="lagre()">Lagre mast</button>
+<button onclick="lastCSV()">Last ned Excel (CSV)</button>
+
 <script>
 
-// GLOBAL DATA
 let excelData = [];
+let manuellTopp = false;
+let valgtType = "";
 
-// LAGRE MAST (OPPDATERT)
+// TOPPDIAMETER
+function beregnTopp(){
+if(manuellTopp) return;
+
+let h=parseFloat(hoyde.value);
+let av=parseFloat(avtr.value);
+let j=parseFloat(jord.value);
+
+if(!h||!av||!j) return;
+
+let topp=j-(h*av*10);
+topp=Math.max(topp,50);
+
+document.getElementById("topp").value=Math.round(topp);
+}
+
+// FELT DEFINISJON
+const felt = {
+indre:["A","B","E"],
+sirk:["A","B","C","D"],
+soft:["A","B","C","D"],
+spett:["A","B"],
+hakk:["A","B","C","D"],
+sprekk:["A","B","C","D","E"]
+};
+
+// GENERER FELT
+function lagFelt(type, containerId, prefix){
+let d=document.getElementById(containerId);
+d.innerHTML="";
+
+felt[type].forEach((f,i)=>{
+d.innerHTML += `<label>${f} mm</label>
+<input id="${prefix}_${f}">`;
+});
+}
+
+// VELG SKADE
+function velg(type){
+
+valgtType = type;
+
+skade1.classList.remove("hidden");
+tittel1.innerText = type + " 1";
+
+lagFelt(type,"felt1","s1");
+lagFelt(type,"felt2","s2");
+
+if(["soft","spett","hakk","sprekk"].includes(type)){
+img1.src=type+".svg";
+img1.style.display="block";
+}else{
+img1.style.display="none";
+}
+}
+
+// HENT FELTVERDIER
+function hentFelt(prefix){
+let result={A:"",B:"",C:"",D:"",E:""};
+
+["A","B","C","D","E"].forEach(f=>{
+let el=document.getElementById(prefix+"_"+f);
+if(el) result[f]=el.value;
+});
+
+return result;
+}
+
+// SKADE 2
+function toggle2(){
+if(skade2.classList.contains("hidden")){
+skade2.classList.remove("hidden");
+btn2.innerText="Skjul skade 2";
+}else{
+skade2.classList.add("hidden");
+btn2.innerText="Legg til skade 2";
+}
+}
+
+// GPS
+let watch=null;
+function startGPS(){
+watch=navigator.geolocation.watchPosition(p=>{
+gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
+});
+}
+function stopGPS(){
+navigator.geolocation.clearWatch(watch);
+}
+
+// LAGRING (EXCEL PRO)
 function lagre(){
 
-let base = {
-netteier: netteier.value,
-linje: linje.value,
-mast: mast.value,
-gps: gps.value,
-dato: new Date().toLocaleString()
+let base={
+netteier:netteier.value,
+linje:linje.value,
+mast:mast.value,
+gps:gps.value,
+dato:new Date().toLocaleString()
 };
 
 // SKADE 1
 if(stolpe1.value){
+let f=hentFelt("s1");
+
 excelData.push({
 ...base,
-stolpe: stolpe1.value,
-skadeNr: 1,
-type: tittel1.innerText
+stolpe:stolpe1.value,
+type:tittel1.innerText,
+skadeNr:1,
+...f
 });
 }
 
 // SKADE 2
 if(stolpe2.value){
+let f=hentFelt("s2");
+
 excelData.push({
 ...base,
-stolpe: stolpe2.value,
-skadeNr: 2,
-type: tittel2.innerText
+stolpe:stolpe2.value,
+type:tittel2.innerText,
+skadeNr:2,
+...f
 });
 }
 
-alert("Mast lagret i Excel-data");
+alert("Lagret");
 }
 
-
-// EKSPORT EXCEL PRO
+// CSV EXPORT
 function lastCSV(){
 
-let csv =
-"Netteier,LinjeID,Mastnr,Stolpenr,Skadetype,SkadeNr,GPS,Dato\n";
+let csv="Netteier,LinjeID,Mastnr,Stolpenr,Skadetype,SkadeNr,A,B,C,D,E,GPS,Dato\n";
 
 excelData.forEach(d=>{
-csv += `${d.netteier},${d.linje},${d.mast},${d.stolpe},${d.type},${d.skadeNr},${d.gps},${d.dato}\n`;
+csv += `${d.netteier},${d.linje},${d.mast},${d.stolpe},${d.type},${d.skadeNr},${d.A},${d.B},${d.C},${d.D},${d.E},${d.gps},${d.dato}\n`;
 });
 
-// LAST NED
-let blob = new Blob([csv], {type:"text/csv"});
-let a = document.createElement("a");
-a.href = URL.createObjectURL(blob);
-a.download = (linje.value || "stolpekontroll") + ".csv";
+let blob=new Blob([csv],{type:"text/csv"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="stolpekontroll.csv";
 a.click();
+}
 
+// NY MAST
+function nyMast(){
+
+let n=netteier.value;
+let l=linje.value;
+
+document.querySelectorAll("input").forEach(i=>i.value="");
+
+netteier.value=n;
+linje.value=l;
+
+skade1.classList.add("hidden");
+skade2.classList.add("hidden");
+
+img1.style.display="none";
+img2.style.display="none";
+
+felt1.innerHTML="";
+felt2.innerHTML="";
+
+btn2.innerText="Legg til skade 2";
+
+manuellTopp=false;
+}
+
+// START
+window.onload=function(){
+skade1.classList.add("hidden");
+skade2.classList.add("hidden");
+img1.style.display="none";
+img2.style.display="none";
 }
 
 </script>
+
+</body>
+</html>
