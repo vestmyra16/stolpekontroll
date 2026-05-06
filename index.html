@@ -5,29 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stolpekontroll v2.9</title>
 
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-180.png">
-
 <style>
-body {font-family:Arial; max-width:420px; margin:auto; background:#f2f2f2;}
-h2{text-align:center;}
-label{font-weight:bold;}
+body{
+font-family:Arial;
+max-width:420px;
+margin:auto;
+background:#f2f2f2;
+padding:10px;
+box-sizing:border-box;
+}
 
-input{
+*{box-sizing:border-box;}
+
+h2{text-align:center;}
+
+input, button{
 width:100%;
-padding:8px;
-margin-bottom:10px;
+padding:12px;
+margin:6px 0;
+border-radius:6px;
+border:1px solid #ccc;
+font-size:16px;
 }
 
 button{
-width:100%;
-padding:14px;
-margin:6px 0;
 background:#2e7d32;
 color:white;
 border:none;
-border-radius:6px;
-font-size:16px;
 }
 
 .grid{
@@ -39,18 +43,17 @@ gap:8px;
 .choice{
 background:#2e7d32;
 color:white;
-padding:14px;
+padding:12px;
 border-radius:6px;
 text-align:center;
-margin-bottom:6px;
 }
 
 .hidden{display:none;}
 
 img{
-width:140px;
-display:none;
+width:120px;
 margin:auto;
+display:none;
 }
 </style>
 </head>
@@ -77,42 +80,24 @@ margin:auto;
 <input id="nedgravd">
 
 <label>Jordbånddiameter (mm)</label>
-<input id="jordband">
+<input id="jord">
 
 <label>Avtrapping (cm/m)</label>
-<input id="avtrapping" value="0.75">
+<input id="avtr" value="0.75">
 
 <label>Toppdiameter (mm)</label>
 <input id="topp" oninput="manuellTopp=true">
 
 <button onclick="beregnTopp()">Beregn toppdiameter</button>
 
-<!-- JORDSMONN -->
 <label>Jordsmonn</label>
-<div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
-<div id="jordvalg" class="hidden">
-<button onclick="setVal('jordTxt','Innmark')">Innmark</button>
-<button onclick="setVal('jordTxt','Skogsmark')">Skogsmark</button>
-<button onclick="setVal('jordTxt','Fjell')">Fjell</button>
-</div>
+<div class="choice" id="jordTxt">Skogsmark</div>
 
-<!-- KLIMA -->
 <label>Klima</label>
-<div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
-<div id="klimavalg" class="hidden">
-<button onclick="setVal('klimaTxt','Kyst')">Kyst</button>
-<button onclick="setVal('klimaTxt','Innland')">Innland</button>
-<button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
-</div>
+<div class="choice" id="klimaTxt">Kyst</div>
 
-<!-- LAST -->
 <label>Vertikallast</label>
-<div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
-<div id="lastvalg" class="hidden">
-<button onclick="setVal('lastTxt','Lav')">Lav</button>
-<button onclick="setVal('lastTxt','Normal')">Normal</button>
-<button onclick="setVal('lastTxt','Høy')">Høy</button>
-</div>
+<div class="choice" id="lastTxt">Normal</div>
 
 <label>GPS</label>
 <input id="gps" readonly>
@@ -137,7 +122,7 @@ margin:auto;
 <h3 id="tittel1"></h3>
 
 <label>Stolpenr</label>
-<input>
+<input id="stolpe1">
 
 <label>Høyde skadested (m)</label>
 <input>
@@ -150,96 +135,132 @@ margin:auto;
 <div id="felt1"></div>
 </div>
 
-<button id="btnSkade2" onclick="toggleSkade2()">Legg til skade 2</button>
+<button id="btn2" onclick="toggle2()">Legg til skade 2</button>
 
 <div id="skade2" class="hidden">
 <h3 id="tittel2"></h3>
 
+<label>Stolpenr</label>
+<input id="stolpe2">
+
 <img id="img2">
+
 <div id="felt2"></div>
 </div>
 
+<button onclick="lagre()">Lagre mast</button>
+<button onclick="lastCSV()">Last ned Excel (CSV)</button>
+
 <script>
 
+let data=[];
 let manuellTopp=false;
 
-// toppdiameter
+// toppdiameter korrekt
 function beregnTopp(){
 if(manuellTopp) return;
 
-let h = parseFloat(document.getElementById("hoyde").value);
-let avtr = parseFloat(document.getElementById("avtrapping").value);
+let h=parseFloat(hoyde.value);
+let av=parseFloat(avtr.value);
+let j=parseFloat(jord.value);
 
-if(!h || !avtr) return;
+if(!h||!av||!j) return;
 
-let topp = 300 - (h * avtr * 10); // enkel modell
-document.getElementById("topp").value = Math.round(topp);
-}
+let topp=j-(h*av*10);
+topp=Math.max(topp,50);
 
-// valg
-function toggle(id){
-document.getElementById(id).classList.toggle("hidden");
-}
-
-function setVal(id,val){
-document.getElementById(id).innerText=val;
-document.getElementById(id.replace("Txt","valg")).classList.add("hidden");
+document.getElementById("topp").value=Math.round(topp);
 }
 
 // felter
 let felt={
-indre:["A mm","B mm","E mm"],
-sirk:["A mm","B mm","C mm","D mm"],
-soft:["A mm","B mm","C mm","D mm"],
-spett:["A mm","B mm"],
-hakk:["A mm","B mm","C mm","D mm"],
-sprekk:["Start (m)","Slutt (m)","A mm","B mm","Lengde (m)"]
-}
+indre:["A","B","E"],
+sirk:["A","B","C","D"],
+soft:["A","B","C","D"],
+spett:["A","B"],
+hakk:["A","B","C","D"],
+sprekk:["Start","Slutt","A","B","Lengde"]
+};
 
+// velg skade
 function velg(type){
 
-let s1=document.getElementById("skade1");
-let img1=document.getElementById("img1");
-let felt1=document.getElementById("felt1");
-
-s1.classList.remove("hidden");
-
-document.getElementById("tittel1").innerText=type+" 1";
-
-img1.src=type+".svg";
-img1.style.display="block";
+skade1.classList.remove("hidden");
+tittel1.innerText=type+" 1";
 
 felt1.innerHTML="";
 felt[type].forEach(f=>{
-felt1.innerHTML+="<label>"+f+"</label><input>";
+felt1.innerHTML+=`<label>${f} mm</label><input>`;
 });
 
+// bilde kun relevante
+if(["soft","spett","hakk","sprekk"].includes(type)){
+img1.src=type+".svg";
+img1.style.display="block";
+}else{
+img1.style.display="none";
+}
 }
 
 // skade 2
-function toggleSkade2(){
-let s2=document.getElementById("skade2");
-
-if(s2.classList.contains("hidden")){
-s2.classList.remove("hidden");
-btnSkade2.innerText="Skjul skade 2";
+function toggle2(){
+if(skade2.classList.contains("hidden")){
+skade2.classList.remove("hidden");
+btn2.innerText="Skjul skade 2";
 }else{
-s2.classList.add("hidden");
-btnSkade2.innerText="Legg til skade 2";
+skade2.classList.add("hidden");
+btn2.innerText="Legg til skade 2";
 }
 }
 
 // GPS
-let gpsWatch=null;
-
+let watch=null;
 function startGPS(){
-gpsWatch=navigator.geolocation.watchPosition(p=>{
+watch=navigator.geolocation.watchPosition(p=>{
 gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
 });
 }
-
 function stopGPS(){
-navigator.geolocation.clearWatch(gpsWatch);
+navigator.geolocation.clearWatch(watch);
+}
+
+// lagring korrekt struktur
+function lagre(){
+
+let mastnr=mast.value;
+
+if(stolpe1.value){
+data.push({
+mast:mastnr,
+stolpe:stolpe1.value,
+skade:tittel1.innerText
+});
+}
+
+if(stolpe2.value){
+data.push({
+mast:mastnr,
+stolpe:stolpe2.value,
+skade:tittel2.innerText
+});
+}
+
+alert("Lagret");
+}
+
+// csv
+function lastCSV(){
+let csv="Mastnr,Stolpenr,Skade\n";
+
+data.forEach(d=>{
+csv+=`${d.mast},${d.stolpe},${d.skade}\n`;
+});
+
+let blob=new Blob([csv]);
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="stolpekontroll.csv";
+a.click();
 }
 
 // ny mast
@@ -262,9 +283,17 @@ img2.style.display="none";
 felt1.innerHTML="";
 felt2.innerHTML="";
 
-btnSkade2.innerText="Legg til skade 2";
+btn2.innerText="Legg til skade 2";
 
 manuellTopp=false;
+}
+
+// start
+window.onload=function(){
+skade1.classList.add("hidden");
+skade2.classList.add("hidden");
+img1.style.display="none";
+img2.style.display="none";
 }
 
 </script>
