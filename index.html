@@ -86,6 +86,17 @@ margin:auto;
 
 <button onclick="beregnTopp()">Beregn toppdiameter</button>
 
+<h3>Fuktmåling</h3>
+
+<label>Lufttemperatur (°C)</label>
+<input id="temp">
+
+<label>Relativ fuktighet (%)</label>
+<input id="rf">
+
+<label>Fukt i ytterskall (%)</label>
+<input id="fukt">
+
 <label>GPS</label>
 <input id="gps" readonly>
 
@@ -105,18 +116,11 @@ margin:auto;
 <button onclick="velg('sprekk')">Sprekk</button>
 </div>
 
-<!-- SKADE 1 -->
 <div id="skade1" class="hidden">
 <h3 id="tittel1"></h3>
 
 <label>Stolpenr</label>
 <input id="stolpe1">
-
-<label>Høyde skadested (m)</label>
-<input id="h1">
-
-<label>Diameter skadested (mm)</label>
-<input id="d1">
 
 <img id="img1">
 <div id="felt1"></div>
@@ -124,18 +128,11 @@ margin:auto;
 
 <button id="btn2" onclick="toggle2()">Legg til skade 2</button>
 
-<!-- SKADE 2 -->
 <div id="skade2" class="hidden">
 <h3 id="tittel2"></h3>
 
 <label>Stolpenr</label>
 <input id="stolpe2">
-
-<label>Høyde skadested (m)</label>
-<input id="h2">
-
-<label>Diameter skadested (mm)</label>
-<input id="d2">
 
 <img id="img2">
 <div id="felt2"></div>
@@ -146,8 +143,8 @@ margin:auto;
 
 <script>
 
-let excelData = [];
-let manuellTopp = false;
+let excelData=[];
+let manuellTopp=false;
 
 // toppdiameter
 function beregnTopp(){
@@ -162,11 +159,11 @@ if(!h||!av||!j) return;
 let topp=j-(h*av*10);
 topp=Math.max(topp,50);
 
-document.getElementById("topp").value=Math.round(topp);
+topp.value=Math.round(topp);
 }
 
 // felter
-const felt = {
+const felt={
 indre:["A","B","E"],
 sirk:["A","B","C","D"],
 soft:["A","B","C","D"],
@@ -175,27 +172,23 @@ hakk:["A","B","C","D"],
 sprekk:["A","B","C","D","E"]
 };
 
-function lagFelt(type, id, prefix){
+function lagFelt(type,id,prefix){
 let d=document.getElementById(id);
 d.innerHTML="";
-
 felt[type].forEach(f=>{
-d.innerHTML += `<label>${f} mm</label><input id="${prefix}_${f}">`;
+d.innerHTML+=`<label>${f} mm</label><input id="${prefix}_${f}">`;
 });
 }
 
-// velg skade
 function velg(type){
-
 skade1.classList.remove("hidden");
 
-tittel1.innerText = type + " 1";
-tittel2.innerText = type + " 2";
+tittel1.innerText=type+" 1";
+tittel2.innerText=type+" 2";
 
 lagFelt(type,"felt1","s1");
 lagFelt(type,"felt2","s2");
 
-// bilder kun for disse
 if(["soft","spett","hakk","sprekk"].includes(type)){
 img1.src=type+".svg";
 img1.style.display="block";
@@ -204,19 +197,15 @@ img1.style.display="none";
 }
 }
 
-// hent felt
 function hent(prefix){
 let r={A:"",B:"",C:"",D:"",E:""};
-
 ["A","B","C","D","E"].forEach(f=>{
 let el=document.getElementById(prefix+"_"+f);
 if(el) r[f]=el.value;
 });
-
 return r;
 }
 
-// toggle skade 2
 function toggle2(){
 if(skade2.classList.contains("hidden")){
 skade2.classList.remove("hidden");
@@ -227,7 +216,6 @@ btn2.innerText="Legg til skade 2";
 }
 }
 
-// GPS
 let watch=null;
 
 function startGPS(){
@@ -240,7 +228,6 @@ function stopGPS(){
 navigator.geolocation.clearWatch(watch);
 }
 
-// lagre
 function lagre(){
 
 let base={
@@ -252,72 +239,53 @@ nedgravd:nedgravd.value,
 jord:jord.value,
 avtr:avtr.value,
 topp:topp.value,
+temp:temp.value,
+rf:rf.value,
+fukt:fukt.value,
 gps:gps.value,
 dato:new Date().toLocaleDateString("no-NO")
 };
 
-// skade 1
 if(stolpe1.value){
 let f=hent("s1");
-excelData.push({...base, stolpe:stolpe1.value, type:tittel1.innerText, skadeNr:1, ...f});
+excelData.push({...base,stolpe:stolpe1.value,type:tittel1.innerText,skadeNr:1,...f});
 }
 
-// skade 2
 if(stolpe2.value){
 let f=hent("s2");
-excelData.push({...base, stolpe:stolpe2.value, type:tittel2.innerText, skadeNr:2, ...f});
+excelData.push({...base,stolpe:stolpe2.value,type:tittel2.innerText,skadeNr:2,...f});
 }
 
 alert("Lagret");
 }
 
-// CSV PRO
 function lastCSV(){
 
-let csv =
-"Netteier,LinjeID,Mastnr,Stolpehøyde,Nedgravd,Jordbånd,Avtrapping,Toppdiameter,Stolpenr,Skadetype,SkadeNr,A,B,C,D,E,GPS_Lat,GPS_Lon,Dato\n";
+let csv="Netteier,LinjeID,Mastnr,Stolpehøyde,Nedgravd,Jordbånd,Avtrapping,Toppdiameter,Temp,RF,Fukt,Stolpenr,Skadetype,SkadeNr,A,B,C,D,E,GPS_Lat,GPS_Lon,Dato\n";
 
 excelData.forEach(d=>{
-
-let lat="", lon="";
-if(d.gps && d.gps.includes(",")){
-let parts=d.gps.split(",");
-lat=parts[0];
-lon=parts[1];
+let lat="",lon="";
+if(d.gps.includes(",")){
+let p=d.gps.split(",");
+lat=p[0];lon=p[1];
 }
 
-csv += [
-d.netteier,
-d.linje,
-d.mast,
-d.hoyde,
-d.nedgravd,
-d.jord,
-d.avtr,
-d.topp,
-d.stolpe,
-d.type,
-d.skadeNr,
-d.A,
-d.B,
-d.C,
-d.D,
-d.E,
-lat,
-lon,
-d.dato
+csv+=[
+d.netteier,d.linje,d.mast,d.hoyde,d.nedgravd,d.jord,d.avtr,d.topp,
+d.temp,d.rf,d.fukt,
+d.stolpe,d.type,d.skadeNr,
+d.A,d.B,d.C,d.D,d.E,
+lat,lon,d.dato
 ].join(",")+"\n";
-
 });
 
-let blob=new Blob([csv],{type:"text/csv"});
+let blob=new Blob([csv]);
 let a=document.createElement("a");
 a.href=URL.createObjectURL(blob);
 a.download="stolpekontroll.csv";
 a.click();
 }
 
-// ny mast
 function nyMast(){
 
 let n=netteier.value;
@@ -342,12 +310,9 @@ btn2.innerText="Legg til skade 2";
 manuellTopp=false;
 }
 
-// start
 window.onload=function(){
 skade1.classList.add("hidden");
 skade2.classList.add("hidden");
-img1.style.display="none";
-img2.style.display="none";
 };
 
 </script>
