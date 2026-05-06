@@ -122,19 +122,19 @@ margin:auto;
 <h3>Registrer skade</h3>
 
 <div class="grid">
-<button onclick="velg('indre')">Indre råte</button>
-<button onclick="velg('sirk')">Sirkulær råte</button>
+<button onclick="velg('indre','Indre råte')">Indre råte</button>
+<button onclick="velg('sirk','Sirkulær råte')">Sirkulær råte</button>
 
-<button onclick="velg('soft')">Softråte</button>
-<button onclick="velg('spett')">Spettsmie</button>
+<button onclick="velg('soft','Softråte')">Softråte</button>
+<button onclick="velg('spett','Spettsmie')">Spettsmie</button>
 
-<button onclick="velg('hakk')">Hakkespetthull</button>
-<button onclick="velg('sprekk')">Sprekk</button>
+<button onclick="velg('hakk','Hakkespetthull')">Hakkespetthull</button>
+<button onclick="velg('sprekk','Sprekk')">Sprekk</button>
 </div>
 
 <!-- SKADE 1 -->
 
-<h3>Skade 1</h3>
+<h3 id="tittel1">Skade 1</h3>
 
 <label>Stolpenr</label>
 <input id="stolpe1">
@@ -154,7 +154,7 @@ margin:auto;
 
 <div id="skade2" class="hidden">
 
-<h3>Skade 2</h3>
+<h3 id="tittel2">Skade 2</h3>
 
 <label>Stolpenr</label>
 <input id="stolpe2">
@@ -196,9 +196,14 @@ sprekk:[
 ]
 };
 
-function velg(type){
+function velg(type, navn){
+
 img1.src = type + ".svg";
 img2.src = type + ".svg";
+
+document.getElementById("tittel1").innerText = navn + " 1";
+document.getElementById("tittel2").innerText = navn + " 2";
+
 lagFelt(type,"felt1");
 lagFelt(type,"felt2");
 }
@@ -212,15 +217,15 @@ d.innerHTML += `<label>${f}</label><input>`;
 }
 
 function toggleSkade2(){
-let el=skade2;
-let btn=btnSkade2;
+let el = document.getElementById("skade2");
+let btn = document.getElementById("btnSkade2");
 
 if(el.classList.contains("hidden")){
 el.classList.remove("hidden");
-btn.innerText="Skjul skade 2";
+btn.innerText = "Skjul skade 2";
 }else{
 el.classList.add("hidden");
-btn.innerText="Legg til skade 2";
+btn.innerText = "Legg til skade 2";
 }
 }
 
@@ -255,21 +260,14 @@ data.push({
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
-hoyde:hoyde.value,
-jordband:jordband.value,
-nedgravd:nedgravd.value,
-toppdiameter:toppdiameter.value,
-avtrapping:avtrapping.value,
 gps:gps.value,
-jord:jordTxt.innerText,
-klima:klimaTxt.innerText,
-last:lastTxt.innerText,
 merknad:merknad.value
 });
 alert("Lagret");
 }
 
 function nyMast(){
+
 let n=netteier.value;
 let l=linje.value;
 
@@ -280,8 +278,12 @@ linje.value=l;
 
 skade2.classList.add("hidden");
 btnSkade2.innerText="Legg til skade 2";
+
+document.getElementById("tittel1").innerText="Skade 1";
+document.getElementById("tittel2").innerText="Skade 2";
 }
 
+// excel
 function excel(){
 let ws=XLSX.utils.json_to_sheet(data);
 let wb=XLSX.utils.book_new();
