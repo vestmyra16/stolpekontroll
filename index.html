@@ -44,6 +44,14 @@ grid-template-columns:1fr 1fr;
 gap:8px;
 }
 
+.choice{
+background:#2e7d32;
+color:white;
+padding:12px;
+border-radius:6px;
+text-align:center;
+}
+
 .hidden{display:none;}
 
 img{
@@ -85,6 +93,32 @@ margin:auto;
 <input id="topp" oninput="manuellTopp=true">
 
 <button onclick="beregnTopp()">Beregn toppdiameter</button>
+
+<h3>Forhold</h3>
+
+<label>Jordsmonn</label>
+<div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
+<div id="jordvalg" class="hidden grid">
+<button onclick="setVal('jordTxt','Innmark')">Innmark</button>
+<button onclick="setVal('jordTxt','Skogsmark')">Skogsmark</button>
+<button onclick="setVal('jordTxt','Fjell')">Fjell</button>
+</div>
+
+<label>Klima</label>
+<div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
+<div id="klimavalg" class="hidden grid">
+<button onclick="setVal('klimaTxt','Kyst')">Kyst</button>
+<button onclick="setVal('klimaTxt','Innland')">Innland</button>
+<button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
+</div>
+
+<label>Vertikallast</label>
+<div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
+<div id="lastvalg" class="hidden grid">
+<button onclick="setVal('lastTxt','Lav')">Lav</button>
+<button onclick="setVal('lastTxt','Normal')">Normal</button>
+<button onclick="setVal('lastTxt','Høy')">Høy</button>
+</div>
 
 <h3>Fuktmåling</h3>
 
@@ -159,7 +193,17 @@ if(!h||!av||!j) return;
 let topp=j-(h*av*10);
 topp=Math.max(topp,50);
 
-topp.value=Math.round(topp);
+document.getElementById("topp").value=Math.round(topp);
+}
+
+// toggle valg
+function toggle(id){
+document.getElementById(id).classList.toggle("hidden");
+}
+
+function setVal(id,val){
+document.getElementById(id).innerText=val;
+document.getElementById(id.replace("Txt","valg")).classList.add("hidden");
 }
 
 // felter
@@ -216,6 +260,7 @@ btn2.innerText="Legg til skade 2";
 }
 }
 
+// GPS
 let watch=null;
 
 function startGPS(){
@@ -228,6 +273,7 @@ function stopGPS(){
 navigator.geolocation.clearWatch(watch);
 }
 
+// lagring
 function lagre(){
 
 let base={
@@ -239,6 +285,9 @@ nedgravd:nedgravd.value,
 jord:jord.value,
 avtr:avtr.value,
 topp:topp.value,
+jordsmonn:jordTxt.innerText,
+klima:klimaTxt.innerText,
+vertikallast:lastTxt.innerText,
 temp:temp.value,
 rf:rf.value,
 fukt:fukt.value,
@@ -259,19 +308,21 @@ excelData.push({...base,stolpe:stolpe2.value,type:tittel2.innerText,skadeNr:2,..
 alert("Lagret");
 }
 
+// CSV
 function lastCSV(){
 
-let csv="Netteier,LinjeID,Mastnr,Stolpehøyde,Nedgravd,Jordbånd,Avtrapping,Toppdiameter,Temp,RF,Fukt,Stolpenr,Skadetype,SkadeNr,A,B,C,D,E,GPS_Lat,GPS_Lon,Dato\n";
+let csv="Netteier,LinjeID,Mastnr,Stolpehøyde,Nedgravd,Jordbånd,Avtrapping,Toppdiameter,Jordsmonn,Klima,Vertikallast,Temp,RF,Fukt,Stolpenr,Skadetype,SkadeNr,A,B,C,D,E,GPS_Lat,GPS_Lon,Dato\n";
 
 excelData.forEach(d=>{
 let lat="",lon="";
 if(d.gps.includes(",")){
 let p=d.gps.split(",");
-lat=p[0];lon=p[1];
+lat=p[0]; lon=p[1];
 }
 
-csv+=[
+csv += [
 d.netteier,d.linje,d.mast,d.hoyde,d.nedgravd,d.jord,d.avtr,d.topp,
+d.jordsmonn,d.klima,d.vertikallast,
 d.temp,d.rf,d.fukt,
 d.stolpe,d.type,d.skadeNr,
 d.A,d.B,d.C,d.D,d.E,
@@ -286,6 +337,7 @@ a.download="stolpekontroll.csv";
 a.click();
 }
 
+// ny mast
 function nyMast(){
 
 let n=netteier.value;
