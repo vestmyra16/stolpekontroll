@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Stolpekontroll v2.9</title>
 
 <link rel="manifest" href="manifest.json">
@@ -59,7 +58,7 @@ margin:auto;
 
 <h2>Stolpekontroll v2.9</h2>
 
-<!-- GRUNNLAGSDATA -->
+<!-- GRUNNLAG -->
 
 <label>Netteier</label>
 <input id="netteier">
@@ -79,6 +78,12 @@ margin:auto;
 <label>Nedgravd (m)</label>
 <input id="nedgravd">
 
+<label>Toppdiameter (mm)</label>
+<input id="toppdiameter">
+
+<label>Avtrapping (cm/m)</label>
+<input id="avtrapping" value="0.75">
+
 <!-- GPS -->
 
 <label>GPS</label>
@@ -87,31 +92,24 @@ margin:auto;
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
-<!-- JORDSMONN -->
+<!-- VALG -->
 
 <label>Jordsmonn</label>
 <div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
-
 <div id="jordvalg" class="hidden grid">
 <button onclick="setVal('jordTxt','Innmark')">Innmark</button>
 <button onclick="setVal('jordTxt','Fjell')">Fjell</button>
 </div>
 
-<!-- KLIMA -->
-
 <label>Klima</label>
 <div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
-
 <div id="klimavalg" class="hidden grid">
 <button onclick="setVal('klimaTxt','Innland')">Innland</button>
 <button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
 </div>
 
-<!-- VERTIKALLAST -->
-
 <label>Vertikallast</label>
 <div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
-
 <div id="lastvalg" class="hidden grid">
 <button onclick="setVal('lastTxt','Lav')">Lav</button>
 <button onclick="setVal('lastTxt','Høy')">Høy</button>
@@ -137,19 +135,39 @@ margin:auto;
 <!-- SKADE 1 -->
 
 <h3>Skade 1</h3>
+
+<label>Stolpenr</label>
+<input id="stolpe1">
+
+<label>Høyde skadested (m)</label>
+<input id="h1">
+
+<label>Diameter skadested (mm)</label>
+<input id="d1">
+
 <img id="img1">
 <div id="felt1"></div>
 
-<!-- TOGGLE SKADE 2 -->
+<!-- SKADE 2 -->
 
 <button id="btnSkade2" onclick="toggleSkade2()">Legg til skade 2</button>
 
-<!-- SKADE 2 -->
-
 <div id="skade2" class="hidden">
+
 <h3>Skade 2</h3>
+
+<label>Stolpenr</label>
+<input id="stolpe2">
+
+<label>Høyde skadested (m)</label>
+<input id="h2">
+
+<label>Diameter skadested (mm)</label>
+<input id="d2">
+
 <img id="img2">
 <div id="felt2"></div>
+
 </div>
 
 <label>Merknad</label>
@@ -169,19 +187,18 @@ soft:["A mm","B mm","C mm","D mm"],
 spett:["A mm","B mm"],
 hakk:["A mm","B mm","C mm","D mm"],
 sprekk:[
-"Diam på skadested",
-"Sprekk starter (m)",
-"Sprekk slutter (m)",
-"Sprekkdybde (A)",
-"Sprekkbredde (B)",
-"Sprekklengde (m)"
+"Diam skadested",
+"Sprekk start (m)",
+"Sprekk slutt (m)",
+"Sprekkdybde",
+"Sprekkbredde",
+"Sprekklengde"
 ]
 };
 
 function velg(type){
 img1.src = type + ".svg";
 img2.src = type + ".svg";
-
 lagFelt(type,"felt1");
 lagFelt(type,"felt2");
 }
@@ -194,18 +211,16 @@ d.innerHTML += `<label>${f}</label><input>`;
 });
 }
 
-// 🔹 KORREKT TOGGLE
 function toggleSkade2(){
-
-let el = document.getElementById("skade2");
-let btn = document.getElementById("btnSkade2");
+let el=skade2;
+let btn=btnSkade2;
 
 if(el.classList.contains("hidden")){
-    el.classList.remove("hidden");
-    btn.innerText = "Skjul skade 2";
-} else {
-    el.classList.add("hidden");
-    btn.innerText = "Legg til skade 2";
+el.classList.remove("hidden");
+btn.innerText="Skjul skade 2";
+}else{
+el.classList.add("hidden");
+btn.innerText="Legg til skade 2";
 }
 }
 
@@ -243,6 +258,8 @@ mast:mast.value,
 hoyde:hoyde.value,
 jordband:jordband.value,
 nedgravd:nedgravd.value,
+toppdiameter:toppdiameter.value,
+avtrapping:avtrapping.value,
 gps:gps.value,
 jord:jordTxt.innerText,
 klima:klimaTxt.innerText,
@@ -252,9 +269,7 @@ merknad:merknad.value
 alert("Lagret");
 }
 
-// ny mast
 function nyMast(){
-
 let n=netteier.value;
 let l=linje.value;
 
@@ -264,10 +279,9 @@ netteier.value=n;
 linje.value=l;
 
 skade2.classList.add("hidden");
-document.getElementById("btnSkade2").innerText = "Legg til skade 2";
+btnSkade2.innerText="Legg til skade 2";
 }
 
-// excel
 function excel(){
 let ws=XLSX.utils.json_to_sheet(data);
 let wb=XLSX.utils.book_new();
