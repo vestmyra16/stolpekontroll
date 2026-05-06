@@ -233,13 +233,16 @@ d.innerHTML+=`<label>${f}</label><input>`;
 // Toggle skade 2
 function toggleSkade2(){
 
-if(skade2.classList.contains("hidden")){
-skade2.classList.remove("hidden");
-btnSkade2.innerText="Skjul skade 2";
-}else{
-skade2.classList.add("hidden");
-btnSkade2.innerText="Legg til skade 2";
-}
+    let skade2 = document.getElementById("skade2");
+    let btn = document.getElementById("btnSkade2");
+
+    if(skade2.classList.contains("hidden")){
+        skade2.classList.remove("hidden");
+        btn.innerText = "Skjul skade 2";
+    } else {
+        skade2.classList.add("hidden");
+        btn.innerText = "Legg til skade 2";
+    }
 }
 
 // GPS
@@ -281,18 +284,35 @@ alert("Lagret");
 // ny mast
 function nyMast(){
 
-let n=netteier.value;
-let l=linje.value;
+    // Behold disse
+    let n = netteier.value;
+    let l = linje.value;
 
-document.querySelectorAll("input").forEach(i=>i.value="");
+    // Nullstill alle input
+    document.querySelectorAll("input").forEach(i => i.value="");
 
-netteier.value=n;
-linje.value=l;
+    // Sett tilbake
+    netteier.value = n;
+    linje.value = l;
 
-skade2.classList.add("hidden");
-btnSkade2.innerText="Legg til skade 2";
+    // Nullstill skadefelt
+    document.getElementById("felt1").innerHTML = "";
+    document.getElementById("felt2").innerHTML = "";
 
-manuellTopp=false;
+    // Fjern bilder
+    document.getElementById("img1").src = "";
+    document.getElementById("img2").src = "";
+
+    // Reset titler
+    document.getElementById("tittel1").innerText = "Skade 1";
+    document.getElementById("tittel2").innerText = "Skade 2";
+
+    // Skjul skade 2
+    skade2.classList.add("hidden");
+    btnSkade2.innerText = "Legg til skade 2";
+
+    // Reset toppdiameter logikk
+    manuellTopp = false;
 }
 
 // excel
