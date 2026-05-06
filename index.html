@@ -70,19 +70,19 @@ margin:auto;
 <input id="mast">
 
 <label>Stolpehøyde (m)</label>
-<input id="hoyde">
+<input id="hoyde" oninput="beregnTopp()">
 
 <label>Jordband (mm)</label>
-<input id="jordband">
+<input id="jordband" oninput="beregnTopp()">
 
 <label>Nedgravd (m)</label>
 <input id="nedgravd">
 
 <label>Toppdiameter (mm)</label>
-<input id="toppdiameter">
+<input id="toppdiameter" oninput="manuellTopp=true">
 
 <label>Avtrapping (cm/m)</label>
-<input id="avtrapping" value="0.75">
+<input id="avtrapping" value="0.75" oninput="beregnTopp()">
 
 <!-- GPS -->
 
@@ -180,29 +180,43 @@ margin:auto;
 
 <script>
 
-const felt = {
+let manuellTopp=false;
+
+// Toppdiameter
+function beregnTopp(){
+
+if(manuellTopp) return;
+
+let jord=parseFloat(jordband.value);
+let h=parseFloat(hoyde.value);
+let av=parseFloat(avtrapping.value);
+
+if(!jord||!h||!av) return;
+
+let topp = jord - (av*h*10);
+
+if(topp>0){
+toppdiameter.value=Math.round(topp);
+}
+}
+
+// Skadefelt
+const felt={
 indre:["A mm","B mm","E mm"],
 sirk:["A mm","B mm","C mm","D mm"],
 soft:["A mm","B mm","C mm","D mm"],
 spett:["A mm","B mm"],
 hakk:["A mm","B mm","C mm","D mm"],
-sprekk:[
-"Diam skadested",
-"Sprekk start (m)",
-"Sprekk slutt (m)",
-"Sprekkdybde",
-"Sprekkbredde",
-"Sprekklengde"
-]
+sprekk:["Start","Slutt","Dybde","Bredde","Lengde"]
 };
 
-function velg(type, navn){
+function velg(type,navn){
 
-img1.src = type + ".svg";
-img2.src = type + ".svg";
+img1.src=type+".svg";
+img2.src=type+".svg";
 
-document.getElementById("tittel1").innerText = navn + " 1";
-document.getElementById("tittel2").innerText = navn + " 2";
+tittel1.innerText=navn+" 1";
+tittel2.innerText=navn+" 2";
 
 lagFelt(type,"felt1");
 lagFelt(type,"felt2");
@@ -212,20 +226,19 @@ function lagFelt(type,id){
 let d=document.getElementById(id);
 d.innerHTML="";
 felt[type].forEach(f=>{
-d.innerHTML += `<label>${f}</label><input>`;
+d.innerHTML+=`<label>${f}</label><input>`;
 });
 }
 
+// Toggle skade 2
 function toggleSkade2(){
-let el = document.getElementById("skade2");
-let btn = document.getElementById("btnSkade2");
 
-if(el.classList.contains("hidden")){
-el.classList.remove("hidden");
-btn.innerText = "Skjul skade 2";
+if(skade2.classList.contains("hidden")){
+skade2.classList.remove("hidden");
+btnSkade2.innerText="Skjul skade 2";
 }else{
-el.classList.add("hidden");
-btn.innerText = "Legg til skade 2";
+skade2.classList.add("hidden");
+btnSkade2.innerText="Legg til skade 2";
 }
 }
 
@@ -260,12 +273,12 @@ data.push({
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
-gps:gps.value,
-merknad:merknad.value
+topp:toppdiameter.value
 });
 alert("Lagret");
 }
 
+// ny mast
 function nyMast(){
 
 let n=netteier.value;
@@ -279,8 +292,7 @@ linje.value=l;
 skade2.classList.add("hidden");
 btnSkade2.innerText="Legg til skade 2";
 
-document.getElementById("tittel1").innerText="Skade 1";
-document.getElementById("tittel2").innerText="Skade 2";
+manuellTopp=false;
 }
 
 // excel
