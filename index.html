@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Stolpekontroll v2.9</title>
+
+<!-- IKON (KRITISK FOR iPHONE) -->
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <style>
 body{
@@ -51,7 +60,7 @@ text-align:center;
 .hidden{display:none;}
 
 img{
-width:120px;
+width:110px;
 margin:auto;
 display:none;
 }
@@ -91,13 +100,13 @@ display:none;
 <button onclick="beregnTopp()">Beregn toppdiameter</button>
 
 <label>Jordsmonn</label>
-<div class="choice" id="jordTxt">Skogsmark</div>
+<div class="choice">Skogsmark</div>
 
 <label>Klima</label>
-<div class="choice" id="klimaTxt">Kyst</div>
+<div class="choice">Kyst</div>
 
 <label>Vertikallast</label>
-<div class="choice" id="lastTxt">Normal</div>
+<div class="choice">Normal</div>
 
 <label>GPS</label>
 <input id="gps" readonly>
@@ -156,7 +165,7 @@ display:none;
 let data=[];
 let manuellTopp=false;
 
-// toppdiameter korrekt
+// toppdiameter
 function beregnTopp(){
 if(manuellTopp) return;
 
@@ -182,7 +191,6 @@ hakk:["A","B","C","D"],
 sprekk:["Start","Slutt","A","B","Lengde"]
 };
 
-// velg skade
 function velg(type){
 
 skade1.classList.remove("hidden");
@@ -193,7 +201,6 @@ felt[type].forEach(f=>{
 felt1.innerHTML+=`<label>${f} mm</label><input>`;
 });
 
-// bilde kun relevante
 if(["soft","spett","hakk","sprekk"].includes(type)){
 img1.src=type+".svg";
 img1.style.display="block";
@@ -224,7 +231,7 @@ function stopGPS(){
 navigator.geolocation.clearWatch(watch);
 }
 
-// lagring korrekt struktur
+// lagring
 function lagre(){
 
 let mastnr=mast.value;
@@ -248,7 +255,7 @@ skade:tittel2.innerText
 alert("Lagret");
 }
 
-// csv
+// CSV
 function lastCSV(){
 let csv="Mastnr,Stolpenr,Skade\n";
 
