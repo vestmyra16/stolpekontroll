@@ -23,6 +23,15 @@ img{width:80px;margin:auto;display:none;}
 
 <body>
 
+<!-- LOGIN -->
+<div id="loginBox">
+<h3>Stolpekontroll</h3>
+<input type="password" id="pass" placeholder="Passord">
+<button onclick="login()">Logg inn</button>
+</div>
+
+<div id="app" style="display:none;">
+
 <h2>Stolpekontroll v3.0</h2>
 
 <h3>Grunnlagsdata</h3>
@@ -56,7 +65,6 @@ img{width:80px;margin:auto;display:none;}
 </div>
 
 <button onclick="toggleFukt()">Fuktmåling</button>
-
 <div id="fuktBox" class="hidden">
 <input id="temp" placeholder="Temperatur">
 <input id="rf" placeholder="Relativ fuktighet">
@@ -82,12 +90,10 @@ img{width:80px;margin:auto;display:none;}
 
 <div id="skade1" class="hidden">
 <h3 id="tittel1"></h3>
-
 <input id="stolpe1" placeholder="Stolpenr">
 <input id="h1" placeholder="Skadehøyde (m)">
 <input id="l1" placeholder="Skadelengde (m)">
 <input id="d1" placeholder="Diameter skadested (mm)">
-
 <img id="img1">
 <div id="felt1"></div>
 </div>
@@ -96,12 +102,10 @@ img{width:80px;margin:auto;display:none;}
 
 <div id="skade2" class="hidden">
 <h3 id="tittel2"></h3>
-
 <input id="stolpe2" placeholder="Stolpenr">
 <input id="h2" placeholder="Skadehøyde (m)">
 <input id="l2" placeholder="Skadelengde (m)">
 <input id="d2" placeholder="Diameter skadested (mm)">
-
 <img id="img2">
 <div id="felt2"></div>
 </div>
@@ -109,12 +113,29 @@ img{width:80px;margin:auto;display:none;}
 <button onclick="lagre()">Lagre mast</button>
 <button onclick="lastCSV()">Last ned Excel</button>
 
+</div>
+
 <script>
 
+// PASSORD
+const PASSORD="1234";
+
+function login(){
+let p=document.getElementById("pass").value;
+if(p===PASSORD){
+document.getElementById("loginBox").style.display="none";
+document.getElementById("app").style.display="block";
+}else{
+alert("Feil passord");
+}
+}
+
+// UI
 function toggle(id){document.getElementById(id).classList.toggle("hidden");}
 function setVal(id,val){document.getElementById(id).innerText=val;}
 function toggleFukt(){fuktBox.classList.toggle("hidden");}
 
+// GPS
 let watch=null;
 function startGPS(){
 watch=navigator.geolocation.watchPosition(p=>{
@@ -123,6 +144,7 @@ gps.value=p.coords.latitude+","+p.coords.longitude;
 }
 function stopGPS(){navigator.geolocation.clearWatch(watch);}
 
+// FELT
 const felt={
 indre:["A","B","E"],
 sirk:["A","B","C","D"],
