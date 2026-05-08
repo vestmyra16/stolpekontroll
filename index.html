@@ -10,142 +10,65 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-body{
-font-family:Arial;
-max-width:420px;
-margin:auto;
-background:#f2f2f2;
-padding:10px;
-box-sizing:border-box;
-}
-*{box-sizing:border-box;}
+body{font-family:Arial;max-width:420px;margin:auto;background:#f2f2f2;padding:10px;}
 h2{text-align:center;}
-
-input,button{
-width:100%;
-padding:12px;
-margin:6px 0;
-border-radius:6px;
-border:1px solid #ccc;
-font-size:16px;
-}
-
-button{
-background:#2e7d32;
-color:white;
-border:none;
-}
-
-.grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:8px;
-}
-
-.choice{
-background:#2e7d32;
-color:white;
-padding:12px;
-border-radius:6px;
-text-align:center;
-}
-
+input,button{width:100%;padding:12px;margin:6px 0;border-radius:6px;border:1px solid #ccc;font-size:16px;}
+button{background:#2e7d32;color:white;border:none;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.choice{background:#2e7d32;color:white;padding:12px;text-align:center;border-radius:6px;}
 .hidden{display:none;}
-
-img{
-width:80px;
-display:none;
-margin:auto;
-}
+img{width:80px;margin:auto;display:none;}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login">
-<h3>Stolpekontroll</h3>
-<input type="password" id="pass" placeholder="Passord">
-<button onclick="login()">Logg inn</button>
-</div>
-
-<div id="app" style="display:none;">
-
 <h2>Stolpekontroll v3.0</h2>
 
 <h3>Grunnlagsdata</h3>
+<input id="netteier" placeholder="Netteier">
+<input id="linje" placeholder="LinjeID">
+<input id="mast" placeholder="Mastnr">
+<input id="hoyde" placeholder="Stolpehøyde (m)">
+<input id="nedgravd" placeholder="Nedgravingsdybde (m)">
+<input id="jord" placeholder="Jordbånddiameter (mm)">
+<input id="avtr" value="0.75" placeholder="Avtrapping">
+<input id="topp" placeholder="Toppdiameter">
 
-<label>Netteier</label>
-<input id="netteier">
-
-<label>LinjeID</label>
-<input id="linje">
-
-<label>Mastnr</label>
-<input id="mast">
-
-<label>Stolpehøyde (m)</label>
-<input id="hoyde">
-
-<label>Nedgravingsdybde (m)</label>
-<input id="nedgravd">
-
-<label>Jordbånddiameter (mm)</label>
-<input id="jord">
-
-<label>Avtrapping (cm/m)</label>
-<input id="avtr" value="0.75">
-
-<label>Toppdiameter (mm)</label>
-<input id="topp">
-
-<!-- FORHOLD -->
 <h3>Forhold</h3>
 
-<label>Jordsmonn</label>
 <div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
 <div id="jordvalg" class="hidden grid">
 <button onclick="setVal('jordTxt','Innmark')">Innmark</button>
-<button onclick="setVal('jordTxt','Skogsmark')">Skogsmark</button>
 <button onclick="setVal('jordTxt','Fjell')">Fjell</button>
 </div>
 
-<label>Klima</label>
 <div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
 <div id="klimavalg" class="hidden grid">
-<button onclick="setVal('klimaTxt','Kyst')">Kyst</button>
 <button onclick="setVal('klimaTxt','Innland')">Innland</button>
 <button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
 </div>
 
-<label>Vertikallast</label>
 <div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
 <div id="lastvalg" class="hidden grid">
 <button onclick="setVal('lastTxt','Lav')">Lav</button>
-<button onclick="setVal('lastTxt','Normal')">Normal</button>
 <button onclick="setVal('lastTxt','Høy')">Høy</button>
 </div>
 
-<!-- FUKT -->
 <button onclick="toggleFukt()">Fuktmåling</button>
 
 <div id="fuktBox" class="hidden">
-<label>Lufttemperatur</label>
-<input id="temp">
-<label>Relativ fuktighet</label>
-<input id="rf">
-<label>Fukt ytterskall</label>
-<input id="fukt">
+<input id="temp" placeholder="Temperatur">
+<input id="rf" placeholder="Relativ fuktighet">
+<input id="fukt" placeholder="Fukt ytterskall">
 </div>
 
-<label>GPS</label>
-<input id="gps" readonly>
-<button onclick="startGPS()">Slå på GPS</button>
-<button onclick="stopGPS()">Slå av GPS</button>
+<input id="gps" placeholder="GPS">
+<button onclick="startGPS()">GPS på</button>
+<button onclick="stopGPS()">GPS av</button>
 
 <button onclick="nyMast()">Ny mast</button>
 
-<!-- SKADER -->
 <h3>Registrer skade</h3>
 
 <div class="grid">
@@ -159,18 +82,26 @@ margin:auto;
 
 <div id="skade1" class="hidden">
 <h3 id="tittel1"></h3>
-<label>Stolpenr</label>
-<input id="stolpe1">
+
+<input id="stolpe1" placeholder="Stolpenr">
+<input id="h1" placeholder="Skadehøyde (m)">
+<input id="l1" placeholder="Skadelengde (m)">
+<input id="d1" placeholder="Diameter skadested (mm)">
+
 <img id="img1">
 <div id="felt1"></div>
 </div>
 
-<button id="btn2" onclick="toggle2()">Legg til skade 2</button>
+<button onclick="toggle2()" id="btn2">Legg til skade 2</button>
 
 <div id="skade2" class="hidden">
 <h3 id="tittel2"></h3>
-<label>Stolpenr</label>
-<input id="stolpe2">
+
+<input id="stolpe2" placeholder="Stolpenr">
+<input id="h2" placeholder="Skadehøyde (m)">
+<input id="l2" placeholder="Skadelengde (m)">
+<input id="d2" placeholder="Diameter skadested (mm)">
+
 <img id="img2">
 <div id="felt2"></div>
 </div>
@@ -178,62 +109,37 @@ margin:auto;
 <button onclick="lagre()">Lagre mast</button>
 <button onclick="lastCSV()">Last ned Excel</button>
 
-</div>
-
 <script>
 
-// LOGIN
-const PASS="1234";
-function login(){
-let p=pass.value;
-let start=localStorage.getItem("start");
-if(p===PASS){
-if(!start) localStorage.setItem("start",Date.now());
-else{
-let d=(Date.now()-start)/(1000*60*60*24);
-if(d>60){alert("Tilgang utløpt");return;}
-}
-login.style.display="none";
-app.style.display="block";
-}else alert("Feil passord");
-}
-
-// TOGGLE
 function toggle(id){document.getElementById(id).classList.toggle("hidden");}
-function setVal(id,val){
-document.getElementById(id).innerText=val;
-document.getElementById(id.replace("Txt","valg")).classList.add("hidden");
-}
+function setVal(id,val){document.getElementById(id).innerText=val;}
 function toggleFukt(){fuktBox.classList.toggle("hidden");}
 
-// GPS
 let watch=null;
 function startGPS(){
 watch=navigator.geolocation.watchPosition(p=>{
-gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
+gps.value=p.coords.latitude+","+p.coords.longitude;
 });
 }
 function stopGPS(){navigator.geolocation.clearWatch(watch);}
 
-// FELT
 const felt={
 indre:["A","B","E"],
 sirk:["A","B","C","D"],
 soft:["A","B","C","D"],
 spett:["A","B"],
 hakk:["A","B","C","D"],
-sprekk:["diameter","start","slutt","A","B","antall","f30","f40","merknad"]
+sprekk:["start","slutt","A","B","antall","f30","f40","merknad"]
 };
 
-function lagFelt(type,id,prefix){
+function lagFelt(type,id,p){
 let d=document.getElementById(id);
 d.innerHTML="";
 felt[type].forEach(f=>{
-d.innerHTML+=`<label>${f}</label><input id="${prefix}_${f}">`;
+d.innerHTML+=`<input id="${p}_${f}" placeholder="${f}">`;
 });
 }
 
-// VELG TYPE
 function velg(type){
 skade1.classList.remove("hidden");
 tittel1.innerText=type+" 1";
@@ -241,81 +147,54 @@ tittel2.innerText=type+" 2";
 lagFelt(type,"felt1","s1");
 lagFelt(type,"felt2","s2");
 
-// bilder
 img1.style.display="block";
 if(type==="indre") img1.src="indre.svg";
 else if(type==="sirk") img1.src="sirk.svg";
 else img1.src=type+".svg";
 }
 
-// DATA
-function hent(prefix){
+function hent(p){
 let r={};
-document.querySelectorAll(`[id^=${prefix}_]`).forEach(i=>{
-let key=i.id.split("_")[1];
-r[key]=i.value;
+document.querySelectorAll(`[id^=${p}_]`).forEach(i=>{
+r[i.id.split("_")[1]]=i.value;
 });
 return r;
 }
 
-// SKADE 2
 function toggle2(){
-if(skade2.classList.contains("hidden")){
-skade2.classList.remove("hidden");
-btn2.innerText="Skjul skade 2";
-}else{
-skade2.classList.add("hidden");
-btn2.innerText="Legg til skade 2";
-}
+skade2.classList.toggle("hidden");
 }
 
-// LAGRING
-let excel=[];
+let data=[];
 
 function lagre(){
-
 let base={
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
-jordsmonn:jordTxt.innerText,
-klima:klimaTxt.innerText,
-vert:lastTxt.innerText,
-temp:temp.value,
-rf:rf.value,
-fukt:fukt.value,
-gps:gps.value,
-dato:new Date().toLocaleDateString("no-NO")
+gps:gps.value
 };
 
 if(stolpe1.value){
-excel.push({...base,stolpe:stolpe1.value,type:tittel1.innerText,skade:1,...hent("s1")});
+data.push({...base,stolpe:stolpe1.value,h:h1.value,l:l1.value,d:d1.value,type:tittel1.innerText,...hent("s1")});
 }
 
 if(stolpe2.value){
-excel.push({...base,stolpe:stolpe2.value,type:tittel2.innerText,skade:2,...hent("s2")});
+data.push({...base,stolpe:stolpe2.value,h:h2.value,l:l2.value,d:d2.value,type:tittel2.innerText,...hent("s2")});
 }
 
 alert("Lagret");
 }
 
-// CSV
 function lastCSV(){
-
-let csv=Object.keys(excel[0]||{}).join(",")+"\n";
-
-excel.forEach(d=>{
-csv+=Object.values(d).join(",")+"\n";
-});
-
-let blob=new Blob([csv]);
+let csv=Object.keys(data[0]||{}).join(",")+"\n";
+data.forEach(d=>{csv+=Object.values(d).join(",")+"\n";});
 let a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
+a.href=URL.createObjectURL(new Blob([csv]));
 a.download="stolpekontroll.csv";
 a.click();
 }
 
-// NY MAST
 function nyMast(){
 let n=netteier.value;
 let l=linje.value;
@@ -328,14 +207,7 @@ img1.style.display="none";
 img2.style.display="none";
 felt1.innerHTML="";
 felt2.innerHTML="";
-btn2.innerText="Legg til skade 2";
 }
-
-// INIT
-window.onload=function(){
-skade1.classList.add("hidden");
-skade2.classList.add("hidden");
-};
 
 </script>
 
