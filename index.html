@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Stolpekontroll v2.9</title>
+<title>Stolpekontroll v3.0</title>
 
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" sizes="192x192" href="icon-192.png">
@@ -20,10 +19,9 @@ padding:10px;
 box-sizing:border-box;
 }
 *{box-sizing:border-box;}
-
 h2{text-align:center;}
 
-input, button{
+input,button{
 width:100%;
 padding:12px;
 margin:6px 0;
@@ -55,7 +53,7 @@ text-align:center;
 .hidden{display:none;}
 
 img{
-width:100px;
+width:80px;
 display:none;
 margin:auto;
 }
@@ -64,7 +62,16 @@ margin:auto;
 
 <body>
 
-<h2>Stolpekontroll v2.9</h2>
+<!-- LOGIN -->
+<div id="login">
+<h3>Stolpekontroll</h3>
+<input type="password" id="pass" placeholder="Passord">
+<button onclick="login()">Logg inn</button>
+</div>
+
+<div id="app" style="display:none;">
+
+<h2>Stolpekontroll v3.0</h2>
 
 <h3>Grunnlagsdata</h3>
 
@@ -90,10 +97,9 @@ margin:auto;
 <input id="avtr" value="0.75">
 
 <label>Toppdiameter (mm)</label>
-<input id="topp" oninput="manuellTopp=true">
+<input id="topp">
 
-<button onclick="beregnTopp()">Beregn toppdiameter</button>
-
+<!-- FORHOLD -->
 <h3>Forhold</h3>
 
 <label>Jordsmonn</label>
@@ -120,25 +126,26 @@ margin:auto;
 <button onclick="setVal('lastTxt','Høy')">Høy</button>
 </div>
 
-<h3>Fuktmåling</h3>
+<!-- FUKT -->
+<button onclick="toggleFukt()">Fuktmåling</button>
 
-<label>Lufttemperatur (°C)</label>
+<div id="fuktBox" class="hidden">
+<label>Lufttemperatur</label>
 <input id="temp">
-
-<label>Relativ fuktighet (%)</label>
+<label>Relativ fuktighet</label>
 <input id="rf">
-
-<label>Fukt i ytterskall (%)</label>
+<label>Fukt ytterskall</label>
 <input id="fukt">
+</div>
 
 <label>GPS</label>
 <input id="gps" readonly>
-
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
 <button onclick="nyMast()">Ny mast</button>
 
+<!-- SKADER -->
 <h3>Registrer skade</h3>
 
 <div class="grid">
@@ -152,10 +159,8 @@ margin:auto;
 
 <div id="skade1" class="hidden">
 <h3 id="tittel1"></h3>
-
 <label>Stolpenr</label>
 <input id="stolpe1">
-
 <img id="img1">
 <div id="felt1"></div>
 </div>
@@ -164,10 +169,8 @@ margin:auto;
 
 <div id="skade2" class="hidden">
 <h3 id="tittel2"></h3>
-
 <label>Stolpenr</label>
 <input id="stolpe2">
-
 <img id="img2">
 <div id="felt2"></div>
 </div>
@@ -175,81 +178,87 @@ margin:auto;
 <button onclick="lagre()">Lagre mast</button>
 <button onclick="lastCSV()">Last ned Excel</button>
 
+</div>
+
 <script>
 
-let excelData=[];
-let manuellTopp=false;
-
-// toppdiameter
-function beregnTopp(){
-if(manuellTopp) return;
-
-let h=parseFloat(hoyde.value);
-let av=parseFloat(avtr.value);
-let j=parseFloat(jord.value);
-
-if(!h||!av||!j) return;
-
-let topp=j-(h*av*10);
-topp=Math.max(topp,50);
-
-document.getElementById("topp").value=Math.round(topp);
+// LOGIN
+const PASS="1234";
+function login(){
+let p=pass.value;
+let start=localStorage.getItem("start");
+if(p===PASS){
+if(!start) localStorage.setItem("start",Date.now());
+else{
+let d=(Date.now()-start)/(1000*60*60*24);
+if(d>60){alert("Tilgang utløpt");return;}
+}
+login.style.display="none";
+app.style.display="block";
+}else alert("Feil passord");
 }
 
-// toggle valg
-function toggle(id){
-document.getElementById(id).classList.toggle("hidden");
-}
-
+// TOGGLE
+function toggle(id){document.getElementById(id).classList.toggle("hidden");}
 function setVal(id,val){
 document.getElementById(id).innerText=val;
 document.getElementById(id.replace("Txt","valg")).classList.add("hidden");
 }
+function toggleFukt(){fuktBox.classList.toggle("hidden");}
 
-// felter
+// GPS
+let watch=null;
+function startGPS(){
+watch=navigator.geolocation.watchPosition(p=>{
+gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
+});
+}
+function stopGPS(){navigator.geolocation.clearWatch(watch);}
+
+// FELT
 const felt={
 indre:["A","B","E"],
 sirk:["A","B","C","D"],
 soft:["A","B","C","D"],
 spett:["A","B"],
 hakk:["A","B","C","D"],
-sprekk:["A","B","C","D","E"]
+sprekk:["diameter","start","slutt","A","B","antall","f30","f40","merknad"]
 };
 
 function lagFelt(type,id,prefix){
 let d=document.getElementById(id);
 d.innerHTML="";
 felt[type].forEach(f=>{
-d.innerHTML+=`<label>${f} mm</label><input id="${prefix}_${f}">`;
+d.innerHTML+=`<label>${f}</label><input id="${prefix}_${f}">`;
 });
 }
 
+// VELG TYPE
 function velg(type){
 skade1.classList.remove("hidden");
-
 tittel1.innerText=type+" 1";
 tittel2.innerText=type+" 2";
-
 lagFelt(type,"felt1","s1");
 lagFelt(type,"felt2","s2");
 
-if(["soft","spett","hakk","sprekk"].includes(type)){
-img1.src=type+".svg";
+// bilder
 img1.style.display="block";
-}else{
-img1.style.display="none";
-}
+if(type==="indre") img1.src="indre.svg";
+else if(type==="sirk") img1.src="sirk.svg";
+else img1.src=type+".svg";
 }
 
+// DATA
 function hent(prefix){
-let r={A:"",B:"",C:"",D:"",E:""};
-["A","B","C","D","E"].forEach(f=>{
-let el=document.getElementById(prefix+"_"+f);
-if(el) r[f]=el.value;
+let r={};
+document.querySelectorAll(`[id^=${prefix}_]`).forEach(i=>{
+let key=i.id.split("_")[1];
+r[key]=i.value;
 });
 return r;
 }
 
+// SKADE 2
 function toggle2(){
 if(skade2.classList.contains("hidden")){
 skade2.classList.remove("hidden");
@@ -260,34 +269,18 @@ btn2.innerText="Legg til skade 2";
 }
 }
 
-// GPS
-let watch=null;
+// LAGRING
+let excel=[];
 
-function startGPS(){
-watch=navigator.geolocation.watchPosition(p=>{
-gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
-});
-}
-
-function stopGPS(){
-navigator.geolocation.clearWatch(watch);
-}
-
-// lagring
 function lagre(){
 
 let base={
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
-hoyde:hoyde.value,
-nedgravd:nedgravd.value,
-jord:jord.value,
-avtr:avtr.value,
-topp:topp.value,
 jordsmonn:jordTxt.innerText,
 klima:klimaTxt.innerText,
-vertikallast:lastTxt.innerText,
+vert:lastTxt.innerText,
 temp:temp.value,
 rf:rf.value,
 fukt:fukt.value,
@@ -296,13 +289,11 @@ dato:new Date().toLocaleDateString("no-NO")
 };
 
 if(stolpe1.value){
-let f=hent("s1");
-excelData.push({...base,stolpe:stolpe1.value,type:tittel1.innerText,skadeNr:1,...f});
+excel.push({...base,stolpe:stolpe1.value,type:tittel1.innerText,skade:1,...hent("s1")});
 }
 
 if(stolpe2.value){
-let f=hent("s2");
-excelData.push({...base,stolpe:stolpe2.value,type:tittel2.innerText,skadeNr:2,...f});
+excel.push({...base,stolpe:stolpe2.value,type:tittel2.innerText,skade:2,...hent("s2")});
 }
 
 alert("Lagret");
@@ -311,23 +302,10 @@ alert("Lagret");
 // CSV
 function lastCSV(){
 
-let csv="Netteier,LinjeID,Mastnr,Stolpehøyde,Nedgravd,Jordbånd,Avtrapping,Toppdiameter,Jordsmonn,Klima,Vertikallast,Temp,RF,Fukt,Stolpenr,Skadetype,SkadeNr,A,B,C,D,E,GPS_Lat,GPS_Lon,Dato\n";
+let csv=Object.keys(excel[0]||{}).join(",")+"\n";
 
-excelData.forEach(d=>{
-let lat="",lon="";
-if(d.gps.includes(",")){
-let p=d.gps.split(",");
-lat=p[0]; lon=p[1];
-}
-
-csv += [
-d.netteier,d.linje,d.mast,d.hoyde,d.nedgravd,d.jord,d.avtr,d.topp,
-d.jordsmonn,d.klima,d.vertikallast,
-d.temp,d.rf,d.fukt,
-d.stolpe,d.type,d.skadeNr,
-d.A,d.B,d.C,d.D,d.E,
-lat,lon,d.dato
-].join(",")+"\n";
+excel.forEach(d=>{
+csv+=Object.values(d).join(",")+"\n";
 });
 
 let blob=new Blob([csv]);
@@ -337,31 +315,23 @@ a.download="stolpekontroll.csv";
 a.click();
 }
 
-// ny mast
+// NY MAST
 function nyMast(){
-
 let n=netteier.value;
 let l=linje.value;
-
 document.querySelectorAll("input").forEach(i=>i.value="");
-
 netteier.value=n;
 linje.value=l;
-
 skade1.classList.add("hidden");
 skade2.classList.add("hidden");
-
 img1.style.display="none";
 img2.style.display="none";
-
 felt1.innerHTML="";
 felt2.innerHTML="";
-
 btn2.innerText="Legg til skade 2";
-
-manuellTopp=false;
 }
 
+// INIT
 window.onload=function(){
 skade1.classList.add("hidden");
 skade2.classList.add("hidden");
