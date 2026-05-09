@@ -16,23 +16,35 @@ max-width:420px;
 margin:auto;
 background:#f2f2f2;
 padding:10px;
-box-sizing:border-box;
 }
+
 h2{text-align:center;}
 
-input,button{
+label{
+display:block;
+font-weight:bold;
+color:#000;
+margin-top:8px;
+}
+
+input{
 width:100%;
 padding:12px;
-margin:6px 0;
+margin:4px 0 8px 0;
 border-radius:6px;
 border:1px solid #ccc;
 font-size:16px;
 }
 
 button{
+width:100%;
+padding:12px;
+margin:6px 0;
+border-radius:6px;
 background:#2e7d32;
 color:white;
 border:none;
+font-size:16px;
 }
 
 .grid{
@@ -50,8 +62,12 @@ text-align:center;
 }
 
 .hidden{display:none;}
-img{width:90px;margin:auto;display:none;}
-label{font-weight:bold;}
+
+img{
+width:90px;
+margin:auto;
+display:none;
+}
 </style>
 </head>
 
@@ -60,7 +76,10 @@ label{font-weight:bold;}
 <!-- LOGIN -->
 <div id="loginBox">
 <h3>Stolpekontroll</h3>
-<input type="password" id="pass" placeholder="Passord">
+
+<label>Passord</label>
+<input type="password" id="pass">
+
 <button onclick="login()">Logg inn</button>
 </div>
 
@@ -70,17 +89,33 @@ label{font-weight:bold;}
 
 <h3>Grunnlagsdata</h3>
 
-<input id="netteier" placeholder="Netteier">
-<input id="linje" placeholder="LinjeID">
-<input id="mast" placeholder="Mastnr">
-<input id="hoyde" placeholder="Stolpehøyde (m)">
-<input id="nedgravd" placeholder="Nedgravingsdybde (m)">
-<input id="jord" placeholder="Jordbånddiameter (mm)">
-<input id="avtr" value="0.75" placeholder="Avtrapping (cm/m)">
-<input id="topp" placeholder="Toppdiameter (mm)">
+<label>Netteier</label>
+<input id="netteier">
+
+<label>LinjeID</label>
+<input id="linje">
+
+<label>Mastnr</label>
+<input id="mast">
+
+<label>Stolpehøyde (m)</label>
+<input id="hoyde">
+
+<label>Nedgravingsdybde (m)</label>
+<input id="nedgravd">
+
+<label>Jordbånddiameter (mm)</label>
+<input id="jord">
+
+<label>Avtrapping (cm/m)</label>
+<input id="avtr" value="0.75">
+
+<label>Toppdiameter (mm)</label>
+<input id="topp">
 
 <h3>Forhold</h3>
 
+<label>Jordsmonn</label>
 <div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
 <div id="jordvalg" class="hidden grid">
 <button onclick="setVal('jordTxt','Innmark')">Innmark</button>
@@ -88,6 +123,7 @@ label{font-weight:bold;}
 <button onclick="setVal('jordTxt','Fjell')">Fjell</button>
 </div>
 
+<label>Klima</label>
 <div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
 <div id="klimavalg" class="hidden grid">
 <button onclick="setVal('klimaTxt','Kyst')">Kyst</button>
@@ -95,6 +131,7 @@ label{font-weight:bold;}
 <button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
 </div>
 
+<label>Vertikallast</label>
 <div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
 <div id="lastvalg" class="hidden grid">
 <button onclick="setVal('lastTxt','Lav')">Lav</button>
@@ -103,13 +140,23 @@ label{font-weight:bold;}
 </div>
 
 <button onclick="toggleFukt()">Fuktmåling</button>
+
 <div id="fuktBox" class="hidden">
-<input id="temp" placeholder="Lufttemperatur">
-<input id="rf" placeholder="Relativ fuktighet">
-<input id="fukt" placeholder="Fukt ytterskall">
+
+<label>Lufttemperatur</label>
+<input id="temp">
+
+<label>Relativ fuktighet</label>
+<input id="rf">
+
+<label>Fukt ytterskall</label>
+<input id="fukt">
+
 </div>
 
-<input id="gps" placeholder="GPS">
+<label>GPS</label>
+<input id="gps">
+
 <button onclick="startGPS()">Slå på GPS</button>
 <button onclick="stopGPS()">Slå av GPS</button>
 
@@ -127,6 +174,7 @@ label{font-weight:bold;}
 </div>
 
 <div id="skade1" class="hidden">
+
 <h3 id="tittel1"></h3>
 
 <label>Stolpenr</label>
@@ -143,11 +191,13 @@ label{font-weight:bold;}
 
 <img id="img1">
 <div id="felt1"></div>
+
 </div>
 
 <button id="btn2" onclick="toggle2()">Legg til skade 2</button>
 
 <div id="skade2" class="hidden">
+
 <h3 id="tittel2"></h3>
 
 <label>Stolpenr</label>
@@ -164,6 +214,7 @@ label{font-weight:bold;}
 
 <img id="img2">
 <div id="felt2"></div>
+
 </div>
 
 <button onclick="lagre()">Lagre mast</button>
