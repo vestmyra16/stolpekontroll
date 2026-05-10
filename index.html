@@ -230,19 +230,49 @@ const PASSORD="1234";
 function login(){
 let p=document.getElementById("pass").value;
 if(p===PASSORD){
-document.getElementById("loginBox").style.display="none";
-document.getElementById("app").style.display="block";
+loginBox.style.display="none";
+app.style.display="block";
 }else{
 alert("Feil passord");
 }
 }
 
-// UI
+// 🔧 AUTOMATISK TOPPDIAMETER
+function beregnTopp(){
+
+let topp = document.getElementById("topp");
+if(topp.value) return;
+
+let jord = parseFloat(jord.value);
+let hoyde = parseFloat(hoyde.value);
+let avtr = parseFloat(avtr.value);
+
+if(!jord || !hoyde || !avtr) return;
+
+let taper = avtr * 10;
+let toppdiam = jord - (taper * hoyde);
+
+if(toppdiam > 0){
+topp.value = Math.round(toppdiam);
+}
+}
+
+// trigges automatisk
+["jord","hoyde","avtr"].forEach(id=>{
+document.addEventListener("input", e=>{
+if(e.target.id === id){
+document.getElementById("topp").value="";
+beregnTopp();
+}
+});
+});
+
+// resten av koden din er UENDRET (samme som du sendte)
+
 function toggle(id){document.getElementById(id).classList.toggle("hidden");}
 function setVal(id,val){document.getElementById(id).innerText=val;}
 function toggleFukt(){fuktBox.classList.toggle("hidden");}
 
-// GPS
 let watch=null;
 function startGPS(){
 watch=navigator.geolocation.watchPosition(p=>{
@@ -251,7 +281,6 @@ gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
 }
 function stopGPS(){navigator.geolocation.clearWatch(watch);}
 
-// FELT
 const felt={
 indre:["A (mm)","B (mm)","E (mm)"],
 sirk:["A (mm)","B (mm)","C (mm)","D (mm)"],
@@ -300,9 +329,7 @@ r[i.id.split("_")[1]]=i.value;
 return r;
 }
 
-function toggle2(){
-skade2.classList.toggle("hidden");
-}
+function toggle2(){skade2.classList.toggle("hidden");}
 
 let data=[];
 
