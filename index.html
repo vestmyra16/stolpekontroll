@@ -239,33 +239,68 @@ alert("Ingen data");
 return;
 }
 
-let header=[
-"Netteier","LinjeID","Mastnr","Stolpenr","Skadetype",
-"GPS","Dato","Skadehøyde","Skadelengde","Diameter",
+let header = [
+"Netteier","LinjeID","Mastnr",
+"Stolpehøyde","Nedgraving","Jorddiameter","Avtrapping","Toppdiameter",
+
+"Klima","Jordsmonn","Vertikallast",
+
+"Lufttemp","RF","Fukt",
+
+"GPS","Dato",
+
+"Stolpenr","Skadetype",
+"Skadehøyde","Skadelengde","Diameter",
+
 "A","B","C","D","E"
 ];
 
-let csv=header.join(";")+"\n";
+let csv = header.join(";") + "\n";
 
 data.forEach(d=>{
-let row=[
-d.netteier,
-d.linje,
-d.mast,
-d.stolpenr,
-d.skadetype,
-`"${d.gps}"`,
-d.dato,
-d.skadehoyde,
-d.skadelengde,
-d.diameter,
-d["s1_A"]||d["s2_A"]||"",
-d["s1_B"]||d["s2_B"]||"",
-d["s1_C"]||d["s2_C"]||"",
-d["s1_D"]||d["s2_D"]||"",
-d["s1_E"]||d["s2_E"]||""
+
+let row = [
+
+d.netteier || "",
+d.linje || "",
+d.mast || "",
+
+d.stolpehoyde || "",
+d.nedgraving || "",
+d.jorddiameter || "",
+d.avtrapping || "",
+d.toppdiameter || "",
+
+d.klima || "",
+d.jordsmonn || "",
+d.vertikallast || "",
+
+d.temp || "",
+d.rf || "",
+d.fukt || "",
+
+// viktig
+`"${d.gps || ""}"`,
+d.dato || "",
+
+d.stolpenr || "",
+d.skadetype || "",
+
+d.skadehoyde || "",
+d.skadelengde || "",
+d.diameter || "",
+
+// måledata
+d["s1_A"] || d["s2_A"] || "",
+d["s1_B"] || d["s2_B"] || "",
+d["s1_C"] || d["s2_C"] || "",
+d["s1_D"] || d["s2_D"] || "",
+d["s1_E"] || d["s2_E"] || ""
+
 ];
-csv+=row.join(";")+"\n";
+
+csv += row.join(";") + "\n";
+
 });
 
 let a=document.createElement("a");
