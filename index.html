@@ -12,7 +12,7 @@
 <style>
 body{font-family:Arial;max-width:420px;margin:auto;background:#f2f2f2;padding:10px;}
 h2{text-align:center;}
-label{display:block;font-weight:bold;margin-top:8px;color:#000;}
+label{display:block;font-weight:bold;color:#000;margin-top:8px;}
 input{width:100%;padding:12px;margin:4px 0 8px 0;border-radius:6px;border:1px solid #ccc;}
 button{width:100%;padding:12px;margin:6px 0;background:#2e7d32;color:white;border:none;}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -24,7 +24,6 @@ img{width:90px;margin:auto;display:none;}
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginBox">
 <h3>Stolpekontroll</h3>
 <label>Passord</label>
@@ -107,6 +106,7 @@ img{width:90px;margin:auto;display:none;}
 <label>Skadehøyde over bakken (m)</label><input id="h1">
 <label>Skadelengde (m)</label><input id="l1">
 <label>Diameter på skadested (mm)</label><input id="d1">
+<img id="img1">
 <div id="felt1"></div>
 </div>
 
@@ -118,6 +118,7 @@ img{width:90px;margin:auto;display:none;}
 <label>Skadehøyde over bakken (m)</label><input id="h2">
 <label>Skadelengde (m)</label><input id="l2">
 <label>Diameter på skadested (mm)</label><input id="d2">
+<img id="img2">
 <div id="felt2"></div>
 </div>
 
@@ -128,8 +129,20 @@ img{width:90px;margin:auto;display:none;}
 
 <script>
 
+// PASSORD
+const PASSORD="1234";
+
+// BILDER
+const bilder={
+indre:"indre.svg",
+sirk:"sirk.svg",
+soft:"soft.svg",
+spett:"spett.svg",
+hakk:"hakk.svg",
+sprekk:"sprekk.svg"
+};
+
 // LOGIN
-const PASSORD="Stolpe2026";
 function login(){
 if(pass.value===PASSORD){
 loginBox.style.display="none";
@@ -137,24 +150,24 @@ app.style.display="block";
 }else alert("Feil passord");
 }
 
-// 🔧 TOPPDIAMETER
+// TOPPDIAMETER
 function beregnTopp(){
-let toppFelt = document.getElementById("topp");
+let toppFelt=document.getElementById("topp");
 if(toppFelt.value) return;
 
-let d = parseFloat(document.getElementById("jord").value);
-let h = parseFloat(document.getElementById("hoyde").value);
-let a = parseFloat(document.getElementById("avtr").value);
+let d=parseFloat(jord.value);
+let h=parseFloat(hoyde.value);
+let a=parseFloat(avtr.value);
 
-if(!d || !h || !a) return;
+if(!d||!h||!a) return;
 
-let topp = d - (a * 10 * h);
-if(topp > 0) toppFelt.value = Math.round(topp);
+let topp=d-(a*10*h);
+if(topp>0) toppFelt.value=Math.round(topp);
 }
 
 ["jord","hoyde","avtr"].forEach(id=>{
-document.getElementById(id).addEventListener("input", ()=>{
-document.getElementById("topp").value="";
+document.getElementById(id).addEventListener("input",()=>{
+topp.value="";
 beregnTopp();
 });
 });
@@ -192,36 +205,20 @@ d.innerHTML+=`<label>${f}</label><input id="${p}_${f}">`;
 }
 
 function velg(type){
+skade1.classList.remove("hidden");
+tittel1.innerText=type+" 1";
+tittel2.innerText=type+" 2";
 
-// vis skade 1
-document.getElementById("skade1").classList.remove("hidden");
-
-// sett titler
-document.getElementById("tittel1").innerText = type + " 1";
-document.getElementById("tittel2").innerText = type + " 2";
-
-// lag felt
 lagFelt(type,"felt1","s1");
 lagFelt(type,"felt2","s2");
 
-// hent bilder
-let img1 = document.getElementById("img1");
-let img2 = document.getElementById("img2");
-
-// sett riktig bilde
+// 🔥 VIS BILDER
 if(bilder[type]){
-img1.src = bilder[type];
-img2.src = bilder[type];
-
-// vis bilde
-img1.style.display = "block";
-img2.style.display = "block";
-}else{
-// fallback (skal egentlig ikke skje)
-img1.style.display = "none";
-img2.style.display = "none";
+img1.src=bilder[type];
+img2.src=bilder[type];
+img1.style.display="block";
+img2.style.display="block";
 }
-
 }
 
 function hent(p){
@@ -238,7 +235,6 @@ function toggle2(){skade2.classList.toggle("hidden");}
 let data=[];
 
 function lagre(){
-
 let base={
 netteier:netteier.value,
 linje:linje.value,
@@ -283,7 +279,6 @@ diameter:d2.value,
 alert("Lagret");
 }
 
-// CSV
 function lastCSV(){
 if(data.length===0){alert("Ingen data");return;}
 let csv=Object.keys(data[0]).join(",")+"\n";
@@ -302,6 +297,8 @@ netteier.value=n;
 linje.value=l;
 skade1.classList.add("hidden");
 skade2.classList.add("hidden");
+img1.style.display="none";
+img2.style.display="none";
 }
 
 </script>
