@@ -286,6 +286,77 @@ alert("Ingen data");
 return;
 }
 
+// FAST struktur (ingen tilfeldig rekkefølge)
+let header = [
+"Netteier","LinjeID","Mastnr","Stolpenr","Skadetype",
+"Stolpehøyde","Nedgraving","Jorddiameter","Avtrapping","Toppdiameter",
+"Klima","Jordsmonn","Vertikallast",
+"Lufttemp","RF","Fukt",
+"GPS","Dato",
+"Skadehøyde","Skadelengde","Diameter",
+"A","B","C","D","E"
+];
+
+// 👉 viktig: bruk ; (Excel Norge)
+let csv = header.join(";") + "\n";
+
+data.forEach(d=>{
+
+let row = [
+d.netteier || "",
+d.linje || "",
+d.mast || "",
+d.stolpenr || "",
+d.skadetype || "",
+
+d.stolpehoyde || "",
+d.nedgraving || "",
+d.jorddiameter || "",
+d.avtrapping || "",
+d.toppdiameter || "",
+
+d.klima || "",
+d.jordsmonn || "",
+d.vertikallast || "",
+
+d.temp || "",
+d.rf || "",
+d.fukt || "",
+
+// 🔥 HER ER HOVEDFIXEN
+`"${d.gps || ""}"`,
+
+d.dato || "",
+
+d.skadehoyde || "",
+d.skadelengde || "",
+d.diameter || "",
+
+// skadetyper (fleksibelt)
+d["s1_A (mm)"] || d["s2_A (mm)"] || "",
+d["s1_B (mm)"] || d["s2_B (mm)"] || "",
+d["s1_C"] || d["s2_C"] || "",
+d["s1_D"] || d["s2_D"] || "",
+d["s1_E (mm)"] || d["s2_E (mm)"] || ""
+
+];
+
+csv += row.join(";") + "\n";
+
+});
+
+// last ned
+let a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([csv]));
+a.download="stolpekontroll.csv";
+a.click();
+}
+
+if(data.length===0){
+alert("Ingen data");
+return;
+}
+
 // FAST HEADER (viktig!)
 let header = [
 "Netteier","LinjeID","Mastnr","Stolpenr","Skadetype",
