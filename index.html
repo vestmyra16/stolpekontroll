@@ -142,12 +142,17 @@ hakk:"hakk.svg",
 sprekk:"sprekk.svg"
 };
 
-// LOGIN
 function login(){
-if(pass.value===PASSORD){
-loginBox.style.display="none";
-app.style.display="block";
-}else alert("Feil passord");
+
+let p = document.getElementById("pass").value;
+
+if(p === PASSORD){
+document.getElementById("loginBox").style.display="none";
+document.getElementById("app").style.display="block";
+}else{
+alert("Feil passord");
+}
+
 }
 
 // TOPPDIAMETER
