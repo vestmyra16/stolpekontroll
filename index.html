@@ -192,11 +192,36 @@ d.innerHTML+=`<label>${f}</label><input id="${p}_${f}">`;
 }
 
 function velg(type){
-skade1.classList.remove("hidden");
-tittel1.innerText=type+" 1";
-tittel2.innerText=type+" 2";
+
+// vis skade 1
+document.getElementById("skade1").classList.remove("hidden");
+
+// sett titler
+document.getElementById("tittel1").innerText = type + " 1";
+document.getElementById("tittel2").innerText = type + " 2";
+
+// lag felt
 lagFelt(type,"felt1","s1");
 lagFelt(type,"felt2","s2");
+
+// hent bilder
+let img1 = document.getElementById("img1");
+let img2 = document.getElementById("img2");
+
+// sett riktig bilde
+if(bilder[type]){
+img1.src = bilder[type];
+img2.src = bilder[type];
+
+// vis bilde
+img1.style.display = "block";
+img2.style.display = "block";
+}else{
+// fallback (skal egentlig ikke skje)
+img1.style.display = "none";
+img2.style.display = "none";
+}
+
 }
 
 function hent(p){
