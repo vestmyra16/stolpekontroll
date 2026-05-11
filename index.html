@@ -10,64 +10,14 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-body{
-font-family:Arial;
-max-width:420px;
-margin:auto;
-background:#f2f2f2;
-padding:10px;
-}
-
+body{font-family:Arial;max-width:420px;margin:auto;background:#f2f2f2;padding:10px;}
 h2{text-align:center;}
-
-label{
-display:block;
-font-weight:bold;
-color:#000;
-margin-top:8px;
-}
-
-input{
-width:100%;
-padding:12px;
-margin:4px 0 8px 0;
-border-radius:6px;
-border:1px solid #ccc;
-font-size:16px;
-}
-
-button{
-width:100%;
-padding:12px;
-margin:6px 0;
-border-radius:6px;
-background:#2e7d32;
-color:white;
-border:none;
-font-size:16px;
-}
-
-.grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:8px;
-}
-
-.choice{
-background:#2e7d32;
-color:white;
-padding:12px;
-border-radius:6px;
-text-align:center;
-}
-
+label{display:block;font-weight:bold;margin-top:8px;}
+input,textarea{width:100%;padding:10px;margin-top:4px;}
+button{width:100%;padding:12px;margin-top:8px;background:#2e7d32;color:white;border:none;}
 .hidden{display:none;}
-
-img{
-width:90px;
-margin:auto;
-display:none;
-}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.choice{background:#2e7d32;color:white;padding:10px;text-align:center;}
 </style>
 </head>
 
@@ -76,10 +26,7 @@ display:none;
 <!-- LOGIN -->
 <div id="loginBox">
 <h3>Stolpekontroll</h3>
-
-<label>Passord</label>
-<input type="password" id="pass">
-
+<input type="password" id="pass" placeholder="Passord">
 <button onclick="login()">Logg inn</button>
 </div>
 
@@ -89,299 +36,123 @@ display:none;
 
 <h3>Grunnlagsdata</h3>
 
-<label>Netteier</label>
-<input id="netteier">
+<label>Netteier</label><input id="netteier">
+<label>LinjeID</label><input id="linje">
+<label>Mastnr</label><input id="mast">
 
-<label>LinjeID</label>
-<input id="linje">
+<label>Stolpehøyde (m)</label><input id="hoyde">
+<label>Nedgravingsdybde (m)</label><input id="nedgravd">
+<label>Jordbånddiameter (mm)</label><input id="jord">
 
-<label>Mastnr</label>
-<input id="mast">
+<label>Avtrapping (cm/m)</label><input id="avtr" value="0.75">
+<label>Toppdiameter (mm)</label><input id="topp">
 
-<label>Stolpehøyde (m)</label>
-<input id="hoyde">
-
-<label>Nedgravingsdybde (m)</label>
-<input id="nedgravd">
-
-<label>Jordbånddiameter (mm)</label>
-<input id="jord">
-
-<label>Avtrapping (cm/m)</label>
-<input id="avtr" value="0.75">
-
-<label>Toppdiameter (mm)</label>
-<input id="topp">
+<label>GPS</label><input id="gps">
 
 <h3>Forhold</h3>
-
-<label>Jordsmonn</label>
-<div class="choice" onclick="toggle('jordvalg')" id="jordTxt">Skogsmark</div>
-<div id="jordvalg" class="hidden grid">
-<button onclick="setVal('jordTxt','Innmark')">Innmark</button>
-<button onclick="setVal('jordTxt','Skogsmark')">Skogsmark</button>
-<button onclick="setVal('jordTxt','Fjell')">Fjell</button>
-</div>
-
-<label>Klima</label>
-<div class="choice" onclick="toggle('klimavalg')" id="klimaTxt">Kyst</div>
-<div id="klimavalg" class="hidden grid">
-<button onclick="setVal('klimaTxt','Kyst')">Kyst</button>
-<button onclick="setVal('klimaTxt','Innland')">Innland</button>
-<button onclick="setVal('klimaTxt','Fjell')">Fjell</button>
-</div>
-
-<label>Vertikallast</label>
-<div class="choice" onclick="toggle('lastvalg')" id="lastTxt">Normal</div>
-<div id="lastvalg" class="hidden grid">
-<button onclick="setVal('lastTxt','Lav')">Lav</button>
-<button onclick="setVal('lastTxt','Normal')">Normal</button>
-<button onclick="setVal('lastTxt','Høy')">Høy</button>
-</div>
-
-<button onclick="toggleFukt()">Fuktmåling</button>
-
-<div id="fuktBox" class="hidden">
-
-<label>Lufttemperatur</label>
-<input id="temp">
-
-<label>Relativ fuktighet</label>
-<input id="rf">
-
-<label>Fukt ytterskall</label>
-<input id="fukt">
-
-</div>
-
-<label>GPS</label>
-<input id="gps">
-
-<button onclick="startGPS()">Slå på GPS</button>
-<button onclick="stopGPS()">Slå av GPS</button>
-
-<button onclick="nyMast()">Ny mast</button>
-
-<h3>Registrer skade</h3>
-
 <div class="grid">
-<button onclick="velg('indre')">Indre råte</button>
-<button onclick="velg('sirk')">Sirkulær råte</button>
-<button onclick="velg('soft')">Softråte</button>
-<button onclick="velg('spett')">Spettsmie</button>
-<button onclick="velg('hakk')">Hakkespetthull</button>
-<button onclick="velg('sprekk')">Sprekk</button>
+<div class="choice" id="jordTxt" onclick="setVal('jordTxt','Innmark')">Innmark</div>
+<div class="choice" id="klimaTxt" onclick="setVal('klimaTxt','Kyst')">Kyst</div>
+<div class="choice" id="lastTxt" onclick="setVal('lastTxt','Normal')">Normal</div>
 </div>
 
-<div id="skade1" class="hidden">
+<h3>Skade</h3>
 
-<h3 id="tittel1"></h3>
+<label>Stolpenr</label><input id="stolpe">
+<label>Skadetype</label><input id="type">
+<label>Skadehøyde</label><input id="sh">
+<label>Skadelengde</label><input id="sl">
+<label>Diameter skadested</label><input id="sd">
 
-<label>Stolpenr</label>
-<input id="stolpe1">
+<label>A</label><input id="A">
+<label>B</label><input id="B">
+<label>C</label><input id="C">
+<label>D</label><input id="D">
+<label>E</label><input id="E">
 
-<label>Skadehøyde over bakken (m)</label>
-<input id="h1">
-
-<label>Skadelengde (m)</label>
-<input id="l1">
-
-<label>Diameter på skadested (mm)</label>
-<input id="d1">
-
-<img id="img1">
-<div id="felt1"></div>
-
-</div>
-
-<button id="btn2" onclick="toggle2()">Legg til skade 2</button>
-
-<div id="skade2" class="hidden">
-
-<h3 id="tittel2"></h3>
-
-<label>Stolpenr</label>
-<input id="stolpe2">
-
-<label>Skadehøyde over bakken (m)</label>
-<input id="h2">
-
-<label>Skadelengde (m)</label>
-<input id="l2">
-
-<label>Diameter på skadested (mm)</label>
-<input id="d2">
-
-<img id="img2">
-<div id="felt2"></div>
-
-</div>
-
-<button onclick="lagre()">Lagre mast</button>
+<button onclick="lagre()">Lagre</button>
 <button onclick="lastCSV()">Last ned Excel</button>
 
 </div>
 
 <script>
 
-// LOGIN
+// PASSORD
 const PASSORD="1234";
 
 function login(){
-let p=document.getElementById("pass").value;
-if(p===PASSORD){
+if(pass.value===PASSORD){
 loginBox.style.display="none";
 app.style.display="block";
-}else{
-alert("Feil passord");
 }
 }
 
-// 🔧 AUTOMATISK TOPPDIAMETER
-function beregnTopp(){
-
-let topp = document.getElementById("topp");
+// 🔧 Toppdiameter
+function calcTopp(){
 if(topp.value) return;
 
-let jord = parseFloat(jord.value);
-let hoyde = parseFloat(hoyde.value);
-let avtr = parseFloat(avtr.value);
+let d=parseFloat(jord.value);
+let h=parseFloat(hoyde.value);
+let a=parseFloat(avtr.value);
 
-if(!jord || !hoyde || !avtr) return;
+if(!d||!h||!a) return;
 
-let taper = avtr * 10;
-let toppdiam = jord - (taper * hoyde);
-
-if(toppdiam > 0){
-topp.value = Math.round(toppdiam);
-}
+let t=d-(a*10*h);
+if(t>0) topp.value=Math.round(t);
 }
 
-// trigges automatisk
 ["jord","hoyde","avtr"].forEach(id=>{
-document.addEventListener("input", e=>{
-if(e.target.id === id){
-document.getElementById("topp").value="";
-beregnTopp();
+document.addEventListener("input",e=>{
+if(e.target.id===id){
+topp.value="";
+calcTopp();
 }
 });
 });
 
-// resten av koden din er UENDRET (samme som du sendte)
-
-function toggle(id){document.getElementById(id).classList.toggle("hidden");}
-function setVal(id,val){document.getElementById(id).innerText=val;}
-function toggleFukt(){fuktBox.classList.toggle("hidden");}
-
-let watch=null;
-function startGPS(){
-watch=navigator.geolocation.watchPosition(p=>{
-gps.value=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);
-});
-}
-function stopGPS(){navigator.geolocation.clearWatch(watch);}
-
-const felt={
-indre:["A (mm)","B (mm)","E (mm)"],
-sirk:["A (mm)","B (mm)","C (mm)","D (mm)"],
-soft:["A (mm)","B (mm)","C (mm)","D (mm)"],
-spett:["A (mm)","B (mm)"],
-hakk:["A (mm)","B (mm)","C (mm)","D (mm)"],
-sprekk:[
-"Start (m over bakken)",
-"Slutt (m over bakken)",
-"A = Sprekkbredde (mm)",
-"B = Sprekkdybde (mm)",
-"Antall sprekker (stk)",
-"Fiberstyrke 30 N/mm²",
-"Fiberstyrke 40 N/mm²",
-"Beskrivelse av sprekk"
-]
-};
-
-function lagFelt(type,id,p){
-let d=document.getElementById(id);
-d.innerHTML="";
-felt[type].forEach(f=>{
-d.innerHTML+=`<label>${f}</label><input id="${p}_${f}">`;
-});
-}
-
-function velg(type){
-skade1.classList.remove("hidden");
-tittel1.innerText=type+" 1";
-tittel2.innerText=type+" 2";
-
-lagFelt(type,"felt1","s1");
-lagFelt(type,"felt2","s2");
-
-img1.style.display="block";
-if(type==="indre") img1.src="indre.svg";
-else if(type==="sirk") img1.src="sirk.svg";
-else img1.src=type+".svg";
-}
-
-function hent(p){
-let r={};
-document.querySelectorAll(`[id^=${p}_]`).forEach(i=>{
-r[i.id.split("_")[1]]=i.value;
-});
-return r;
-}
-
-function toggle2(){skade2.classList.toggle("hidden");}
-
+// DATA
 let data=[];
 
 function lagre(){
-let base={
+
+let rad={
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
+hoyde:hoyde.value,
+nedgravd:nedgravd.value,
+jord:jord.value,
+avtr:avtr.value,
+topp:topp.value,
 gps:gps.value,
-dato:new Date().toLocaleDateString("no-NO")
+klima:klimaTxt.innerText,
+jordtype:jordTxt.innerText,
+last:lastTxt.innerText,
+stolpe:stolpe.value,
+type:type.value,
+skadeh:sh.value,
+skadel:sl.value,
+diameter:sd.value,
+A:A.value,B:B.value,C:C.value,D:D.value,E:E.value,
+dato:new Date().toLocaleDateString()
 };
 
-if(stolpe1.value){
-data.push({...base,stolpe:stolpe1.value,hoyde:h1.value,lengde:l1.value,diameter:d1.value,type:tittel1.innerText,...hent("s1")});
-}
-
-if(stolpe2.value){
-data.push({...base,stolpe:stolpe2.value,hoyde:h2.value,lengde:l2.value,diameter:d2.value,type:tittel2.innerText,...hent("s2")});
-}
-
+data.push(rad);
 alert("Lagret");
 }
 
 function lastCSV(){
-let csv=Object.keys(data[0]||{}).join(",")+"\n";
+
+let csv=Object.keys(data[0]).join(",")+"\n";
 data.forEach(d=>{csv+=Object.values(d).join(",")+"\n";});
+
 let a=document.createElement("a");
 a.href=URL.createObjectURL(new Blob([csv]));
 a.download="stolpekontroll.csv";
 a.click();
 }
 
-function nyMast(){
-let n=netteier.value;
-let l=linje.value;
-
-document.querySelectorAll("input").forEach(i=>i.value="");
-
-netteier.value=n;
-linje.value=l;
-
-skade1.classList.add("hidden");
-skade2.classList.add("hidden");
-
-img1.style.display="none";
-img2.style.display="none";
-
-felt1.innerHTML="";
-felt2.innerHTML="";
-
-btn2.innerText="Legg til skade 2";
-}
+function setVal(id,val){document.getElementById(id).innerText=val;}
 
 </script>
 
