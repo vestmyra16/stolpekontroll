@@ -13,11 +13,12 @@
 body{font-family:Arial;max-width:420px;margin:auto;background:#f2f2f2;padding:10px;}
 h2{text-align:center;}
 label{display:block;font-weight:bold;margin-top:8px;}
-input,textarea{width:100%;padding:10px;margin-top:4px;}
-button{width:100%;padding:12px;margin-top:8px;background:#2e7d32;color:white;border:none;}
+input{width:100%;padding:12px;margin:4px 0 8px 0;border-radius:6px;border:1px solid #ccc;}
+button{width:100%;padding:12px;margin:6px 0;background:#2e7d32;color:white;border:none;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.choice{background:#2e7d32;color:white;padding:12px;text-align:center;}
 .hidden{display:none;}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.choice{background:#2e7d32;color:white;padding:10px;text-align:center;}
+img{width:90px;display:none;}
 </style>
 </head>
 
@@ -26,7 +27,7 @@ button{width:100%;padding:12px;margin-top:8px;background:#2e7d32;color:white;bor
 <!-- LOGIN -->
 <div id="loginBox">
 <h3>Stolpekontroll</h3>
-<input type="password" id="pass" placeholder="Passord">
+<input type="password" id="pass">
 <button onclick="login()">Logg inn</button>
 </div>
 
@@ -39,7 +40,6 @@ button{width:100%;padding:12px;margin-top:8px;background:#2e7d32;color:white;bor
 <label>Netteier</label><input id="netteier">
 <label>LinjeID</label><input id="linje">
 <label>Mastnr</label><input id="mast">
-
 <label>Stolpehøyde (m)</label><input id="hoyde">
 <label>Nedgravingsdybde (m)</label><input id="nedgravd">
 <label>Jordbånddiameter (mm)</label><input id="jord">
@@ -49,28 +49,44 @@ button{width:100%;padding:12px;margin-top:8px;background:#2e7d32;color:white;bor
 
 <label>GPS</label><input id="gps">
 
-<h3>Forhold</h3>
+<button onclick="nyMast()">Ny mast</button>
+
+<h3>Registrer skade</h3>
+
 <div class="grid">
-<div class="choice" id="jordTxt" onclick="setVal('jordTxt','Innmark')">Innmark</div>
-<div class="choice" id="klimaTxt" onclick="setVal('klimaTxt','Kyst')">Kyst</div>
-<div class="choice" id="lastTxt" onclick="setVal('lastTxt','Normal')">Normal</div>
+<button onclick="velg('indre')">Indre råte</button>
+<button onclick="velg('sirk')">Sirkulær råte</button>
+<button onclick="velg('soft')">Softråte</button>
+<button onclick="velg('spett')">Spettsmie</button>
+<button onclick="velg('hakk')">Hakkespetthull</button>
+<button onclick="velg('sprekk')">Sprekk</button>
 </div>
 
-<h3>Skade</h3>
+<div id="skade1" class="hidden">
+<h3 id="tittel1"></h3>
 
-<label>Stolpenr</label><input id="stolpe">
-<label>Skadetype</label><input id="type">
-<label>Skadehøyde</label><input id="sh">
-<label>Skadelengde</label><input id="sl">
-<label>Diameter skadested</label><input id="sd">
+<label>Stolpenr</label><input id="stolpe1">
+<label>Skadehøyde (m)</label><input id="h1">
+<label>Skadelengde (m)</label><input id="l1">
+<label>Diameter skadested</label><input id="d1">
 
-<label>A</label><input id="A">
-<label>B</label><input id="B">
-<label>C</label><input id="C">
-<label>D</label><input id="D">
-<label>E</label><input id="E">
+<div id="felt1"></div>
+</div>
 
-<button onclick="lagre()">Lagre</button>
+<button onclick="toggle2()">Legg til skade 2</button>
+
+<div id="skade2" class="hidden">
+<h3 id="tittel2"></h3>
+
+<label>Stolpenr</label><input id="stolpe2">
+<label>Skadehøyde (m)</label><input id="h2">
+<label>Skadelengde (m)</label><input id="l2">
+<label>Diameter skadested</label><input id="d2">
+
+<div id="felt2"></div>
+</div>
+
+<button onclick="lagre()">Lagre mast</button>
 <button onclick="lastCSV()">Last ned Excel</button>
 
 </div>
@@ -79,16 +95,15 @@ button{width:100%;padding:12px;margin-top:8px;background:#2e7d32;color:white;bor
 
 // PASSORD
 const PASSORD="1234";
-
 function login(){
 if(pass.value===PASSORD){
 loginBox.style.display="none";
 app.style.display="block";
-}
+}else alert("Feil passord");
 }
 
-// 🔧 Toppdiameter
-function calcTopp(){
+// 🔧 TOPPDIAMETER (riktig)
+function beregnTopp(){
 if(topp.value) return;
 
 let d=parseFloat(jord.value);
@@ -105,17 +120,56 @@ if(t>0) topp.value=Math.round(t);
 document.addEventListener("input",e=>{
 if(e.target.id===id){
 topp.value="";
-calcTopp();
+beregnTopp();
 }
 });
 });
+
+// FELT
+const felt={
+indre:["A","B","E"],
+sirk:["A","B","C","D"],
+soft:["A","B","C","D"],
+spett:["A","B"],
+hakk:["A","B","C","D"],
+sprekk:["Start","Slutt","A","B","Antall","30","40","Beskrivelse"]
+};
+
+function lagFelt(type,id,p){
+let d=document.getElementById(id);
+d.innerHTML="";
+felt[type].forEach(f=>{
+d.innerHTML+=`<label>${f}</label><input id="${p}_${f}">`;
+});
+}
+
+function velg(type){
+skade1.classList.remove("hidden");
+tittel1.innerText=type+" 1";
+tittel2.innerText=type+" 2";
+
+lagFelt(type,"felt1","s1");
+lagFelt(type,"felt2","s2");
+}
+
+function hent(prefix){
+let r={};
+document.querySelectorAll(`[id^=${prefix}_]`).forEach(i=>{
+r[i.id]=i.value;
+});
+return r;
+}
+
+function toggle2(){
+skade2.classList.toggle("hidden");
+}
 
 // DATA
 let data=[];
 
 function lagre(){
 
-let rad={
+let base={
 netteier:netteier.value,
 linje:linje.value,
 mast:mast.value,
@@ -125,26 +179,48 @@ jord:jord.value,
 avtr:avtr.value,
 topp:topp.value,
 gps:gps.value,
-klima:klimaTxt.innerText,
-jordtype:jordTxt.innerText,
-last:lastTxt.innerText,
-stolpe:stolpe.value,
-type:type.value,
-skadeh:sh.value,
-skadel:sl.value,
-diameter:sd.value,
-A:A.value,B:B.value,C:C.value,D:D.value,E:E.value,
 dato:new Date().toLocaleDateString()
 };
 
-data.push(rad);
+// skade 1
+if(stolpe1.value){
+data.push({...base,
+stolpe:stolpe1.value,
+skade:tittel1.innerText,
+skadeh:h1.value,
+skadel:l1.value,
+diameter:d1.value,
+...hent("s1")
+});
+}
+
+// skade 2
+if(stolpe2.value){
+data.push({...base,
+stolpe:stolpe2.value,
+skade:tittel2.innerText,
+skadeh:h2.value,
+skadel:l2.value,
+diameter:d2.value,
+...hent("s2")
+});
+}
+
 alert("Lagret");
 }
 
+// CSV
 function lastCSV(){
+if(data.length===0){
+alert("Ingen data");
+return;
+}
 
 let csv=Object.keys(data[0]).join(",")+"\n";
-data.forEach(d=>{csv+=Object.values(d).join(",")+"\n";});
+
+data.forEach(d=>{
+csv+=Object.values(d).join(",")+"\n";
+});
 
 let a=document.createElement("a");
 a.href=URL.createObjectURL(new Blob([csv]));
@@ -152,7 +228,19 @@ a.download="stolpekontroll.csv";
 a.click();
 }
 
-function setVal(id,val){document.getElementById(id).innerText=val;}
+// NY MAST
+function nyMast(){
+let n=netteier.value;
+let l=linje.value;
+
+document.querySelectorAll("input").forEach(i=>i.value="");
+
+netteier.value=n;
+linje.value=l;
+
+skade1.classList.add("hidden");
+skade2.classList.add("hidden");
+}
 
 </script>
 
