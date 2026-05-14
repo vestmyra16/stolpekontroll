@@ -2,11 +2,15 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Stolpekontroll v5.2 - Komplett</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stolpekontroll</title>
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="icon" type="image/png" href="icon-180.png">
+    <link rel="manifest" href="manifest.json">
     <style>
         body { font-family: sans-serif; max-width: 420px; margin: auto; padding: 10px; background: #f2f2f2; }
-        label { display: block; font-weight: bold; color: #000; margin-top: 12px; margin-bottom: 2px; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #000; box-sizing: border-box; color: #000; background:#fff; }
+        label { display: block; font-weight: bold; color: #000; margin-top: 15px; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #000; box-sizing: border-box; color: #000; background: #fff; }
         button { width: 100%; padding: 12px; margin: 4px 0; background: #2e7d32; color: #fff; border: none; font-weight: bold; cursor: pointer; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
         .skade-box { border: 2px solid #2e7d32; padding: 10px; margin-top: 20px; background: #fff; }
@@ -47,8 +51,9 @@
     <button onclick="leggTilNy()" style="background:#558b2f;">+ Registrer ny skade</button>
     <div id="skadeOmraade"></div>
 
-    <button onclick="lagre()" style="background:#1b5e20; margin-top:20px;">Lagre Mast (alle data)</button>
+    <button onclick="lagre()" style="background:#1b5e20; margin-top:20px;">Lagre Mast</button>
     <button onclick="lastCSV()" style="background:#1565c0;">Last ned Excel (CSV)</button>
+    <button onclick="location.reload()" style="background:#c62828;">Ny Mast</button>
 </div>
 
 <script>
@@ -96,10 +101,18 @@ function lagre() {
         s.querySelectorAll(".d_f").forEach(i => obj[i.dataset.navn] = i.value);
         d.push(obj);
     });
-    localStorage.setItem("db", JSON.stringify(d)); alert("Lagret!");
+    localStorage.setItem("db", JSON.stringify(d)); alert("Mast lagret!");
 }
 
-function lastCSV() { /* CSV-eksportlogikk */ }
+function lastCSV() {
+    let d = JSON.parse(localStorage.getItem("db")||"[]");
+    if(d.length === 0) return alert("Ingen data");
+    let csv = "\uFEFF" + Object.keys(d[0]).join(";") + "\n" + d.map(r => Object.values(r).join(";")).join("\n");
+    let a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = "stolpekontroll.csv";
+    a.click();
+}
 </script>
 </body>
 </html>
