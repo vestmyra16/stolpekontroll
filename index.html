@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.4</title>
+    <title>Stolpekontroll v5.5</title>
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -29,7 +29,7 @@
     <label>Jordbånd (mm)</label><input id="jord" oninput="beregnTopp()">
     <label>Avtrapping (cm/m)</label><input id="avtr" value="0.7" oninput="beregnTopp()">
     <label>Toppdiameter (mm)</label>
-    <input id="topp" class="beregnet" placeholder="Beregnes...">
+    <input id="topp" class="beregnet">
 
     <h3>Forhold</h3>
     <label>Jordsmonn</label>
@@ -67,7 +67,7 @@
 <script>
 let valgData = {jord:"", klima:"", last:""};
 const skadeDef = {
-    "Indre råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "indre.svg" },
+    "Indre råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'E',u:'mm'}], img: "indre.svg" },
     "Sirkulær råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "sirk.svg" },
     "Softråte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "soft.svg" },
     "Spettsmie": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "spett.svg" },
@@ -80,9 +80,7 @@ function beregnTopp() {
     let n = parseFloat(document.getElementById("nedgravd").value) || 0;
     let j = parseFloat(document.getElementById("jord").value) || 0;
     let a = parseFloat(document.getElementById("avtr").value) || 0.7;
-    if (h && j) {
-        document.getElementById("topp").value = Math.round(j - (a * (h - n) * 10));
-    }
+    if (h && j) document.getElementById("topp").value = Math.round(j - (a * (h - n) * 10));
 }
 
 function v(k, n, b) { 
@@ -108,7 +106,6 @@ function oppdater(sel) {
     let t = sel.value;
     let cont = sel.parentElement.querySelector(".skade-innhold");
     if(!t) { cont.innerHTML = ""; return; }
-    
     cont.innerHTML = `<img src="${skadeDef[t].img}">
         <label>Stolpenr</label><input class="s_stolpe">
         <label>Skadehøyde over bakken (m)</label><input class="s_h">
@@ -123,47 +120,32 @@ function lagre() {
         linje: document.getElementById("linje").value,
         mast: document.getElementById("mast").value,
         toppdiam: document.getElementById("topp").value,
-        jordsmonn: valgData.jord,
-        klima: valgData.klima,
-        vertikallast: valgData.last,
-        temp: document.getElementById("temp").value,
-        fukt: document.getElementById("fukt").value
+        jordsmonn: valgData.jord, klima: valgData.klima, vertikallast: valgData.last,
+        temp: document.getElementById("temp").value, fukt: document.getElementById("fukt").value
     };
 
     document.querySelectorAll(".skade-box").forEach(s => {
         let type = s.querySelector("select").value;
         if(!type) return;
-        
         let row = { ...grunndata, skadetype: type };
         row.stolpenr = s.querySelector(".s_stolpe").value;
         row.skadehoyde = s.querySelector(".s_h").value;
         row.diam_skadested = s.querySelector(".s_diam").value;
         
-        // Definer alle mulige kolonner som tomme først for å holde CSV ryddig
-        ['A','B','C','D','Start over bakken','Slutt over bakken'].forEach(k => row[k] = "");
-        
-        s.querySelectorAll(".d_f").forEach(i => {
-            row[i.dataset.navn] = i.value;
-        });
+        ['A','B','C','D','E','Start over bakken','Slutt over bakken'].forEach(k => row[k] = "");
+        s.querySelectorAll(".d_f").forEach(i => row[i.dataset.navn] = i.value);
         d.push(row);
     });
-
     localStorage.setItem("db", JSON.stringify(d));
-    alert("Mast lagret!");
+    alert("Lagret!");
 }
 
 function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
     if(d.length === 0) return alert("Ingen data");
-    
-    // Sikrer fast rekkefølge på kolonner
-    let headers = ['netteier','linje','mast','toppdiam','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde','diam_skadested','A','B','C','D','Start over bakken','Slutt over bakken'];
-    
+    let headers = ['netteier','linje','mast','toppdiam','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde','diam_skadested','A','B','C','D','E','Start over bakken','Slutt over bakken'];
     let csv = "\uFEFF" + headers.join(";") + "\n";
-    d.forEach(r => {
-        csv += headers.map(h => r[h] || "").join(";") + "\n";
-    });
-    
+    d.forEach(r => csv += headers.map(h => r[h] || "").join(";") + "\n");
     let a = document.createElement("a");
     a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
     a.download = "stolpekontroll_master.csv";
