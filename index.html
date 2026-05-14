@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v4.0</title>
+    <title>Stolpekontroll v4.1</title>
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -13,8 +13,9 @@
         input{width:100%; padding:10px; border:1px solid #ccc; box-sizing:border-box;}
         button{width:100%; padding:12px; margin:5px 0; background:#2e7d32; color:white; border:none; cursor:pointer;}
         .grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;}
-        .selected{background:#1b5e20 !important;}
+        .selected{background:#1b5e20 !important; outline: 2px solid #000;}
         .hidden{display:none;}
+        .skade-boks{border:1px solid #999; padding:10px; margin-top:10px; background:#fff;}
     </style>
 </head>
 <body>
@@ -45,9 +46,19 @@
     <label>Rel. fukt (%)</label><input id="rf">
     <label>Fukt ytterskall (%)</label><input id="fukt">
 
+    <h3>Registrer skade</h3>
+    <div class="grid">
+        <button onclick="leggTilSkade('Indre råte')">Indre råte</button>
+        <button onclick="leggTilSkade('Sirkulær råte')">Sirk. råte</button>
+        <button onclick="leggTilSkade('Softråte')">Softråte</button>
+        <button onclick="leggTilSkade('Spettsmie')">Spettsmie</button>
+        <button onclick="leggTilSkade('Hakkespett')">Hakkespett</button>
+        <button onclick="leggTilSkade('Sprekk')">Sprekk</button>
+    </div>
+    
     <div id="skader"></div>
-    <button onclick="leggTilSkade()" style="background:#555;">+ Legg til skade</button>
-    <button onclick="lagre()">Lagre Mast</button>
+
+    <button onclick="lagre()" style="background:#2e7d32; margin-top:20px;">Lagre Mast</button>
     <button onclick="lastCSV()" style="background:#1565c0;">Last ned Excel (CSV)</button>
     <button onclick="nyMast()" style="background:#c62828;">Ny Mast</button>
 </div>
@@ -56,13 +67,11 @@
 const PASSORD = "1234";
 let valg = {jord:"", klima:"", last:""};
 
-// Tidsbegrensning 60 dager
 function sjekkTid() {
     let start = localStorage.getItem("startDato");
     if(!start) localStorage.setItem("startDato", new Date().getTime());
     else if((new Date().getTime() - start) > (60 * 24 * 60 * 60 * 1000)) {
-        alert("Appen har utløpt. Kontakt administrator.");
-        document.body.innerHTML = "<h1>Lisens utløpt</h1>";
+        document.body.innerHTML = "<h1>Lisens utløpt - Kontakt admin</h1>";
     }
 }
 
@@ -80,31 +89,41 @@ function sett(btn, kat) {
     btn.classList.add('selected');
 }
 
-function leggTilSkade() {
+function leggTilSkade(type) {
     let d = document.createElement("div");
-    d.innerHTML = `<label>Skadetype</label><input class="s_type"><label>Stolpenr</label><input class="s_stolpe"><label>Skadehøyde</label><input class="s_h">`;
+    d.className = "skade-boks";
+    d.innerHTML = `<strong>${type}</strong>
+        <input type="hidden" class="s_type" value="${type}">
+        <label>Stolpenr</label><input class="s_stolpe">
+        <label>Skadehøyde</label><input class="s_h">
+        <label>Lengde</label><input class="s_l">
+        <label>Diameter</label><input class="s_d">`;
     document.getElementById("skader").appendChild(d);
 }
 
 function lagre() {
     let data = JSON.parse(localStorage.getItem("db") || "[]");
-    document.querySelectorAll("#skader > div").forEach(s => {
+    document.querySelectorAll(".skade-boks").forEach(s => {
         data.push({
+            dato: new Date().toLocaleDateString(),
             netteier: document.getElementById("netteier").value,
             linje: document.getElementById("linje").value,
             mast: document.getElementById("mast").value,
             ...valg,
             skadetype: s.querySelector(".s_type").value,
             stolpe: s.querySelector(".s_stolpe").value,
-            hoyde: s.querySelector(".s_h").value
+            hoyde: s.querySelector(".s_h").value,
+            lengde: s.querySelector(".s_l").value,
+            diameter: s.querySelector(".s_d").value
         });
     });
     localStorage.setItem("db", JSON.stringify(data));
-    alert("Lagret");
+    alert("Mast med " + document.querySelectorAll(".skade-boks").length + " skader lagret.");
 }
 
 function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db"));
+    if(!d) return alert("Ingen data");
     let csv = "\uFEFF" + Object.keys(d[0]).join(";") + "\n";
     d.forEach(r => csv += Object.values(r).join(";") + "\n");
     let a = document.createElement("a");
@@ -116,10 +135,10 @@ function lastCSV() {
 function nyMast() {
     let n = document.getElementById("netteier").value;
     let l = document.getElementById("linje").value;
-    document.querySelectorAll("input").forEach(i => i.value = "");
+    document.querySelectorAll("input").forEach(i => { if(i.id!=="netteier" && i.id!=="linje") i.value = ""; });
+    document.getElementById("skader").innerHTML = "";
     document.getElementById("netteier").value = n;
     document.getElementById("linje").value = l;
-    document.getElementById("skader").innerHTML = "";
 }
 </script>
 </body>
