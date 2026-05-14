@@ -2,15 +2,15 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v4.2</title>
+    <title>Stolpekontroll v2.9-Fixed</title>
     <style>
         body{font-family:Arial; max-width:420px; margin:auto; background:#f2f2f2; padding:10px;}
-        input, select{width:100%; padding:10px; margin:5px 0; border:1px solid #ccc;}
-        button{width:100%; padding:12px; margin:5px 0; background:#2e7d32; color:white; border:none; cursor:pointer;}
-        .grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;}
-        .skade-boks{border:1px solid #999; padding:10px; margin-top:10px; background:#fff;}
-        img { width: 100px; display: block; margin: 10px auto; }
+        label{display:block; font-weight:bold; color:#000 !important; margin-top:12px; margin-bottom:2px;}
+        input{width:100%; padding:10px; border:1px solid #ccc; box-sizing:border-box; color:#000;}
+        button{width:100%; padding:12px; margin:4px 0; background:#2e7d32; color:white; border:none; cursor:pointer;}
+        .grid{display:grid; grid-template-columns:1fr 1fr; gap:5px;}
+        .hidden{display:none;}
+        img{width:120px; display:block; margin:10px auto;}
     </style>
 </head>
 <body>
@@ -21,86 +21,76 @@
     <button onclick="login()">Logg inn</button>
 </div>
 
-<div id="app" style="display:none;">
+<div id="app" class="hidden">
     <h3>Grunnlagsdata</h3>
-    <input id="netteier" placeholder="Netteier">
-    <input id="linje" placeholder="LinjeID">
-    <input id="mast" placeholder="Mastnr">
-    <input id="hoyde" placeholder="Stolpehøyde (m)">
-    <input id="nedgravd" placeholder="Nedgravd (m)">
-    <input id="jord" placeholder="Jordbånddiam (mm)">
-    <input id="avtr" placeholder="Avtrapping">
-    <input id="topp" placeholder="Toppdiameter (mm)">
+    <label>Netteier</label><input id="netteier">
+    <label>LinjeID</label><input id="linje">
+    <label>Mastnr</label><input id="mast">
+    <label>Stolpehøyde (m)</label><input id="hoyde">
+    <label>Nedgravd (m)</label><input id="nedgravd">
+    <label>Jordbånd (mm)</label><input id="jord">
+    <label>Avtrapping</label><input id="avtr" value="0.75">
+    <label>Toppdiameter</label><input id="topp">
 
     <h3>Forhold</h3>
-    <div class="grid"><button onclick="sett('jord','Skogsmark')">Skogsmark</button><button onclick="sett('jord','Innmark')">Innmark</button><button onclick="sett('jord','Fjell')">Fjell</button></div>
-    <div class="grid"><button onclick="sett('klima','Kyst')">Kyst</button><button onclick="sett('klima','Innland')">Innland</button><button onclick="sett('klima','Fjell')">Fjell</button></div>
-    <div class="grid"><button onclick="sett('last','Lav')">Lav</button><button onclick="sett('last','Normal')">Normal</button><button onclick="sett('last','Høy')">Høy</button></div>
-    
-    <input id="temp" placeholder="Lufttemperatur">
-    <input id="rf" placeholder="Relativ fuktighet">
-    <input id="fukt" placeholder="Fukt i ytterskall">
-    <input id="gps" placeholder="GPS-koordinater">
-    <button onclick="gps()">Slå på GPS</button>
-
+    <div class="grid"><button onclick="sett('jord','Innmark')">Innmark</button><button onclick="sett('jord','Skogsmark')">Skogsmark</button><button onclick="sett('jord','Fjell')">Fjell</button></div>
     <h3>Registrer skade</h3>
     <div class="grid">
-        <button onclick="skade('indre')">Indre</button><button onclick="skade('sirk')">Sirk</button><button onclick="skade('soft')">Soft</button>
-        <button onclick="skade('spett')">Spett</button><button onclick="skade('hakk')">Hakk</button><button onclick="skade('sprekk')">Sprekk</button>
+        <button onclick="velg('indre')">Indre råte</button>
+        <button onclick="velg('sirk')">Sirk. råte</button>
+        <button onclick="velg('soft')">Softråte</button>
+        <button onclick="velg('spett')">Spettsmie</button>
+        <button onclick="velg('hakk')">Hakkespett</button>
+        <button onclick="velg('sprekk')">Sprekk</button>
     </div>
-    
-    <div id="skadeContainer"></div>
-    <button onclick="lagre()" style="background:#1b5e20;">Lagre mast</button>
+
+    <div id="skadeBox" class="hidden">
+        <img id="skadeImg">
+        <label>Stolpenr</label><input id="s_stolpe">
+        <label>Skadehøyde</label><input id="s_h">
+        <label>Skadelengde</label><input id="s_l">
+        <label>Diameter</label><input id="s_d">
+        <div id="dynamiskeFelt"></div>
+    </div>
+
+    <button onclick="lagre()">Lagre Mast</button>
     <button onclick="lastCSV()" style="background:#1565c0;">Last ned Excel</button>
 </div>
 
 <script>
-const felter = {
-    indre: ['A','B','E'], sirk: ['A','B','C','D'], soft: ['A','B','C','D'],
-    spett: ['A','B'], hakk: ['A','B','C','D'], sprekk: ['Start','Slutt','A','B']
-};
-
-function sjekkTid() {
-    let s = localStorage.getItem("start");
-    if(!s) localStorage.setItem("start", new Date().getTime());
-    if((new Date().getTime() - s) > (60*24*60*60*1000)) document.body.innerHTML="<h1>Lisens utløpt</h1>";
-}
+const felter = {indre:['A','B','E'], sirk:['A','B','C','D'], soft:['A','B','C','D'], spett:['A','B'], hakk:['A','B','C','D'], sprekk:['Start','Slutt','A','B']};
+let aktivType = "";
 
 function login(){
     if(document.getElementById("pass").value==="1234"){
-        sjekkTid();
-        document.getElementById("loginBox").style.display="none";
-        document.getElementById("app").style.display="block";
+        let s = localStorage.getItem("start");
+        if(!s) localStorage.setItem("start", new Date().getTime());
+        if((new Date().getTime() - s) > (60*24*60*60*1000)) return alert("Lisens utløpt");
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
     }
 }
 
-function skade(type) {
-    let d = document.createElement("div");
-    d.className = "skade-boks";
-    d.innerHTML = `<img src="${type}.svg"><strong>${type}</strong>
-        <input class="s_type" value="${type}" type="hidden">
-        <input class="s_stolpe" placeholder="Stolpenr">
-        <input class="s_h" placeholder="Skadehøyde">
-        <input class="s_l" placeholder="Skadelengde">
-        <input class="s_d" placeholder="Diameter">` + 
-        felter[type].map(f => `<input class="s_felt" data-navn="${f}" placeholder="${f} (mm)">`).join('');
-    document.getElementById("skadeContainer").appendChild(d);
+function velg(type) {
+    aktivType = type;
+    document.getElementById("skadeBox").classList.remove("hidden");
+    document.getElementById("skadeImg").src = type + ".svg";
+    let d = document.getElementById("dynamiskeFelt");
+    d.innerHTML = "";
+    felter[type].forEach(f => {
+        d.innerHTML += `<label>${f} (mm)</label><input class="f_val" data-navn="${f}">`;
+    });
 }
 
 function lagre() {
     let db = JSON.parse(localStorage.getItem("db")||"[]");
-    document.querySelectorAll(".skade-boks").forEach(s => {
-        let obj = {
-            dato: new Date().toLocaleDateString(),
-            netteier: document.getElementById("netteier").value,
-            mast: document.getElementById("mast").value,
-            type: s.querySelector(".s_type").value
-        };
-        s.querySelectorAll("input").forEach(i => {
-            if(i.className === "s_felt") obj[i.dataset.navn] = i.value;
-        });
-        db.push(obj);
-    });
+    let obj = {
+        mast: document.getElementById("mast").value,
+        type: aktivType,
+        stolpe: document.getElementById("s_stolpe").value
+    };
+    document.querySelectorAll(".f_val").forEach(i => obj[i.dataset.navn] = i.value);
+    db.push(obj);
     localStorage.setItem("db", JSON.stringify(db));
     alert("Lagret");
 }
