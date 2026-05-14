@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.3</title>
+    <title>Stolpekontroll v5.4</title>
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -12,7 +12,7 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #000; box-sizing: border-box; color: #000; background: #fff; }
         button { width: 100%; padding: 12px; margin: 4px 0; background: #2e7d32; color: #fff; border: none; font-weight: bold; cursor: pointer; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .skade-box { border: 2px solid #2e7d32; padding: 10px; margin-top: 20px; background: #fff; position: relative; }
+        .skade-box { border: 2px solid #2e7d32; padding: 10px; margin-top: 20px; background: #fff; }
         img { width: 120px; display: block; margin: 10px auto; border: 1px solid #ccc; }
         .beregnet { background: #e8f5e9 !important; font-style: italic; }
     </style>
@@ -28,16 +28,28 @@
     <label>Nedgravd (m)</label><input id="nedgravd" oninput="beregnTopp()">
     <label>Jordbånd (mm)</label><input id="jord" oninput="beregnTopp()">
     <label>Avtrapping (cm/m)</label><input id="avtr" value="0.7" oninput="beregnTopp()">
-    <label>Toppdiameter (mm) - <small>Overskriv ved behov</small></label>
-    <input id="topp" class="beregnet" placeholder="Beregnes automatisk...">
+    <label>Toppdiameter (mm)</label>
+    <input id="topp" class="beregnet" placeholder="Beregnes...">
 
     <h3>Forhold</h3>
     <label>Jordsmonn</label>
-    <div class="grid"><button onclick="v('jord', 'Innmark', this)">Innmark</button><button onclick="v('jord', 'Skogsmark', this)">Skogsmark</button><button onclick="v('jord', 'Fjell', this)">Fjell</button></div>
+    <div class="grid">
+        <button onclick="v('jord', 'Innmark', this)">Innmark</button>
+        <button onclick="v('jord', 'Skogsmark', this)">Skogsmark</button>
+        <button onclick="v('jord', 'Fjell', this)">Fjell</button>
+    </div>
     <label>Klima</label>
-    <div class="grid"><button onclick="v('klima', 'Innland', this)">Innland</button><button onclick="v('klima', 'Kyst', this)">Kyst</button><button onclick="v('klima', 'Fjell', this)">Fjell</button></div>
+    <div class="grid">
+        <button onclick="v('klima', 'Innland', this)">Innland</button>
+        <button onclick="v('klima', 'Kyst', this)">Kyst</button>
+        <button onclick="v('klima', 'Fjell', this)">Fjell</button>
+    </div>
     <label>Vertikallast</label>
-    <div class="grid"><button onclick="v('last', 'Lav', this)">Lav</button><button onclick="v('last', 'Normal', this)">Normal</button><button onclick="v('last', 'Høy', this)">Høy</button></div>
+    <div class="grid">
+        <button onclick="v('last', 'Lav', this)">Lav</button>
+        <button onclick="v('last', 'Normal', this)">Normal</button>
+        <button onclick="v('last', 'Høy', this)">Høy</button>
+    </div>
     
     <label>Lufttemp (°C)</label><input id="temp">
     <label>Rel. fukt (%)</label><input id="rf">
@@ -53,14 +65,14 @@
 </div>
 
 <script>
-let valg = {jord:"", klima:"", last:""};
+let valgData = {jord:"", klima:"", last:""};
 const skadeDef = {
-    "Indre råte": { felt: ['A', 'B'], img: "indre.svg" },
-    "Sirkulær råte": { felt: ['A', 'B', 'C', 'D'], img: "sirk.svg" },
-    "Softråte": { felt: ['A', 'B', 'C', 'D'], img: "soft.svg" },
-    "Spettsmie": { felt: ['A', 'B'], img: "spett.svg" },
-    "Hakkespetthull": { felt: ['A', 'B', 'C', 'D'], img: "hakk.svg" },
-    "Sprekk": { felt: ['Start høyde', 'Slutt høyde', 'A', 'B'], img: "sprekk.svg" }
+    "Indre råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "indre.svg" },
+    "Sirkulær råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "sirk.svg" },
+    "Softråte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "soft.svg" },
+    "Spettsmie": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "spett.svg" },
+    "Hakkespetthull": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "hakk.svg" },
+    "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
 };
 
 function beregnTopp() {
@@ -68,15 +80,13 @@ function beregnTopp() {
     let n = parseFloat(document.getElementById("nedgravd").value) || 0;
     let j = parseFloat(document.getElementById("jord").value) || 0;
     let a = parseFloat(document.getElementById("avtr").value) || 0.7;
-    
     if (h && j) {
-        let beregnet = j - (a * (h - n) * 10);
-        document.getElementById("topp").value = Math.round(beregnet);
+        document.getElementById("topp").value = Math.round(j - (a * (h - n) * 10));
     }
 }
 
 function v(k, n, b) { 
-    valg[k]=n; 
+    valgData[k]=n; 
     b.parentElement.querySelectorAll('button').forEach(x=>x.style.background='#2e7d32'); 
     b.style.background='#1b5e20'; 
 }
@@ -99,11 +109,11 @@ function oppdater(sel) {
     let cont = sel.parentElement.querySelector(".skade-innhold");
     if(!t) { cont.innerHTML = ""; return; }
     
-    cont.innerHTML = `<img src="${skadeDef[t].img}" alt="Mangler bilde">
+    cont.innerHTML = `<img src="${skadeDef[t].img}">
         <label>Stolpenr</label><input class="s_stolpe">
         <label>Skadehøyde over bakken (m)</label><input class="s_h">
         <label>Diameter på skadested (mm)</label><input class="s_diam">` +
-        skadeDef[t].felt.map(f => `<label>${f} (mm)</label><input class="d_f" data-navn="${f}">`).join('');
+        skadeDef[t].felt.map(f => `<label>${f.n} (${f.u})</label><input class="d_f" data-navn="${f.n}">`).join('');
 }
 
 function lagre() {
@@ -113,7 +123,9 @@ function lagre() {
         linje: document.getElementById("linje").value,
         mast: document.getElementById("mast").value,
         toppdiam: document.getElementById("topp").value,
-        ...valg,
+        jordsmonn: valgData.jord,
+        klima: valgData.klima,
+        vertikallast: valgData.last,
         temp: document.getElementById("temp").value,
         fukt: document.getElementById("fukt").value
     };
@@ -122,37 +134,39 @@ function lagre() {
         let type = s.querySelector("select").value;
         if(!type) return;
         
-        let skadeObj = { ...grunndata, skadetype: type };
-        skadeObj.stolpenr = s.querySelector(".s_stolpe").value;
-        skadeObj.skadehoyde = s.querySelector(".s_h").value;
-        skadeObj.diam_skadested = s.querySelector(".s_diam").value;
+        let row = { ...grunndata, skadetype: type };
+        row.stolpenr = s.querySelector(".s_stolpe").value;
+        row.skadehoyde = s.querySelector(".s_h").value;
+        row.diam_skadested = s.querySelector(".s_diam").value;
         
-        // Nullstill bokstaver for hver rad for å unngå "blanding"
-        ['A','B','C','D','Start høy','Slutt høy'].forEach(b => skadeObj[b] = "");
+        // Definer alle mulige kolonner som tomme først for å holde CSV ryddig
+        ['A','B','C','D','Start over bakken','Slutt over bakken'].forEach(k => row[k] = "");
         
         s.querySelectorAll(".d_f").forEach(i => {
-            skadeObj[i.dataset.navn] = i.value;
+            row[i.dataset.navn] = i.value;
         });
-        d.push(skadeObj);
+        d.push(row);
     });
 
     localStorage.setItem("db", JSON.stringify(d));
-    alert("Lagret!");
+    alert("Mast lagret!");
 }
 
 function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
-    if(d.length === 0) return alert("Ingen data å eksportere");
+    if(d.length === 0) return alert("Ingen data");
     
-    let headers = Object.keys(d[0]);
+    // Sikrer fast rekkefølge på kolonner
+    let headers = ['netteier','linje','mast','toppdiam','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde','diam_skadested','A','B','C','D','Start over bakken','Slutt over bakken'];
+    
     let csv = "\uFEFF" + headers.join(";") + "\n";
-    d.forEach(row => {
-        csv += headers.map(h => row[h] || "").join(";") + "\n";
+    d.forEach(r => {
+        csv += headers.map(h => r[h] || "").join(";") + "\n";
     });
     
     let a = document.createElement("a");
     a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "stolpekontroll_eksport.csv";
+    a.download = "stolpekontroll_master.csv";
     a.click();
 }
 </script>
