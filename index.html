@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.5</title>
+    <title>Stolpekontroll v5.6</title>
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -25,7 +25,7 @@
     <label>LinjeID</label><input id="linje">
     <label>Mastnr</label><input id="mast">
     <label>Stolpehøyde (m)</label><input id="hoyde" oninput="beregnTopp()">
-    <label>Nedgravd (m)</label><input id="nedgravd" oninput="beregnTopp()">
+    <label>Nedgravingsdybde (m)</label><input id="nedgravd" oninput="beregnTopp()">
     <label>Jordbånd (mm)</label><input id="jord" oninput="beregnTopp()">
     <label>Avtrapping (cm/m)</label><input id="avtr" value="0.7" oninput="beregnTopp()">
     <label>Toppdiameter (mm)</label>
@@ -119,7 +119,10 @@ function lagre() {
         netteier: document.getElementById("netteier").value,
         linje: document.getElementById("linje").value,
         mast: document.getElementById("mast").value,
-        toppdiam: document.getElementById("topp").value,
+        stolpehøyde_m: document.getElementById("hoyde").value,
+        nedgravingsdybde_m: document.getElementById("nedgravd").value,
+        jordbånd_mm: document.getElementById("jord").value,
+        toppdiam_mm: document.getElementById("topp").value,
         jordsmonn: valgData.jord, klima: valgData.klima, vertikallast: valgData.last,
         temp: document.getElementById("temp").value, fukt: document.getElementById("fukt").value
     };
@@ -129,26 +132,29 @@ function lagre() {
         if(!type) return;
         let row = { ...grunndata, skadetype: type };
         row.stolpenr = s.querySelector(".s_stolpe").value;
-        row.skadehoyde = s.querySelector(".s_h").value;
-        row.diam_skadested = s.querySelector(".s_diam").value;
+        row.skadehoyde_m = s.querySelector(".s_h").value;
+        row.diam_skadested_mm = s.querySelector(".s_diam").value;
         
         ['A','B','C','D','E','Start over bakken','Slutt over bakken'].forEach(k => row[k] = "");
         s.querySelectorAll(".d_f").forEach(i => row[i.dataset.navn] = i.value);
         d.push(row);
     });
     localStorage.setItem("db", JSON.stringify(d));
-    alert("Lagret!");
+    alert("Mast og grunnlagsdata lagret!");
 }
 
 function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
     if(d.length === 0) return alert("Ingen data");
-    let headers = ['netteier','linje','mast','toppdiam','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde','diam_skadested','A','B','C','D','E','Start over bakken','Slutt over bakken'];
+    
+    // Oppdatert header med alle viktige tekniske data først
+    let headers = ['netteier','linje','mast','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
+    
     let csv = "\uFEFF" + headers.join(";") + "\n";
     d.forEach(r => csv += headers.map(h => r[h] || "").join(";") + "\n");
     let a = document.createElement("a");
     a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "stolpekontroll_master.csv";
+    a.download = "stolpekontroll_komplett_rapport.csv";
     a.click();
 }
 </script>
