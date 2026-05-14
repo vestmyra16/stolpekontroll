@@ -2,13 +2,12 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Stolpekontroll v5.0 - Endelig</title>
+    <title>Stolpekontroll v5.1 - Fleksibel</title>
     <style>
         body { font-family: sans-serif; max-width: 420px; margin: auto; padding: 10px; background: #f2f2f2; }
         label { display: block; font-weight: bold; color: #000; margin-top: 12px; margin-bottom: 2px; }
-        input { width: 100%; padding: 8px; border: 1px solid #000; box-sizing: border-box; color: #000; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #000; box-sizing: border-box; color: #000; }
         button { width: 100%; padding: 12px; margin: 4px 0; background: #2e7d32; color: #fff; border: none; font-weight: bold; cursor: pointer; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
         .skade-box { border: 2px solid #2e7d32; padding: 10px; margin-top: 20px; background: #fff; }
         img { width: 100px; display: block; margin: 10px auto; }
     </style>
@@ -26,29 +25,9 @@
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
     <label>Mastnr</label><input id="mast">
-    <label>Stolpehøyde (m)</label><input id="hoyde">
-    <label>Nedgravd (m)</label><input id="nedgravd">
-    <label>Jordbånd (mm)</label><input id="jord">
-    <label>Avtrapping</label><input id="avtr" value="0.75">
-    <label>Toppdiameter (mm)</label><input id="topp">
 
-    <h3>Forhold</h3>
-    <label>Jordsmonn</label>
-    <div class="grid"><button onclick="valg('jord', 'Innmark', this)">Innmark</button><button onclick="valg('jord', 'Skogsmark', this)">Skogsmark</button><button onclick="valg('jord', 'Fjell', this)">Fjell</button></div>
-    <label>Klima</label>
-    <div class="grid"><button onclick="valg('klima', 'Innland', this)">Innland</button><button onclick="valg('klima', 'Kyst', this)">Kyst</button><button onclick="valg('klima', 'Fjell', this)">Fjell</button></div>
-    <label>Vertikallast</label>
-    <div class="grid"><button onclick="valg('last', 'Lav', this)">Lav</button><button onclick="valg('last', 'Normal', this)">Normal</button><button onclick="valg('last', 'Høy', this)">Høy</button></div>
-
-    <label>Lufttemperatur (°C)</label><input id="temp">
-    <label>Relativ fuktighet (%)</label><input id="rf">
-    <label>Fukt i ytterskall (%)</label><input id="fukt">
-
-    <h3>Registrer skade</h3>
-    <div class="grid">
-        <button onclick="leggTil('indre')">Indre</button><button onclick="leggTil('sirk')">Sirk</button><button onclick="leggTil('soft')">Soft</button>
-        <button onclick="leggTil('spett')">Spett</button><button onclick="leggTil('hakk')">Hakk</button><button onclick="leggTil('sprekk')">Sprekk</button>
-    </div>
+    <h3>Registrering</h3>
+    <button onclick="leggTilNy()" style="background:#558b2f;">+ Registrer ny skade</button>
 
     <div id="skadeOmraade"></div>
 
@@ -58,41 +37,55 @@
 </div>
 
 <script>
+const skadeTyper = ["Indre råte", "Sirkulær råte", "Softråte", "Spettsmie", "Hakkespett", "Sprekk"];
 const felter = {
-    indre:['A','B','E'], sirk:['A','B','C','D'], soft:['A','B','C','D'],
-    spett:['A','B'], hakk:['A','B','C','D'], sprekk:['Start','Slutt','A','B']
+    "Indre råte":['A','B','E'], "Sirkulær råte":['A','B','C','D'], "Softråte":['A','B','C','D'],
+    "Spettsmie":['A','B'], "Hakkespett":['A','B','C','D'], "Sprekk":['Start','Slutt','A','B']
 };
-let v = {jord:"", klima:"", last:""};
 
 function login(){ if(document.getElementById("pass").value==="1234"){ document.getElementById("loginBox").style.display="none"; document.getElementById("app").style.display="block"; } }
-function valg(k, n, b) { v[k]=n; b.parentElement.querySelectorAll('button').forEach(x=>x.style.background='#2e7d32'); b.style.background='#1b5e20'; }
 
-function leggTil(type) {
+function leggTilNy() {
+    let container = document.getElementById("skadeOmraade");
     let div = document.createElement("div");
     div.className = "skade-box";
-    div.innerHTML = `<img src="${type}.svg">
-        <input type="hidden" class="s_type" value="${type}">
+    
+    // Dropdown for å velge type
+    let options = skadeTyper.map(t => `<option value="${t}">${t}</option>`).join('');
+    
+    div.innerHTML = `
+        <label>Velg skadetype</label>
+        <select onchange="oppdaterFelter(this)">
+            <option value="">-- Velg --</option>
+            ${options}
+        </select>
+        <div class="felt-container"></div>
+        <button style="background:#888;" onclick="this.parentElement.remove()">Fjern denne skaden</button>
+    `;
+    container.appendChild(div);
+}
+
+function oppdaterFelter(select) {
+    let type = select.value;
+    let container = select.parentElement.querySelector(".felt-container");
+    container.innerHTML = `
         <label>Stolpenr</label><input class="s_stolpe">
         <label>Skadehøyde</label><input class="s_h">
         <label>Lengde</label><input class="s_l">
         <label>Diameter</label><input class="s_d">` +
-        felter[type].map(f => `<label>${f} (mm)</label><input class="d_f" data-navn="${f}">`).join('') +
-        `<button style="background:#888;" onclick="this.parentElement.remove()">Fjern denne skaden</button>`;
-    document.getElementById("skadeOmraade").appendChild(div);
+        felter[type].map(f => `<label>${f} (mm)</label><input class="d_f" data-navn="${f}">`).join('');
 }
 
 function lagre() {
     let d = JSON.parse(localStorage.getItem("db")||"[]");
     document.querySelectorAll(".skade-box").forEach(s => {
-        let obj = { ...v, mast: document.getElementById("mast").value, type: s.querySelector(".s_type").value };
+        let obj = { mast: document.getElementById("mast").value, type: s.querySelector("select").value };
         s.querySelectorAll("input").forEach(i => { if(i.className.includes("s_")) obj[i.className] = i.value; });
         s.querySelectorAll(".d_f").forEach(i => obj[i.dataset.navn] = i.value);
         d.push(obj);
     });
-    localStorage.setItem("db", JSON.stringify(d)); alert("Mast lagret med alle skader!");
+    localStorage.setItem("db", JSON.stringify(d)); alert("Lagret!");
 }
-
-function lastCSV() { /* CSV-eksportlogikk som før */ }
 </script>
 </body>
 </html>
