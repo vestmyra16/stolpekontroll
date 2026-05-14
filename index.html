@@ -2,15 +2,15 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Stolpekontroll v5.0 - Strikt</title>
+    <title>Stolpekontroll v5.0 - Endelig</title>
     <style>
         body { font-family: sans-serif; max-width: 420px; margin: auto; padding: 10px; background: #f2f2f2; }
-        label { display: block; font-weight: bold; color: #000; margin-top: 15px; margin-bottom: 5px; }
-        input { width: 100%; padding: 10px; border: 1px solid #000; box-sizing: border-box; color: #000; background: #fff; }
+        label { display: block; font-weight: bold; color: #000; margin-top: 12px; margin-bottom: 2px; }
+        input { width: 100%; padding: 8px; border: 1px solid #000; box-sizing: border-box; color: #000; }
         button { width: 100%; padding: 12px; margin: 4px 0; background: #2e7d32; color: #fff; border: none; font-weight: bold; cursor: pointer; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
         .skade-box { border: 2px solid #2e7d32; padding: 10px; margin-top: 20px; background: #fff; }
-        img { width: 120px; display: block; margin: 10px auto; }
+        img { width: 100px; display: block; margin: 10px auto; }
     </style>
 </head>
 <body>
@@ -46,15 +46,15 @@
 
     <h3>Registrer skade</h3>
     <div class="grid">
-        <button onclick="visSkade('indre')">Indre</button><button onclick="visSkade('sirk')">Sirk</button><button onclick="visSkade('soft')">Soft</button>
-        <button onclick="visSkade('spett')">Spett</button><button onclick="visSkade('hakk')">Hakk</button><button onclick="visSkade('sprekk')">Sprekk</button>
+        <button onclick="leggTil('indre')">Indre</button><button onclick="leggTil('sirk')">Sirk</button><button onclick="leggTil('soft')">Soft</button>
+        <button onclick="leggTil('spett')">Spett</button><button onclick="leggTil('hakk')">Hakk</button><button onclick="leggTil('sprekk')">Sprekk</button>
     </div>
 
     <div id="skadeOmraade"></div>
 
     <button onclick="lagre()" style="background:#1b5e20;">Lagre Mast</button>
     <button onclick="lastCSV()" style="background:#1565c0;">Last ned Excel</button>
-    <button onclick="nyMast()" style="background:#c62828;">Ny Mast</button>
+    <button onclick="location.reload()" style="background:#c62828;">Ny Mast</button>
 </div>
 
 <script>
@@ -67,29 +67,32 @@ let v = {jord:"", klima:"", last:""};
 function login(){ if(document.getElementById("pass").value==="1234"){ document.getElementById("loginBox").style.display="none"; document.getElementById("app").style.display="block"; } }
 function valg(k, n, b) { v[k]=n; b.parentElement.querySelectorAll('button').forEach(x=>x.style.background='#2e7d32'); b.style.background='#1b5e20'; }
 
-function visSkade(type) {
-    let container = document.getElementById("skadeOmraade");
-    container.innerHTML = `<div class="skade-box">
-        <img src="${type}.svg">
-        <input type="hidden" id="s_type" value="${type}">
-        <label>Stolpenr</label><input id="s_stolpe">
-        <label>Skadehøyde (m)</label><input id="s_h">
-        <label>Skadelengde (m)</label><input id="s_l">
-        <label>Diameter (mm)</label><input id="s_d">` +
-        felter[type].map(f => `<label>${f} (mm)</label><input class="dynamisk" data-navn="${f}">`).join('') +
-    `</div>`;
+function leggTil(type) {
+    let div = document.createElement("div");
+    div.className = "skade-box";
+    div.innerHTML = `<img src="${type}.svg">
+        <input type="hidden" class="s_type" value="${type}">
+        <label>Stolpenr</label><input class="s_stolpe">
+        <label>Skadehøyde</label><input class="s_h">
+        <label>Lengde</label><input class="s_l">
+        <label>Diameter</label><input class="s_d">` +
+        felter[type].map(f => `<label>${f} (mm)</label><input class="d_f" data-navn="${f}">`).join('') +
+        `<button style="background:#888;" onclick="this.parentElement.remove()">Fjern denne skaden</button>`;
+    document.getElementById("skadeOmraade").appendChild(div);
 }
 
 function lagre() {
     let d = JSON.parse(localStorage.getItem("db")||"[]");
-    let obj = { mast: document.getElementById("mast").value, type: document.getElementById("s_type").value };
-    document.querySelectorAll("input").forEach(i => { if(i.id) obj[i.id] = i.value; });
-    document.querySelectorAll(".dynamisk").forEach(i => obj[i.dataset.navn] = i.value);
-    d.push(obj); localStorage.setItem("db", JSON.stringify(d)); alert("Lagret");
+    document.querySelectorAll(".skade-box").forEach(s => {
+        let obj = { ...v, mast: document.getElementById("mast").value, type: s.querySelector(".s_type").value };
+        s.querySelectorAll("input").forEach(i => { if(i.className.includes("s_")) obj[i.className] = i.value; });
+        s.querySelectorAll(".d_f").forEach(i => obj[i.dataset.navn] = i.value);
+        d.push(obj);
+    });
+    localStorage.setItem("db", JSON.stringify(d)); alert("Mast lagret med alle skader!");
 }
 
-function nyMast() { location.reload(); }
-function lastCSV() { /* Samme eksport som før */ }
+function lastCSV() { /* CSV-eksportlogikk som før */ }
 </script>
 </body>
 </html>
