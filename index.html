@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.7</title>
+    <title>Stolpekontroll v5.8</title>
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -32,6 +32,17 @@
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
     <label>Mastnr</label><input id="mast">
+    
+    <label>Mast type</label>
+    <input id="mast_type" list="mastetyper" placeholder="Velg eller skriv inn type...">
+    <datalist id="mastetyper">
+        <option value="E">
+        <option value="H">
+        <option value="3H">
+        <option value="2A">
+        <option value="3A">
+    </datalist>
+
     <label>Stolpehøyde (m)</label><input id="hoyde" oninput="beregnTopp()">
     <label>Nedgravingsdybde (m)</label><input id="nedgravd" oninput="beregnTopp()">
     <label>Jordbånd (mm)</label><input id="jord" oninput="beregnTopp()">
@@ -136,6 +147,7 @@ function lagre() {
         netteier: document.getElementById("netteier").value,
         linje: document.getElementById("linje").value,
         mast: document.getElementById("mast").value,
+        mast_type: document.getElementById("mast_type").value, // Lagrer mastetypen
         stolpehøyde_m: document.getElementById("hoyde").value,
         nedgravingsdybde_m: document.getElementById("nedgravd").value,
         jordbånd_mm: document.getElementById("jord").value,
@@ -159,7 +171,6 @@ function lagre() {
         d.push(row);
     });
 
-    // Hvis brukeren lagrer en mast UTEN skader, lagrer vi likevel en rad med tom skadetype
     if(!lagretMinstEn) {
         d.push({ ...grunndata, skadetype: "Ingen skade", stolpenr:"", skadehoyde_m:"", diam_skadested_mm:"", A:"", B:"", C:"", D:"", E:"", 'Start over bakken':"", 'Slutt over bakken':"" });
     }
@@ -169,16 +180,13 @@ function lagre() {
 }
 
 function nyMast() {
-    // Tømmer spesifikke input-felter
-    ['mast', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
+    // Tømmer spesifikke input-felter inkludert den nye mastetypen
+    ['mast', 'mast_type', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
         document.getElementById(id).value = "";
     });
     
-    // Nullstiller forhold (knapper)
     valgData = {jord:"", klima:"", last:""};
     document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
-    
-    // Tømmer alle registrerte skadebokser
     document.getElementById("skadeOmraade").innerHTML = "";
     
     alert("Klar for ny mast! Netteier, LinjeID og Avtrapping er bevart.");
@@ -188,7 +196,8 @@ function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
     if(d.length === 0) return alert("Ingen data");
     
-    let headers = ['netteier','linje','mast','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
+    // Lagt til 'mast_type' på sin naturlige plass i kolonnerekkefølgen (etter 'mast')
+    let headers = ['netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
     
     let csv = "\uFEFF" + headers.join(";") + "\n";
     d.forEach(r => csv += headers.map(h => r[h] || "").join(";") + "\n");
