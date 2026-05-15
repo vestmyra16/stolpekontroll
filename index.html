@@ -20,20 +20,20 @@
         }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .grid button { padding: 15px 5px; font-size: 14px; } /* Justert for å passe 3 i bredden */
+        .grid button { padding: 15px 5px; font-size: 14px; }
         
         .skade-box { border: 2px solid #2e7d32; border-radius: 12px; padding: 12px; margin-top: 20px; background: #fff; }
         img { width: 140px; display: block; margin: 10px auto; border: 1px solid #ccc; border-radius: 6px; }
         .beregnet { background: #e8f5e9 !important; font-style: italic; font-weight: bold; border: 1px solid #2e7d32; }
         
-        #loginBox { margin-top: 60px; padding: 25px; background: #fff; border: 1px solid #000; border-radius: 12px; text-align: center; }
+        #loginBox { max-width:400px; margin: 60px auto; padding: 25px; background: #fff; border: 1px solid #ccc; border-radius: 12px; text-align: center; }
         .skjult { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="loginBox">
-    <h3>Logg inn - Stolpekontroll</h3>
+    <h3>Logg inn - Stolpekontroll v5.8</h3>
     <label>Passord</label>
     <input type="password" id="pass" style="text-align: center; margin-bottom: 15px;">
     <button onclick="login()">Logg inn</button>
@@ -111,18 +111,20 @@ const skadeDef = {
 document.addEventListener("DOMContentLoaded", () => {
     const utlopsDato = new Date("2026-07-13");
     if (new Date() > utlopsDato) {
-        alert("Testperioden på 60 dager er utløpt.");
+        alert("Testperioden på 60 dager er utløpt. Ta kontakt for fornyelse.");
         window.location.href = "about:blank";
         return;
     }
-    if (sessionStorage.getItem("innlogget") === "ja") {
+    if (sessionStorage.getItem("stolpe_innlogget") === "ja") {
         visAppen();
     }
 });
 
 function login() { 
-    if(document.getElementById("pass").value === "1234") { 
-        sessionStorage.setItem("innlogget", "ja");
+    const input = document.getElementById("pass").value;
+    // Låst med samme btoa-hash ("MTIzNA==" er "1234")
+    if(btoa(input) === "MTIzNA==") { 
+        sessionStorage.setItem("stolpe_innlogget", "ja");
         visAppen();
     } else {
         alert("Feil passord!");
@@ -187,7 +189,7 @@ function lagre() {
         klima: valgData.klima, 
         vertikallast: valgData.last,
         temp: document.getElementById("temp").value, 
-        rf: document.getElementById("rf").value, // Lagrer nå RF
+        rf: document.getElementById("rf").value,
         fukt: document.getElementById("fukt").value
     };
 
@@ -225,25 +227,22 @@ function nyMast() {
     window.scrollTo(0,0);
 }
 
-function lastNedCSV() { lastCSV(); } // Alias for sikkerhet
-
 function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
     if(d.length === 0) return alert("Ingen data å laste ned.");
     
-    // Inkludert 'rf' på sin faste plass
     let headers = ['netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','rf','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
     
     let csv = "\uFEFF" + headers.join(";") + "\n";
     d.forEach(r => {
         let linje = headers.map(h => {
             let v = r[h] || "";
-            return `"${v.toString().replace(/"/g, '""')}"`; // Sikrer mot tegnkrøll
+            let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ");
+            return `"${renset}"`;
         }).join(";");
         csv += linje + "\n";
     });
     
-    // Trygg Blob-nedlasting som ikke krasjer på store datamengder
     let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     let a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
