@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.6</title>
+    <title>Stolpekontroll v5.7</title>
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -15,11 +15,19 @@
         .skade-box { border: 2px solid #2e7d32; padding: 10px; margin-top: 20px; background: #fff; }
         img { width: 120px; display: block; margin: 10px auto; border: 1px solid #ccc; }
         .beregnet { background: #e8f5e9 !important; font-style: italic; }
+        #loginBox { margin-top: 50px; padding: 20px; background: #fff; border: 1px solid #000; }
     </style>
 </head>
 <body>
 
-<div id="app">
+<div id="loginBox">
+    <h3>Logg inn</h3>
+    <label>Passord</label>
+    <input type="password" id="pass">
+    <button onclick="login()">Logg inn</button>
+</div>
+
+<div id="app" style="display:none;">
     <h3>Grunnlagsdata</h3>
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
@@ -61,7 +69,7 @@
 
     <button onclick="lagre()" style="background:#1b5e20; margin-top:20px;">Lagre Mast</button>
     <button onclick="lastCSV()" style="background:#1565c0;">Last ned CSV (Excel)</button>
-    <button onclick="location.reload()" style="background:#c62828;">Ny Mast</button>
+    <button onclick="nyMast()" style="background:#c62828;">Ny Mast</button>
 </div>
 
 <script>
@@ -74,6 +82,15 @@ const skadeDef = {
     "Hakkespetthull": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "hakk.svg" },
     "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
 };
+
+function login() { 
+    if(document.getElementById("pass").value === "1234") { 
+        document.getElementById("loginBox").style.display = "none"; 
+        document.getElementById("app").style.display = "block"; 
+    } else {
+        alert("Feil passord!");
+    }
+}
 
 function beregnTopp() {
     let h = parseFloat(document.getElementById("hoyde").value) || 0;
@@ -127,9 +144,11 @@ function lagre() {
         temp: document.getElementById("temp").value, fukt: document.getElementById("fukt").value
     };
 
+    let lagretMinstEn = false;
     document.querySelectorAll(".skade-box").forEach(s => {
         let type = s.querySelector("select").value;
         if(!type) return;
+        lagretMinstEn = true;
         let row = { ...grunndata, skadetype: type };
         row.stolpenr = s.querySelector(".s_stolpe").value;
         row.skadehoyde_m = s.querySelector(".s_h").value;
@@ -139,22 +158,43 @@ function lagre() {
         s.querySelectorAll(".d_f").forEach(i => row[i.dataset.navn] = i.value);
         d.push(row);
     });
+
+    // Hvis brukeren lagrer en mast UTEN skader, lagrer vi likevel en rad med tom skadetype
+    if(!lagretMinstEn) {
+        d.push({ ...grunndata, skadetype: "Ingen skade", stolpenr:"", skadehoyde_m:"", diam_skadested_mm:"", A:"", B:"", C:"", D:"", E:"", 'Start over bakken':"", 'Slutt over bakken':"" });
+    }
+
     localStorage.setItem("db", JSON.stringify(d));
-    alert("Mast og grunnlagsdata lagret!");
+    alert("Mast lagret!");
+}
+
+function nyMast() {
+    // Tømmer spesifikke input-felter
+    ['mast', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
+        document.getElementById(id).value = "";
+    });
+    
+    // Nullstiller forhold (knapper)
+    valgData = {jord:"", klima:"", last:""};
+    document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
+    
+    // Tømmer alle registrerte skadebokser
+    document.getElementById("skadeOmraade").innerHTML = "";
+    
+    alert("Klar for ny mast! Netteier, LinjeID og Avtrapping er bevart.");
 }
 
 function lastCSV() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
     if(d.length === 0) return alert("Ingen data");
     
-    // Oppdatert header med alle viktige tekniske data først
     let headers = ['netteier','linje','mast','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
     
     let csv = "\uFEFF" + headers.join(";") + "\n";
     d.forEach(r => csv += headers.map(h => r[h] || "").join(";") + "\n");
     let a = document.createElement("a");
     a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "stolpekontroll_komplett_rapport.csv";
+    a.download = "stolpekontroll_rapport.csv";
     a.click();
 }
 </script>
