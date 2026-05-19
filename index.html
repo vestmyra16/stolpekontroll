@@ -26,6 +26,12 @@
         img { width: 140px; display: block; margin: 10px auto; border: 1px solid #ccc; border-radius: 6px; }
         .beregnet { background: #e8f5e9 !important; font-style: italic; font-weight: bold; border: 1px solid #2e7d32; }
         
+        /* Spesialknapper */
+        .lightgreen { background:#4caf50 !important; color:white; margin-bottom: 20px; border: 3px solid #1b5e20 !important; }
+        .save-btn { background:#1b5e20 !important; margin-top:30px; }
+        .csv-btn { background:#1565c0 !important; }
+        .new-pole-btn { background:#c62828 !important; }
+
         #loginBox { max-width:400px; margin: 60px auto; padding: 25px; background: #fff; border: 1px solid #ccc; border-radius: 12px; text-align: center; }
         .skjult { display: none !important; }
     </style>
@@ -40,9 +46,15 @@
 </div>
 
 <div id="app" class="skjult">
+    <!-- NY KNAPP FOR NYTT ANLEGG -->
+    <button class="lightgreen" onclick="nyttAnlegg()">➕ NYTT ANLEGG / ENDRE ANLEGG</button>
+
     <h3>Grunnlagsdata</h3>
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
+    
+    <hr style="margin: 20px 0; border: 1px solid #ccc;">
+
     <label>Mastnr</label><input id="mast">
     
     <label>Mast type</label>
@@ -91,9 +103,9 @@
     <button onclick="leggTilNy()" style="background:#558b2f;">+ Registrer ny skade</button>
     <div id="skadeOmraade"></div>
 
-    <button onclick="lagre()" style="background:#1b5e20; margin-top:30px;">Lagre Mast</button>
-    <button onclick="lastCSV()" style="background:#1565c0;">Last ned CSV (Excel)</button>
-    <button onclick="nyMast()" style="background:#c62828;">Ny Mast</button>
+    <button class="save-btn" onclick="lagre()">Lagre Mast</button>
+    <button class="csv-btn" onclick="lastCSV()">Last ned CSV (Excel)</button>
+    <button class="new-pole-btn" onclick="nyMast()">Neste Mast</button>
 </div>
 
 <script>
@@ -107,11 +119,10 @@ const skadeDef = {
     "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
 };
 
-// Autorisering og tidsbegrensning (Utløper 13. juli 2026)
 document.addEventListener("DOMContentLoaded", () => {
     const utlopsDato = new Date("2026-07-13");
     if (new Date() > utlopsDato) {
-        alert("Testperioden på 60 dager er utløpt. Ta kontakt for fornyelse.");
+        alert("Testperioden er utløpt.");
         window.location.href = "about:blank";
         return;
     }
@@ -122,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function login() { 
     const input = document.getElementById("pass").value;
-    // Låst med samme btoa-hash ("MTIzNA==" er "1234")
     if(btoa(input) === "MTIzNA==") { 
         sessionStorage.setItem("stolpe_innlogget", "ja");
         visAppen();
@@ -134,6 +144,15 @@ function login() {
 function visAppen() {
     document.getElementById("loginBox").classList.add("skjult"); 
     document.getElementById("app").classList.remove("skjult"); 
+}
+
+// NY FUNKSJON FOR NYTT ANLEGG
+function nyttAnlegg() {
+    if(confirm("Dette vil tømme Netteier og LinjeID. Er du sikker?")) {
+        document.getElementById("netteier").value = "";
+        document.getElementById("linje").value = "";
+        nyMast(); // Tømmer resten av skjemaet samtidig
+    }
 }
 
 function beregnTopp() {
@@ -213,17 +232,17 @@ function lagre() {
     }
 
     localStorage.setItem("db", JSON.stringify(d));
-    alert("Mast " + grunndata.mast + " lagret lokalt!");
+    alert("Mast " + grunndata.mast + " lagret!");
 }
 
 function nyMast() {
+    // BEHOLDER netteier og linjeID, tømmer resten
     ['mast', 'mast_type', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
         document.getElementById(id).value = "";
     });
     valgData = {jord:"", klima:"", last:""};
     document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
     document.getElementById("skadeOmraade").innerHTML = "";
-    alert("Klar for ny mast!");
     window.scrollTo(0,0);
 }
 
