@@ -31,6 +31,7 @@
         .save-btn { background:#1b5e20 !important; margin-top:30px; }
         .csv-btn { background:#1565c0 !important; }
         .new-pole-btn { background:#c62828 !important; }
+        .retur-btn { background:#1565c0 !important; margin-top:15px; border: 2px solid #0d47a1 !important; font-size: 18px; display: block; text-decoration: none; text-align: center; padding: 18px; color: white; font-weight: bold; border-radius: 10px; box-sizing: border-box; }
 
         #loginBox { max-width:400px; margin: 60px auto; padding: 25px; background: #fff; border: 1px solid #ccc; border-radius: 12px; text-align: center; }
         .skjult { display: none !important; }
@@ -103,6 +104,9 @@
     <div id="skadeOmraade"></div>
 
     <button class="save-btn" onclick="lagre()">Lagre Mast</button>
+    
+    <div id="returSone"></div>
+
     <button class="csv-btn" onclick="lastCSV()">Last ned CSV (Excel)</button>
     <button class="new-pole-btn" onclick="nyMast()">Neste Mast</button>
 </div>
@@ -127,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (sessionStorage.getItem("stolpe_innlogget") === "ja") {
         visAppen();
-        sjekkURLParametere(); // Sjekker lenken hvis man allerede er logget inn
+        sjekkURLParametere();
     }
 });
 
@@ -136,7 +140,7 @@ function login() {
     if(btoa(input) === "MTIzNA==") { 
         sessionStorage.setItem("stolpe_innlogget", "ja");
         visAppen();
-        setTimeout(sjekkURLParametere, 100); // Venter et lite sekund til skjemaet er tegnet opp, så fyller den ut
+        setTimeout(sjekkURLParametere, 100);
     } else {
         alert("Feil passord!");
     }
@@ -147,12 +151,11 @@ function visAppen() {
     document.getElementById("app").classList.remove("skjult"); 
 }
 
-// NY FUNKSJON FOR NYTT ANLEGG
 function nyttAnlegg() {
     if(confirm("Dette vil tømme Netteier og LinjeID. Er du sikker?")) {
         document.getElementById("netteier").value = "";
         document.getElementById("linje").value = "";
-        nyMast(); // Tømmer resten av skjemaet samtidig
+        nyMast();
     }
 }
 
@@ -181,14 +184,14 @@ function leggTilNy() {
         <div class="skade-innhold"></div>
         <button style="background:#888; margin-top:10px; padding:10px;" onclick="this.parentElement.remove()">Slett denne skaden</button>`;
     document.getElementById("skadeOmraade").appendChild(div);
-    return div; // Returnerer boksen så den kan fylles ut via scriptet
+    return div;
 }
 
 function oppdater(sel) {
     let t = sel.value;
     let cont = sel.parentElement.querySelector(".skade-innhold");
     if(!t) { cont.innerHTML = ""; return; }
-    cont.innerHTML = `<img src="${skadeDef[t].img}">
+    cont.innerHTML = `<img src="${skDef=skadeDef[t].img}">
         <label>Stolpenr</label><input class="s_stolpe">
         <label>Skadehøyde over bakken (m)</label><input class="s_h" type="number" step="0.1">
         <label>Diameter på skadested (mm)</label><input class="s_diam" type="number">` +
@@ -235,16 +238,34 @@ function lagre() {
 
     localStorage.setItem("db", JSON.stringify(d));
     alert("Mast " + grunndata.mast + " lagret!");
+
+    // NY LOGIKK: Generer en direkte returknapp tilbake til Linjekontroll-appen
+    lagReturKnapp(grunndata.netteier, grunndata.linje, grunndata.mast);
+}
+
+function lagReturKnapp(ne, li, ma) {
+    let n = encodeURIComponent(ne || "");
+    let l = encodeURIComponent(li || "");
+    let m = encodeURIComponent(ma || "");
+    
+    // Vi antar at Linjekontroll-appen ligger i samme GitHub-mappe/bruker, men har et annet repo-navn.
+    // Vi bruker relativ lenke for å gå tilbake til Linjekontroll som ligger på samme domene, 
+    // eller du kan lime inn den fulle URL-en til linjekontroll-appen din her i stedet for "../linjekontroll/"
+    let returUrl = `https://vestmyra16.github.io/linjekontroll/`; 
+    
+    document.getElementById("returSone").innerHTML = `
+        <a href="${returUrl}" class="retur-btn">🔙 GÅ TILBAKE TIL LINJEKONTROLL</a>
+    `;
 }
 
 function nyMast() {
-    // BEHOLDER netteier og linjeID, tømmer resten
     ['mast', 'mast_type', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
         document.getElementById(id).value = "";
     });
     valgData = {jord:"", klima:"", last:""};
     document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
     document.getElementById("skadeOmraade").innerHTML = "";
+    document.getElementById("returSone").innerHTML = ""; // Nullstill returknapp
     window.scrollTo(0,0);
 }
 
@@ -273,7 +294,6 @@ function lastCSV() {
     document.body.removeChild(a);
 }
 
-// NY FUNKSJON SOM FINNER OG UTFYLLER DATA FRA LINJE-APPEN
 function sjekkURLParametere() {
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -282,18 +302,12 @@ function sjekkURLParametere() {
     const mastVal = urlParams.get('mast');
     const stolpenrVal = urlParams.get('stolpenr');
 
-    // Fyll ut grunndata hvis de finnes i lenken
     if (netteierVal) document.getElementById('netteier').value = netteierVal;
     if (linjeVal) document.getElementById('linje').value = linjeVal;
     if (mastVal) document.getElementById('mast').value = mastVal;
 
-    // Hvis det ble sendt med et stolpenummer, åpner vi en skadeboks med en gang
     if (stolpenrVal) {
-        // Lag en ny skade-boks automatisk
         let nyBoks = leggTilNy();
-        
-        // Siden vi vet at vi skal sette stolpenummeret, må vi vente til brukeren 
-        // har valgt en skadetype i listen før vi kan dytte inn stolpenummeret.
         let selectFelt = nyBoks.querySelector("select");
         
         selectFelt.addEventListener("change", () => {
@@ -303,7 +317,6 @@ function sjekkURLParametere() {
             }
         });
         
-        // Skroll ned til skadeskjemaet så kontrolløren slipper å skrolle selv
         nyBoks.scrollIntoView({ behavior: 'smooth' });
     }
 }
