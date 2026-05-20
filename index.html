@@ -244,17 +244,10 @@ function lagre() {
 }
 
 function lagReturKnapp(ne, li, ma) {
-    let n = encodeURIComponent(ne || "");
-    let l = encodeURIComponent(li || "");
-    let m = encodeURIComponent(ma || "");
-    
-    // Vi antar at Linjekontroll-appen ligger i samme GitHub-mappe/bruker, men har et annet repo-navn.
-    // Vi bruker relativ lenke for å gå tilbake til Linjekontroll som ligger på samme domene, 
-    // eller du kan lime inn den fulle URL-en til linjekontroll-appen din her i stedet for "../linjekontroll/"
-    let returUrl = `https://vestmyra16.github.io/linjekontroll/`; 
-    
+    // Denne metoden dundrer kontrolløren rett tilbake til Linjekontroll-fanen han kom fra,
+    // helt uavhengig av om mappen heter Linjekontroll med stor eller liten bokstav!
     document.getElementById("returSone").innerHTML = `
-        <a href="${returUrl}" class="retur-btn">🔙 GÅ TILBAKE TIL LINJEKONTROLL</a>
+        <button onclick="window.history.back()" class="retur-btn" style="background:#1565c0 !important; width:100%;">🔙 GÅ TILBAKE TIL LINJEKONTROLL</button>
     `;
 }
 
