@@ -46,7 +46,6 @@
 </div>
 
 <div id="app" class="skjult">
-    <!-- NY KNAPP FOR NYTT ANLEGG -->
     <button class="lightgreen" onclick="nyttAnlegg()">➕ NYTT ANLEGG / ENDRE ANLEGG</button>
 
     <h3>Grunnlagsdata</h3>
@@ -128,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (sessionStorage.getItem("stolpe_innlogget") === "ja") {
         visAppen();
+        sjekkURLParametere(); // Sjekker lenken hvis man allerede er logget inn
     }
 });
 
@@ -136,6 +136,7 @@ function login() {
     if(btoa(input) === "MTIzNA==") { 
         sessionStorage.setItem("stolpe_innlogget", "ja");
         visAppen();
+        setTimeout(sjekkURLParametere, 100); // Venter et lite sekund til skjemaet er tegnet opp, så fyller den ut
     } else {
         alert("Feil passord!");
     }
@@ -180,6 +181,7 @@ function leggTilNy() {
         <div class="skade-innhold"></div>
         <button style="background:#888; margin-top:10px; padding:10px;" onclick="this.parentElement.remove()">Slett denne skaden</button>`;
     document.getElementById("skadeOmraade").appendChild(div);
+    return div; // Returnerer boksen så den kan fylles ut via scriptet
 }
 
 function oppdater(sel) {
@@ -269,6 +271,41 @@ function lastCSV() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+// NY FUNKSJON SOM FINNER OG UTFYLLER DATA FRA LINJE-APPEN
+function sjekkURLParametere() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const netteierVal = urlParams.get('netteier');
+    const linjeVal = urlParams.get('linje');
+    const mastVal = urlParams.get('mast');
+    const stolpenrVal = urlParams.get('stolpenr');
+
+    // Fyll ut grunndata hvis de finnes i lenken
+    if (netteierVal) document.getElementById('netteier').value = netteierVal;
+    if (linjeVal) document.getElementById('linje').value = linjeVal;
+    if (mastVal) document.getElementById('mast').value = mastVal;
+
+    // Hvis det ble sendt med et stolpenummer, åpner vi en skadeboks med en gang
+    if (stolpenrVal) {
+        // Lag en ny skade-boks automatisk
+        let nyBoks = leggTilNy();
+        
+        // Siden vi vet at vi skal sette stolpenummeret, må vi vente til brukeren 
+        // har valgt en skadetype i listen før vi kan dytte inn stolpenummeret.
+        let selectFelt = nyBoks.querySelector("select");
+        
+        selectFelt.addEventListener("change", () => {
+            let stolpeFelt = nyBoks.querySelector(".s_stolpe");
+            if (stolpeFelt) {
+                stolpeFelt.value = stolpenrVal;
+            }
+        });
+        
+        // Skroll ned til skadeskjemaet så kontrolløren slipper å skrolle selv
+        nyBoks.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 </script>
 </body>
