@@ -129,7 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "about:blank";
         return;
     }
-    if (sessionStorage.getItem("stolpe_innlogget") === "ja") {
+    // ENDRET TIL localStorage FOR SØMLØS SAMPLING PÅ SAMSUNG
+    if (localStorage.getItem("stolpe_innlogget") === "ja") {
         visAppen();
         sjekkURLParametere();
     }
@@ -137,8 +138,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function login() { 
     const input = document.getElementById("pass").value;
-    if(btoa(input) === "MTIzNA==") { 
-        sessionStorage.setItem("stolpe_innlogget", "ja");
+    if(input === "1234") { 
+        // ENDRET TIL localStorage
+        localStorage.setItem("stolpe_innlogget", "ja");
         visAppen();
         setTimeout(sjekkURLParametere, 100);
     } else {
@@ -239,15 +241,20 @@ function lagre() {
     localStorage.setItem("db", JSON.stringify(d));
     alert("Mast " + grunndata.mast + " lagret!");
 
-    // NY LOGIKK: Generer en direkte returknapp tilbake til Linjekontroll-appen
+    // SAMSUNG-SIKKER RETUR: Sender med dataene tilbake i en fast nettlenke
     lagReturKnapp(grunndata.netteier, grunndata.linje, grunndata.mast);
 }
 
 function lagReturKnapp(ne, li, ma) {
-    // Denne metoden dundrer kontrolløren rett tilbake til Linjekontroll-fanen han kom fra,
-    // helt uavhengig av om mappen heter Linjekontroll med stor eller liten bokstav!
+    let n = encodeURIComponent(ne || "");
+    let l = encodeURIComponent(li || "");
+    let m = encodeURIComponent(ma || "");
+    
+    // Tvinger Samsung og iPhone direkte tilbake til Linjekontroll med fylte data
+    let returUrl = `https://vestmyra16.github.io/Linjekontroll/?retur=ja&netteier=${n}&linje=${l}&mast=${m}`; 
+    
     document.getElementById("returSone").innerHTML = `
-        <button onclick="window.history.back()" class="retur-btn" style="background:#1565c0 !important; width:100%;">🔙 GÅ TILBAKE TIL LINJEKONTROLL</button>
+        <a href="${returUrl}" class="retur-btn">Transmission complete 🔙 TILBAKE TIL LINJEKONTROLL</a>
     `;
 }
 
@@ -258,7 +265,7 @@ function nyMast() {
     valgData = {jord:"", klima:"", last:""};
     document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
     document.getElementById("skadeOmraade").innerHTML = "";
-    document.getElementById("returSone").innerHTML = ""; // Nullstill returknapp
+    document.getElementById("returSone").innerHTML = ""; 
     window.scrollTo(0,0);
 }
 
