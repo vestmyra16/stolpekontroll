@@ -59,14 +59,20 @@
     <label>Mastnr</label><input id="mast">
     
     <label>Mast type</label>
-    <input id="mast_type" list="mastetyper" placeholder="Velg eller skriv inn type...">
-    <datalist id="mastetyper">
-        <option value="E">
-        <option value="H">
-        <option value="3H">
-        <option value="2A">
-        <option value="3A">
-    </datalist>
+    <select id="mast_type" onchange="sjekkMastType(this.value)">
+        <option value="E">E</option>
+        <option value="H" selected>H</option>
+        <option value="DH">DH</option>
+        <option value="3H">3H</option>
+        <option value="2A">2A</option>
+        <option value="3A">3A</option>
+        <option value="Annet">Annen type...</option>
+    </select>
+    
+    <div id="egendefinertMastDiv" class="skjult">
+        <label>Skriv inn mast type</label>
+        <input id="egenMastType" placeholder="F.eks. Portal, Gitter...">
+    </div>
 
     <label>Stolpehøyde (m)</label><input id="hoyde" type="number" step="0.1" oninput="beregnTopp()">
     <label>Nedgravingsdybde (m)</label><input id="nedgravd" type="number" step="0.1" oninput="beregnTopp()">
@@ -123,14 +129,13 @@ const skadeDef = {
     "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
 };
 
-    document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
     
     // --- START DOMENELÅS ---
     const gyldigDomene = "vestmyra16.github.io";
-    // Tillater også blankt domene (hvis du tester filen lokalt på egen PC), men stopper alle andre nettsider
     if (window.location.hostname !== "" && window.location.hostname !== gyldigDomene) {
-        document.body.innerHTML = ""; // Viser bare en blank skjerm
-        return; // Stopper appen
+        document.body.innerHTML = ""; 
+        return; 
     }
     // --- SLUTT DOMENELÅS ---
 
@@ -141,7 +146,6 @@ const skadeDef = {
         return;
     }
     
-    // ENDRET TIL localStorage FOR SØMLØS SAMPLING PÅ SAMSUNG
     if (localStorage.getItem("stolpe_innlogget") === "ja") {
         visAppen();
         sjekkURLParametere();
@@ -151,7 +155,6 @@ const skadeDef = {
 function login() { 
     const input = document.getElementById("pass").value;
     if(input === "1234") { 
-        // ENDRET TIL localStorage
         localStorage.setItem("stolpe_innlogget", "ja");
         visAppen();
         setTimeout(sjekkURLParametere, 100);
@@ -170,6 +173,16 @@ function nyttAnlegg() {
         document.getElementById("netteier").value = "";
         document.getElementById("linje").value = "";
         nyMast();
+    }
+}
+
+function sjekkMastType(verdi) {
+    let egenDiv = document.getElementById("egendefinertMastDiv");
+    if (verdi === "Annet") {
+        egenDiv.classList.remove("skjult");
+    } else {
+        egenDiv.classList.add("skjult");
+        document.getElementById("egenMastType").value = "";
     }
 }
 
@@ -214,11 +227,17 @@ function oppdater(sel) {
 
 function lagre() {
     let d = JSON.parse(localStorage.getItem("db") || "[]");
+    
+    // Sjekker om "Annet" er valgt og henter egendefinert tekst
+    let valgtMastType = document.getElementById("mast_type").value === "Annet" 
+        ? document.getElementById("egenMastType").value || "Uoppgitt" 
+        : document.getElementById("mast_type").value;
+
     let grunndata = {
         netteier: document.getElementById("netteier").value,
         linje: document.getElementById("linje").value,
         mast: document.getElementById("mast").value,
-        mast_type: document.getElementById("mast_type").value,
+        mast_type: valgtMastType,
         stolpehøyde_m: document.getElementById("hoyde").value,
         nedgravingsdybde_m: document.getElementById("nedgravd").value,
         jordbånd_mm: document.getElementById("jord").value,
@@ -253,7 +272,6 @@ function lagre() {
     localStorage.setItem("db", JSON.stringify(d));
     alert("Mast " + grunndata.mast + " lagret!");
 
-    // SAMSUNG-SIKKER RETUR: Sender med dataene tilbake i en fast nettlenke
     lagReturKnapp(grunndata.netteier, grunndata.linje, grunndata.mast);
 }
 
@@ -262,7 +280,6 @@ function lagReturKnapp(ne, li, ma) {
     let l = encodeURIComponent(li || "");
     let m = encodeURIComponent(ma || "");
     
-    // Tvinger Samsung og iPhone direkte tilbake til Linjekontroll med fylte data
     let returUrl = `https://vestmyra16.github.io/Linjekontroll/?retur=ja&netteier=${n}&linje=${l}&mast=${m}`; 
     
     document.getElementById("returSone").innerHTML = `
@@ -271,9 +288,13 @@ function lagReturKnapp(ne, li, ma) {
 }
 
 function nyMast() {
-    ['mast', 'mast_type', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
+    ['mast', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
         document.getElementById(id).value = "";
     });
+    
+    document.getElementById("mast_type").value = "H"; 
+    sjekkMastType("H"); 
+
     valgData = {jord:"", klima:"", last:""};
     document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
     document.getElementById("skadeOmraade").innerHTML = "";
