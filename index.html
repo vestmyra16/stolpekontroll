@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stolpekontroll v5.8</title>
+    <meta name="author" content="Opphavsrett 2026 - vestmyra16">
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
@@ -122,13 +123,24 @@ const skadeDef = {
     "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
+    
+    // --- START DOMENELÅS ---
+    const gyldigDomene = "vestmyra16.github.io";
+    // Tillater også blankt domene (hvis du tester filen lokalt på egen PC), men stopper alle andre nettsider
+    if (window.location.hostname !== "" && window.location.hostname !== gyldigDomene) {
+        document.body.innerHTML = ""; // Viser bare en blank skjerm
+        return; // Stopper appen
+    }
+    // --- SLUTT DOMENELÅS ---
+
     const utlopsDato = new Date("2026-07-13");
     if (new Date() > utlopsDato) {
         alert("Testperioden er utløpt.");
         window.location.href = "about:blank";
         return;
     }
+    
     // ENDRET TIL localStorage FOR SØMLØS SAMPLING PÅ SAMSUNG
     if (localStorage.getItem("stolpe_innlogget") === "ja") {
         visAppen();
