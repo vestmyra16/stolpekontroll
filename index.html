@@ -9,11 +9,17 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 440px; margin: auto; padding: 12px; background: #f2f2f2; }
+        body { font-family: Arial, sans-serif; max-width: 440px; margin: auto; padding: 12px; background: #f2f2f2; -webkit-user-select: none; user-select: none; }
+        
+        /* Vannmerke */
+        .vannmerke {
+            position: fixed; top: 10px; right: 10px; z-index: 9999;
+            font-size: 10px; color: rgba(0,0,0,0.1); pointer-events: none;
+        }
+
         label { display: block; font-weight: bold; color: #000; margin-top: 14px; margin-bottom: 4px; font-size: 16px; }
         input, select { width: 100%; padding: 14px; border: 1px solid #000; border-radius: 8px; box-sizing: border-box; color: #000; background: #fff; font-size: 16px; }
         
-        /* Hanske-vennlige knapper */
         button { 
             width: 100%; padding: 18px; margin: 6px 0; background: #2e7d32; color: #fff; 
             border: none; border-radius: 10px; font-weight: bold; font-size: 16px; 
@@ -27,7 +33,6 @@
         img { width: 140px; display: block; margin: 10px auto; border: 1px solid #ccc; border-radius: 6px; }
         .beregnet { background: #e8f5e9 !important; font-style: italic; font-weight: bold; border: 1px solid #2e7d32; }
         
-        /* Spesialknapper */
         .lightgreen { background:#4caf50 !important; color:white; margin-bottom: 20px; border: 3px solid #1b5e20 !important; }
         .save-btn { background:#1b5e20 !important; margin-top:30px; }
         .csv-btn { background:#1565c0 !important; }
@@ -39,6 +44,7 @@
     </style>
 </head>
 <body>
+<div class="vannmerke">Kun for autorisert bruk - Vestmyra16</div>
 
 <div id="loginBox">
     <h3>Logg inn - Stolpekontroll v5.8</h3>
@@ -53,11 +59,9 @@
     <h3>Grunnlagsdata</h3>
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
-    
     <hr style="margin: 20px 0; border: 1px solid #ccc;">
 
     <label>Mastnr</label><input id="mast">
-    
     <label>Mast type</label>
     <select id="mast_type" onchange="sjekkMastType(this.value)">
         <option value="E">E</option>
@@ -111,248 +115,233 @@
     <div id="skadeOmraade"></div>
 
     <button class="save-btn" onclick="lagre()">Lagre Mast</button>
-    
     <div id="returSone"></div>
-
     <button class="csv-btn" onclick="lastCSV()">Last ned CSV (Excel)</button>
     <button class="new-pole-btn" onclick="nyMast()">Neste Mast</button>
 </div>
 
 <script>
-let valgData = {jord:"", klima:"", last:""};
-const skadeDef = {
-    "Indre råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'E',u:'mm'}], img: "indre.svg" },
-    "Sirkulær råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "sirk.svg" },
-    "Softråte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "soft.svg" },
-    "Spettsmie": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "spett.svg" },
-    "Hakkespetthull": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "hakk.svg" },
-    "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
-};
+    // 🔒 START SIKKERHETSLÅS
+    document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('copy', event => event.preventDefault());
 
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // --- START DOMENELÅS ---
-    const gyldigDomene = "vestmyra16.github.io";
-    if (window.location.hostname !== "" && window.location.hostname !== gyldigDomene) {
-        document.body.innerHTML = ""; 
-        return; 
-    }
-    // --- SLUTT DOMENELÅS ---
+        const gyldigDomene = "vestmyra16.github.io";
+        if (window.location.hostname !== "" && window.location.hostname !== gyldigDomene) {
+            document.body.innerHTML = ""; 
+            return; 
+        }
 
-    const utlopsDato = new Date("2026-07-13");
-    if (new Date() > utlopsDato) {
-        alert("Testperioden er utløpt.");
-        window.location.href = "about:blank";
-        return;
-    }
-    
-    if (localStorage.getItem("stolpe_innlogget") === "ja") {
-        visAppen();
-        sjekkURLParametere();
-    }
-});
+        const utlopsDato = new Date("2026-07-13");
+        if (new Date() > utlopsDato) {
+            alert("Testperioden er utløpt.");
+            window.location.href = "about:blank";
+            return;
+        }
 
-function login() { 
-    const input = document.getElementById("pass").value;
-    if(input === "1234") { 
-        localStorage.setItem("stolpe_innlogget", "ja");
-        visAppen();
-        setTimeout(sjekkURLParametere, 100);
-    } else {
-        alert("Feil passord!");
-    }
-}
+        if (localStorage.getItem("stolpe_innlogget") === "ja") {
+            visAppen();
+            sjekkURLParametere();
+        }
+    });
+    // 🔒 SLUTT SIKKERHETSLÅS
 
-function visAppen() {
-    document.getElementById("loginBox").classList.add("skjult"); 
-    document.getElementById("app").classList.remove("skjult"); 
-}
-
-function nyttAnlegg() {
-    if(confirm("Dette vil tømme Netteier og LinjeID. Er du sikker?")) {
-        document.getElementById("netteier").value = "";
-        document.getElementById("linje").value = "";
-        nyMast();
-    }
-}
-
-function sjekkMastType(verdi) {
-    let egenDiv = document.getElementById("egendefinertMastDiv");
-    if (verdi === "Annet") {
-        egenDiv.classList.remove("skjult");
-    } else {
-        egenDiv.classList.add("skjult");
-        document.getElementById("egenMastType").value = "";
-    }
-}
-
-function beregnTopp() {
-    let h = parseFloat(document.getElementById("hoyde").value) || 0;
-    let n = parseFloat(document.getElementById("nedgravd").value) || 0;
-    let j = parseFloat(document.getElementById("jord").value) || 0;
-    let a = parseFloat(document.getElementById("avtr").value) || 0.7;
-    if (h && j) document.getElementById("topp").value = Math.round(j - (a * (h - n) * 10));
-}
-
-function v(k, n, b) { 
-    valgData[k]=n; 
-    b.parentElement.querySelectorAll('button').forEach(x=>x.style.background='#2e7d32'); 
-    b.style.background='#1b5e20'; 
-}
-
-function leggTilNy() {
-    let div = document.createElement("div");
-    div.className = "skade-box";
-    div.innerHTML = `<label>Velg skadetype</label>
-        <select onchange="oppdater(this)">
-            <option value="">-- Velg --</option>
-            ${Object.keys(skadeDef).map(t => `<option value="${t}">${t}</option>`).join('')}
-        </select>
-        <div class="skade-innhold"></div>
-        <button style="background:#888; margin-top:10px; padding:10px;" onclick="this.parentElement.remove()">Slett denne skaden</button>`;
-    document.getElementById("skadeOmraade").appendChild(div);
-    return div;
-}
-
-function oppdater(sel) {
-    let t = sel.value;
-    let cont = sel.parentElement.querySelector(".skade-innhold");
-    if(!t) { cont.innerHTML = ""; return; }
-    cont.innerHTML = `<img src="${skDef=skadeDef[t].img}">
-        <label>Stolpenr</label><input class="s_stolpe">
-        <label>Skadehøyde over bakken (m)</label><input class="s_h" type="number" step="0.1">
-        <label>Diameter på skadested (mm)</label><input class="s_diam" type="number">` +
-        skadeDef[t].felt.map(f => `<label>${f.n} (${f.u})</label><input class="d_f" data-navn="${f.n}" type="number" step="0.1">`).join('');
-}
-
-function lagre() {
-    let d = JSON.parse(localStorage.getItem("db") || "[]");
-    
-    // Sjekker om "Annet" er valgt og henter egendefinert tekst
-    let valgtMastType = document.getElementById("mast_type").value === "Annet" 
-        ? document.getElementById("egenMastType").value || "Uoppgitt" 
-        : document.getElementById("mast_type").value;
-
-    let grunndata = {
-        netteier: document.getElementById("netteier").value,
-        linje: document.getElementById("linje").value,
-        mast: document.getElementById("mast").value,
-        mast_type: valgtMastType,
-        stolpehøyde_m: document.getElementById("hoyde").value,
-        nedgravingsdybde_m: document.getElementById("nedgravd").value,
-        jordbånd_mm: document.getElementById("jord").value,
-        toppdiam_mm: document.getElementById("topp").value,
-        jordsmonn: valgData.jord, 
-        klima: valgData.klima, 
-        vertikallast: valgData.last,
-        temp: document.getElementById("temp").value, 
-        rf: document.getElementById("rf").value,
-        fukt: document.getElementById("fukt").value
+    let valgData = {jord:"", klima:"", last:""};
+    const skadeDef = {
+        "Indre råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'E',u:'mm'}], img: "indre.svg" },
+        "Sirkulær råte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "sirk.svg" },
+        "Softråte": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "soft.svg" },
+        "Spettsmie": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "spett.svg" },
+        "Hakkespetthull": { felt: [{n:'A',u:'mm'}, {n:'B',u:'mm'}, {n:'C',u:'mm'}, {n:'D',u:'mm'}], img: "hakk.svg" },
+        "Sprekk": { felt: [{n:'Start over bakken',u:'m'}, {n:'Slutt over bakken',u:'m'}, {n:'A',u:'mm'}, {n:'B',u:'mm'}], img: "sprekk.svg" }
     };
 
-    let lagretMinstEn = false;
-    document.querySelectorAll(".skade-box").forEach(s => {
-        let type = s.querySelector("select").value;
-        if(!type) return;
-        lagretMinstEn = true;
-        let row = { ...grunndata, skadetype: type };
-        row.stolpenr = s.querySelector(".s_stolpe").value;
-        row.skadehoyde_m = s.querySelector(".s_h").value;
-        row.diam_skadested_mm = s.querySelector(".s_diam").value;
-        
-        ['A','B','C','D','E','Start over bakken','Slutt over bakken'].forEach(k => row[k] = "");
-        s.querySelectorAll(".d_f").forEach(i => row[i.dataset.navn] = i.value);
-        d.push(row);
-    });
-
-    if(!lagretMinstEn) {
-        d.push({ ...grunndata, skadetype: "Ingen skade", stolpenr:"", skadehoyde_m:"", diam_skadested_mm:"", A:"", B:"", C:"", D:"", E:"", 'Start over bakken':"", 'Slutt over bakken':"" });
+    function login() { 
+        const input = document.getElementById("pass").value;
+        if(input === "1234") { 
+            localStorage.setItem("stolpe_innlogget", "ja");
+            visAppen();
+            setTimeout(sjekkURLParametere, 100);
+        } else {
+            alert("Feil passord!");
+        }
     }
 
-    localStorage.setItem("db", JSON.stringify(d));
-    alert("Mast " + grunndata.mast + " lagret!");
+    function visAppen() {
+        document.getElementById("loginBox").classList.add("skjult"); 
+        document.getElementById("app").classList.remove("skjult"); 
+    }
 
-    lagReturKnapp(grunndata.netteier, grunndata.linje, grunndata.mast);
-}
+    function nyttAnlegg() {
+        if(confirm("Dette vil tømme Netteier og LinjeID. Er du sikker?")) {
+            document.getElementById("netteier").value = "";
+            document.getElementById("linje").value = "";
+            nyMast();
+        }
+    }
 
-function lagReturKnapp(ne, li, ma) {
-    let n = encodeURIComponent(ne || "");
-    let l = encodeURIComponent(li || "");
-    let m = encodeURIComponent(ma || "");
-    
-    let returUrl = `https://vestmyra16.github.io/Linjekontroll/?retur=ja&netteier=${n}&linje=${l}&mast=${m}`; 
-    
-    document.getElementById("returSone").innerHTML = `
-        <a href="${returUrl}" class="retur-btn">Transmission complete 🔙 TILBAKE TIL LINJEKONTROLL</a>
-    `;
-}
+    function sjekkMastType(verdi) {
+        let egenDiv = document.getElementById("egendefinertMastDiv");
+        if (verdi === "Annet") {
+            egenDiv.classList.remove("skjult");
+        } else {
+            egenDiv.classList.add("skjult");
+            document.getElementById("egenMastType").value = "";
+        }
+    }
 
-function nyMast() {
-    ['mast', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
-        document.getElementById(id).value = "";
-    });
-    
-    document.getElementById("mast_type").value = "H"; 
-    sjekkMastType("H"); 
+    function beregnTopp() {
+        let h = parseFloat(document.getElementById("hoyde").value) || 0;
+        let n = parseFloat(document.getElementById("nedgravd").value) || 0;
+        let j = parseFloat(document.getElementById("jord").value) || 0;
+        let a = parseFloat(document.getElementById("avtr").value) || 0.7;
+        if (h && j) document.getElementById("topp").value = Math.round(j - (a * (h - n) * 10));
+    }
 
-    valgData = {jord:"", klima:"", last:""};
-    document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
-    document.getElementById("skadeOmraade").innerHTML = "";
-    document.getElementById("returSone").innerHTML = ""; 
-    window.scrollTo(0,0);
-}
+    function v(k, n, b) { 
+        valgData[k]=n; 
+        b.parentElement.querySelectorAll('button').forEach(x=>x.style.background='#2e7d32'); 
+        b.style.background='#1b5e20'; 
+    }
 
-function lastCSV() {
-    let d = JSON.parse(localStorage.getItem("db") || "[]");
-    if(d.length === 0) return alert("Ingen data å laste ned.");
-    
-    let headers = ['netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','rf','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
-    
-    let csv = "\uFEFF" + headers.join(";") + "\n";
-    d.forEach(r => {
-        let linje = headers.map(h => {
-            let v = r[h] || "";
-            let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ");
-            return `"${renset}"`;
-        }).join(";");
-        csv += linje + "\n";
-    });
-    
-    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "stolpekontroll_rapport.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
+    function leggTilNy() {
+        let div = document.createElement("div");
+        div.className = "skade-box";
+        div.innerHTML = `<label>Velg skadetype</label>
+            <select onchange="oppdater(this)">
+                <option value="">-- Velg --</option>
+                ${Object.keys(skadeDef).map(t => `<option value="${t}">${t}</option>`).join('')}
+            </select>
+            <div class="skade-innhold"></div>
+            <button style="background:#888; margin-top:10px; padding:10px;" onclick="this.parentElement.remove()">Slett denne skaden</button>`;
+        document.getElementById("skadeOmraade").appendChild(div);
+        return div;
+    }
 
-function sjekkURLParametere() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    const netteierVal = urlParams.get('netteier');
-    const linjeVal = urlParams.get('linje');
-    const mastVal = urlParams.get('mast');
-    const stolpenrVal = urlParams.get('stolpenr');
+    function oppdater(sel) {
+        let t = sel.value;
+        let cont = sel.parentElement.querySelector(".skade-innhold");
+        if(!t) { cont.innerHTML = ""; return; }
+        cont.innerHTML = `<img src="${skadeDef[t].img}">
+            <label>Stolpenr</label><input class="s_stolpe">
+            <label>Skadehøyde over bakken (m)</label><input class="s_h" type="number" step="0.1">
+            <label>Diameter på skadested (mm)</label><input class="s_diam" type="number">` +
+            skadeDef[t].felt.map(f => `<label>${f.n} (${f.u})</label><input class="d_f" data-navn="${f.n}" type="number" step="0.1">`).join('');
+    }
 
-    if (netteierVal) document.getElementById('netteier').value = netteierVal;
-    if (linjeVal) document.getElementById('linje').value = linjeVal;
-    if (mastVal) document.getElementById('mast').value = mastVal;
+    function lagre() {
+        let d = JSON.parse(localStorage.getItem("db") || "[]");
+        let valgtMastType = document.getElementById("mast_type").value === "Annet" 
+            ? document.getElementById("egenMastType").value || "Uoppgitt" 
+            : document.getElementById("mast_type").value;
 
-    if (stolpenrVal) {
-        let nyBoks = leggTilNy();
-        let selectFelt = nyBoks.querySelector("select");
-        
-        selectFelt.addEventListener("change", () => {
-            let stolpeFelt = nyBoks.querySelector(".s_stolpe");
-            if (stolpeFelt) {
-                stolpeFelt.value = stolpenrVal;
-            }
+        let grunndata = {
+            netteier: document.getElementById("netteier").value,
+            linje: document.getElementById("linje").value,
+            mast: document.getElementById("mast").value,
+            mast_type: valgtMastType,
+            stolpehøyde_m: document.getElementById("hoyde").value,
+            nedgravingsdybde_m: document.getElementById("nedgravd").value,
+            jordbånd_mm: document.getElementById("jord").value,
+            toppdiam_mm: document.getElementById("topp").value,
+            jordsmonn: valgData.jord, 
+            klima: valgData.klima, 
+            vertikallast: valgData.last,
+            temp: document.getElementById("temp").value, 
+            rf: document.getElementById("rf").value,
+            fukt: document.getElementById("fukt").value
+        };
+
+        let lagretMinstEn = false;
+        document.querySelectorAll(".skade-box").forEach(s => {
+            let type = s.querySelector("select").value;
+            if(!type) return;
+            lagretMinstEn = true;
+            let row = { ...grunndata, skadetype: type };
+            row.stolpenr = s.querySelector(".s_stolpe").value;
+            row.skadehoyde_m = s.querySelector(".s_h").value;
+            row.diam_skadested_mm = s.querySelector(".s_diam").value;
+            
+            ['A','B','C','D','E','Start over bakken','Slutt over bakken'].forEach(k => row[k] = "");
+            s.querySelectorAll(".d_f").forEach(i => row[i.dataset.navn] = i.value);
+            d.push(row);
         });
-        
-        nyBoks.scrollIntoView({ behavior: 'smooth' });
+
+        if(!lagretMinstEn) {
+            d.push({ ...grunndata, skadetype: "Ingen skade", stolpenr:"", skadehoyde_m:"", diam_skadested_mm:"", A:"", B:"", C:"", D:"", E:"", 'Start over bakken':"", 'Slutt over bakken':"" });
+        }
+
+        localStorage.setItem("db", JSON.stringify(d));
+        alert("Mast " + grunndata.mast + " lagret!");
+        lagReturKnapp(grunndata.netteier, grunndata.linje, grunndata.mast);
     }
-}
+
+    function lagReturKnapp(ne, li, ma) {
+        let n = encodeURIComponent(ne || "");
+        let l = encodeURIComponent(li || "");
+        let m = encodeURIComponent(ma || "");
+        let returUrl = `https://vestmyra16.github.io/Linjekontroll/?retur=ja&netteier=${n}&linje=${l}&mast=${m}`; 
+        document.getElementById("returSone").innerHTML = `
+            <a href="${returUrl}" class="retur-btn">Transmission complete 🔙 TILBAKE TIL LINJEKONTROLL</a>
+        `;
+    }
+
+    function nyMast() {
+        ['mast', 'hoyde', 'nedgravd', 'jord', 'topp', 'temp', 'rf', 'fukt'].forEach(id => {
+            document.getElementById(id).value = "";
+        });
+        document.getElementById("mast_type").value = "H"; 
+        sjekkMastType("H"); 
+        valgData = {jord:"", klima:"", last:""};
+        document.querySelectorAll('.grid button').forEach(b => b.style.background = '#2e7d32');
+        document.getElementById("skadeOmraade").innerHTML = "";
+        document.getElementById("returSone").innerHTML = ""; 
+        window.scrollTo(0,0);
+    }
+
+    function lastCSV() {
+        let d = JSON.parse(localStorage.getItem("db") || "[]");
+        if(d.length === 0) return alert("Ingen data å laste ned.");
+        let headers = ['netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','rf','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
+        let csv = "\uFEFF" + headers.join(";") + "\n";
+        d.forEach(r => {
+            let linje = headers.map(h => {
+                let v = r[h] || "";
+                let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ");
+                return `"${renset}"`;
+            }).join(";");
+            csv += linje + "\n";
+        });
+        let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        let a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "stolpekontroll_rapport.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function sjekkURLParametere() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const netteierVal = urlParams.get('netteier');
+        const linjeVal = urlParams.get('linje');
+        const mastVal = urlParams.get('mast');
+        const stolpenrVal = urlParams.get('stolpenr');
+
+        if (netteierVal) document.getElementById('netteier').value = netteierVal;
+        if (linjeVal) document.getElementById('linje').value = linjeVal;
+        if (mastVal) document.getElementById('mast').value = mastVal;
+
+        if (stolpenrVal) {
+            let nyBoks = leggTilNy();
+            let selectFelt = nyBoks.querySelector("select");
+            selectFelt.addEventListener("change", () => {
+                let stolpeFelt = nyBoks.querySelector(".s_stolpe");
+                if (stolpeFelt) stolpeFelt.value = stolpenrVal;
+            });
+            nyBoks.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
 </script>
 </body>
 </html>
