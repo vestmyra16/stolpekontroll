@@ -308,6 +308,10 @@
             let linje = headers.map(h => {
                 let v = r[h] || "";
                 let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ");
+                
+                // NY LINJE: Bytter ut punktum med komma slik at norsk Excel forstår desimalene
+                renset = renset.replace(/\./g, ","); 
+                
                 return `"${renset}"`;
             }).join(";");
             csv += linje + "\n";
