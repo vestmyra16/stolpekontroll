@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.9</title>
+    <title>Stolpekontroll v6.0</title>
     <meta name="author" content="Opphavsrett 2026 - vestmyra16">
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         body { font-family: Arial, sans-serif; max-width: 440px; margin: auto; padding: 12px; background: #f2f2f2; -webkit-user-select: none; user-select: none; }
         
@@ -35,7 +38,7 @@
         
         .lightgreen { background:#4caf50 !important; color:white; margin-bottom: 20px; border: 3px solid #1b5e20 !important; }
         .save-btn { background:#1b5e20 !important; margin-top:30px; }
-        .csv-btn { background:#1565c0 !important; }
+        .excel-btn { background:#1565c0 !important; }
         .report-btn { background:#f57c00 !important; color: white; border: 2px solid #e65100 !important; margin-top:15px; }
         .new-pole-btn { background:#c62828 !important; }
         .retur-btn { background:#1565c0 !important; margin-top:15px; border: 2px solid #0d47a1 !important; font-size: 18px; display: block; text-decoration: none; text-align: center; padding: 18px; color: white; font-weight: bold; border-radius: 10px; box-sizing: border-box; }
@@ -48,7 +51,7 @@
 <div class="vannmerke">Kun for autorisert bruk - Vestmyra16</div>
 
 <div id="loginBox">
-    <h3>Logg inn - Stolpekontroll v5.9</h3>
+    <h3>Logg inn - Stolpekontroll v6.0</h3>
     <label>Passord</label>
     <input type="password" id="pass" style="text-align: center; margin-bottom: 15px;">
     <button onclick="login()">Logg inn</button>
@@ -60,7 +63,10 @@
     <h3>Grunnlagsdata</h3>
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
+    
     <label>Kontrollert av:</label> <input id="kontrollor" oninput="lagreKontrollor()" placeholder="F.eks. Ola Nordmann">
+    <label>Dato kontrollert:</label> <input type="date" id="dato_kontroll">
+    
     <hr style="margin: 20px 0; border: 1px solid #ccc;">
 
     <label>Mastnr</label><input id="mast">
@@ -121,7 +127,7 @@
     <hr style="margin: 20px 0; border: 1px solid #ccc;">
     
     <button class="report-btn" onclick="visRapporter()">📄 Vis Råteskjema (Utskrift/PDF)</button>
-    <button class="csv-btn" onclick="lastCSV()">📊 Last ned CSV (Excel)</button>
+    <button class="excel-btn" onclick="lastExcel()">📊 Last ned Excel (.xlsx)</button>
     <button class="new-pole-btn" onclick="nyMast()">Neste Mast</button>
 </div>
 
@@ -180,6 +186,10 @@
         document.getElementById("loginBox").classList.add("skjult"); 
         document.getElementById("app").classList.remove("skjult"); 
         document.getElementById('kontrollor').value = localStorage.getItem('stolpe_kontrollor') || "";
+        
+        // Sett dagens dato som standard i datofeltet
+        let today = new Date().toISOString().split('T')[0];
+        document.getElementById('dato_kontroll').value = today;
     }
 
     function nyttAnlegg() {
@@ -245,7 +255,12 @@
             ? document.getElementById("egenMastType").value || "Uoppgitt" 
             : document.getElementById("mast_type").value;
             
-        let datoFormat = new Date().toLocaleDateString('no-NO', {day: '2-digit', month: '2-digit', year: 'numeric'});
+        let inputDato = document.getElementById("dato_kontroll").value;
+        let datoFormat = "";
+        if(inputDato) {
+            let deler = inputDato.split('-');
+            datoFormat = `${deler[2]}.${deler[1]}.${deler[0]}`; // Formaterer til Norsk DD.MM.YYYY
+        }
 
         let grunndata = {
             dato: datoFormat,
@@ -313,29 +328,82 @@
         window.scrollTo(0,0);
     }
 
-    function lastCSV() {
+    function lastExcel() {
+        if(typeof XLSX === 'undefined') {
+            alert("Laster inn Excel-biblioteket, vennligst prøv igjen om et sekund.");
+            return;
+        }
+        
         let d = JSON.parse(localStorage.getItem("db") || "[]");
         if(d.length === 0) return alert("Ingen data å laste ned.");
-        let headers = ['dato','kontrollor','netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','rf','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
-        let csv = "\uFEFF" + headers.join(";") + "\n";
         
+        // Oppretter en ny Excel arbeidsbok
+        let wb = XLSX.utils.book_new();
+        
+        // -- 1. Lag Hovedoversikt (Alle master på ett ark) --
+        let headers = ['Dato', 'Kontrollør', 'Netteier', 'Linje', 'Mast', 'Mast_type', 'Høyde_m', 'Nedgravd_m', 'Jordbånd_mm', 'Toppdiam_mm', 'Jordsmonn', 'Klima', 'Vertikallast', 'Temp', 'RF', 'Fukt', 'Skadetype', 'Stolpenr', 'Skadehøyde_m', 'Diam_skadested_mm', 'A', 'B', 'C', 'D', 'E', 'Start_over_bakken', 'Slutt_over_bakken'];
+        
+        let hovedData = [headers];
         d.forEach(r => {
-            let linje = headers.map(h => {
-                let v = r[h] || "";
-                let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ").replace(/\./g, ","); 
-                // Tvinger formatet til tekst (="verdi") for å forhindre dato/meter-feil i Excel
-                return `="${renset}"`;
-            }).join(";");
-            csv += linje + "\n";
+            hovedData.push([
+                r.dato, r.kontrollor, r.netteier, r.linje, r.mast, r.mast_type,
+                r.stolpehøyde_m, r.nedgravingsdybde_m, r.jordbånd_mm, r.toppdiam_mm,
+                r.jordsmonn, r.klima, r.vertikallast, r.temp, r.rf, r.fukt,
+                r.skadetype, r.stolpenr, r.skadehoyde_m, r.diam_skadested_mm,
+                r.A, r.B, r.C, r.D, r.E, r['Start over bakken'], r['Slutt over bakken']
+            ]);
         });
         
-        let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        let a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "stolpekontroll_rapport.csv";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        let ws_main = XLSX.utils.aoa_to_sheet(hovedData);
+        XLSX.utils.book_append_sheet(wb, ws_main, "Oversikt");
+
+        // -- 2. Lag egne ark pr skade --
+        d.filter(r => r.skadetype && r.skadetype !== "Ingen skade").forEach((r, idx) => {
+            // Excel fanenavn har strenge regler (Maks 31 tegn, ingen spesialtegn). Vi bygger et unikt navn:
+            let faneNavn = (`M${r.mast || "X"}-S${r.stolpenr || "?"}-${idx+1}`).replace(/[\\\/\?\*\[\]:]/g, "").substring(0, 31);
+            
+            // Setter opp skadedataen ryddig nedover (Kolonne A = Navn, Kolonne B = Verdi)
+            let skadeData = [
+                ["GRUNNLAGSDATA", ""],
+                ["Dato Kontrollert", r.dato || "-"],
+                ["Kontrollør", r.kontrollor || "-"],
+                ["Netteier", r.netteier || "-"],
+                ["Linje", r.linje || "-"],
+                ["Mast nr", r.mast || "-"],
+                ["Stolpe nr", r.stolpenr || "-"],
+                ["", ""],
+                ["REGISTRERT SKADE", ""],
+                ["Skadetype", r.skadetype || "-"],
+                ["Skadehøyde over bakken (m)", r.skadehoyde_m || "-"],
+                ["Diameter på skadested (mm)", r.diam_skadested_mm || "-"]
+            ];
+            
+            if(r.A) skadeData.push(["Mål A (mm)", r.A]);
+            if(r.B) skadeData.push(["Mål B (mm)", r.B]);
+            if(r.C) skadeData.push(["Mål C (mm)", r.C]);
+            if(r.D) skadeData.push(["Mål D (mm)", r.D]);
+            if(r.E) skadeData.push(["Mål E (mm)", r.E]);
+            if(r['Start over bakken']) skadeData.push(["Start over bakken (m)", r['Start over bakken']]);
+            if(r['Slutt over bakken']) skadeData.push(["Slutt over bakken (m)", r['Slutt over bakken']]);
+            
+            skadeData.push(["", ""]);
+            skadeData.push(["STOLPEFAKTA", ""]);
+            skadeData.push(["Mast Type", r.mast_type || "-"]);
+            skadeData.push(["Stolpehøyde (m)", r.stolpehøyde_m || "-"]);
+            skadeData.push(["Nedgravingsdybde (m)", r.nedgravingsdybde_m || "-"]);
+            skadeData.push(["Jordsmonn", r.jordsmonn || "-"]);
+            skadeData.push(["Klima", r.klima || "-"]);
+
+            let ws_skade = XLSX.utils.aoa_to_sheet(skadeData);
+            
+            // Gjøre kolonne A bredere for at teksten skal synes fint
+            ws_skade['!cols'] = [{ wch: 25 }, { wch: 15 }]; 
+
+            XLSX.utils.book_append_sheet(wb, ws_skade, faneNavn);
+        });
+
+        // Last ned filen som en ekte .xlsx fil
+        XLSX.writeFile(wb, "stolpekontroll_rapport.xlsx");
     }
 
     function visRapporter() {
