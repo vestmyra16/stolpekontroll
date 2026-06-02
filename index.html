@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v5.8</title>
+    <title>Stolpekontroll v5.9</title>
     <meta name="author" content="Opphavsrett 2026 - vestmyra16">
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
@@ -36,6 +36,7 @@
         .lightgreen { background:#4caf50 !important; color:white; margin-bottom: 20px; border: 3px solid #1b5e20 !important; }
         .save-btn { background:#1b5e20 !important; margin-top:30px; }
         .csv-btn { background:#1565c0 !important; }
+        .report-btn { background:#f57c00 !important; color: white; border: 2px solid #e65100 !important; margin-top:15px; }
         .new-pole-btn { background:#c62828 !important; }
         .retur-btn { background:#1565c0 !important; margin-top:15px; border: 2px solid #0d47a1 !important; font-size: 18px; display: block; text-decoration: none; text-align: center; padding: 18px; color: white; font-weight: bold; border-radius: 10px; box-sizing: border-box; }
 
@@ -47,7 +48,7 @@
 <div class="vannmerke">Kun for autorisert bruk - Vestmyra16</div>
 
 <div id="loginBox">
-    <h3>Logg inn - Stolpekontroll v5.8</h3>
+    <h3>Logg inn - Stolpekontroll v5.9</h3>
     <label>Passord</label>
     <input type="password" id="pass" style="text-align: center; margin-bottom: 15px;">
     <button onclick="login()">Logg inn</button>
@@ -59,6 +60,7 @@
     <h3>Grunnlagsdata</h3>
     <label>Netteier</label><input id="netteier">
     <label>LinjeID</label><input id="linje">
+    <label>Kontrollert av:</label> <input id="kontrollor" oninput="lagreKontrollor()" placeholder="F.eks. Ola Nordmann">
     <hr style="margin: 20px 0; border: 1px solid #ccc;">
 
     <label>Mastnr</label><input id="mast">
@@ -116,7 +118,10 @@
 
     <button class="save-btn" onclick="lagre()">Lagre Mast</button>
     <div id="returSone"></div>
-    <button class="csv-btn" onclick="lastCSV()">Last ned CSV (Excel)</button>
+    <hr style="margin: 20px 0; border: 1px solid #ccc;">
+    
+    <button class="report-btn" onclick="visRapporter()">📄 Vis Råteskjema (Utskrift/PDF)</button>
+    <button class="csv-btn" onclick="lastCSV()">📊 Last ned CSV (Excel)</button>
     <button class="new-pole-btn" onclick="nyMast()">Neste Mast</button>
 </div>
 
@@ -167,9 +172,14 @@
         }
     }
 
+    function lagreKontrollor() {
+        localStorage.setItem("stolpe_kontrollor", document.getElementById("kontrollor").value);
+    }
+
     function visAppen() {
         document.getElementById("loginBox").classList.add("skjult"); 
         document.getElementById("app").classList.remove("skjult"); 
+        document.getElementById('kontrollor').value = localStorage.getItem('stolpe_kontrollor') || "";
     }
 
     function nyttAnlegg() {
@@ -234,8 +244,12 @@
         let valgtMastType = document.getElementById("mast_type").value === "Annet" 
             ? document.getElementById("egenMastType").value || "Uoppgitt" 
             : document.getElementById("mast_type").value;
+            
+        let datoFormat = new Date().toLocaleDateString('no-NO', {day: '2-digit', month: '2-digit', year: 'numeric'});
 
         let grunndata = {
+            dato: datoFormat,
+            kontrollor: document.getElementById("kontrollor").value,
             netteier: document.getElementById("netteier").value,
             linje: document.getElementById("linje").value,
             mast: document.getElementById("mast").value,
@@ -302,20 +316,19 @@
     function lastCSV() {
         let d = JSON.parse(localStorage.getItem("db") || "[]");
         if(d.length === 0) return alert("Ingen data å laste ned.");
-        let headers = ['netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','rf','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
+        let headers = ['dato','kontrollor','netteier','linje','mast','mast_type','stolpehøyde_m','nedgravingsdybde_m','jordbånd_mm','toppdiam_mm','jordsmonn','klima','vertikallast','temp','rf','fukt','skadetype','stolpenr','skadehoyde_m','diam_skadested_mm','A','B','C','D','E','Start over bakken','Slutt over bakken'];
         let csv = "\uFEFF" + headers.join(";") + "\n";
+        
         d.forEach(r => {
             let linje = headers.map(h => {
                 let v = r[h] || "";
-                let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ");
-                
-                // NY LINJE: Bytter ut punktum med komma slik at norsk Excel forstår desimalene
-                renset = renset.replace(/\./g, ","); 
-                
-                return `"${renset}"`;
+                let renset = v.toString().replace(/(\r\n|\n|\r|;)/gm, " ").replace(/\./g, ","); 
+                // Tvinger formatet til tekst (="verdi") for å forhindre dato/meter-feil i Excel
+                return `="${renset}"`;
             }).join(";");
             csv += linje + "\n";
         });
+        
         let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         let a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -323,6 +336,60 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+    }
+
+    function visRapporter() {
+        let d = JSON.parse(localStorage.getItem("db") || "[]");
+        let skader = d.filter(r => r.skadetype && r.skadetype !== "Ingen skade");
+        
+        if(skader.length === 0) return alert("Ingen skader er registrert enda, så det er ingenting å vise.");
+
+        let printWindow = window.open('', '_blank');
+        let html = `<html><head><title>Råteskjema</title><style>
+            body { font-family: Arial, sans-serif; background: #555; padding: 20px; }
+            .page { background: white; max-width: 800px; margin: 0 auto 30px auto; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.5); page-break-after: always; }
+            h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px;}
+            img { max-height: 250px; display: block; margin: 20px auto; }
+            table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 16px; }
+            th, td { border: 1px solid #ccc; padding: 12px; text-align: left; }
+            th { background: #f4f4f4; width: 40%; }
+            @media print { body { background: white; padding: 0; } .page { box-shadow: none; margin: 0; padding: 20px; } }
+        </style></head><body>`;
+
+        skader.forEach(r => {
+            let imgSrc = skadeDef[r.skadetype] ? skadeDef[r.skadetype].img : "";
+            let imgTag = imgSrc ? `<img src="${imgSrc}" alt="${r.skadetype}">` : "";
+            
+            html += `<div class="page">
+                <h2>Råteskjema - Mast ${r.mast} (Stolpe ${r.stolpenr || "Uoppgitt"})</h2>
+                <p><strong>Dato:</strong> ${r.dato || "-"} | <strong>Kontrollør:</strong> ${r.kontrollor || "-"}</p>
+                <p><strong>Netteier:</strong> ${r.netteier || "-"} | <strong>LinjeID:</strong> ${r.linje || "-"}</p>
+                
+                ${imgTag}
+                
+                <table>
+                    <tr><th>Skadetype</th><td><strong>${r.skadetype}</strong></td></tr>
+                    <tr><th>Høyde over bakken</th><td>${r.skadehoyde_m || "-"} m</td></tr>
+                    <tr><th>Diameter på skadested</th><td>${r.diam_skadested_mm || "-"} mm</td></tr>`;
+            
+            if(r.A) html += `<tr><th>Mål A</th><td>${r.A}</td></tr>`;
+            if(r.B) html += `<tr><th>Mål B</th><td>${r.B}</td></tr>`;
+            if(r.C) html += `<tr><th>Mål C</th><td>${r.C}</td></tr>`;
+            if(r.D) html += `<tr><th>Mål D</th><td>${r.D}</td></tr>`;
+            if(r.E) html += `<tr><th>Mål E</th><td>${r.E}</td></tr>`;
+            if(r['Start over bakken']) html += `<tr><th>Start over bakken</th><td>${r['Start over bakken']}</td></tr>`;
+            if(r['Slutt over bakken']) html += `<tr><th>Slutt over bakken</th><td>${r['Slutt over bakken']}</td></tr>`;
+
+            html += `
+                    <tr><th>Jordsmonn</th><td>${r.jordsmonn || "-"}</td></tr>
+                    <tr><th>Klima</th><td>${r.klima || "-"}</td></tr>
+                </table>
+            </div>`;
+        });
+
+        html += `<script>window.onload = function() { window.print(); }<\/script></body></html>`;
+        printWindow.document.write(html);
+        printWindow.document.close();
     }
 
     function sjekkURLParametere() {
