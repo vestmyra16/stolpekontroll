@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stolpekontroll v6.1</title>
+    <title>Stolpekontroll v6.3</title>
     <meta name="author" content="Opphavsrett 2026 - vestmyra16">
     <link class="no-print" rel="apple-touch-icon" href="icon-180.png">
     <link class="no-print" rel="manifest" href="manifest.json">
@@ -46,7 +46,7 @@
         #loginBox { max-width:400px; margin: 60px auto; padding: 25px; background: #fff; border: 1px solid #ccc; border-radius: 12px; text-align: center; }
         .skjult { display: none !important; }
 
-        /* Spesialregler for sømløs mobilutskrift */
+        /* Utskriftsinnstillinger for "her og nå"-rapport */
         #printSone { display: none; }
         @media print {
             body { background: white; max-width: 100% !important; width: 100% !important; padding: 0 !important; }
@@ -65,7 +65,7 @@
 <div class="vannmerke">Kun for autorisert bruk - Vestmyra16</div>
 
 <div id="loginBox" class="no-print">
-    <h3>Logg inn - Stolpekontroll v6.1</h3>
+    <h3>Logg inn - Stolpekontroll v6.3</h3>
     <label>Passord</label>
     <input type="password" id="pass" style="text-align: center; margin-bottom: 15px;">
     <button onclick="login()">Logg inn</button>
@@ -343,17 +343,28 @@
         window.scrollTo(0,0);
     }
 
+    // NY FILTRERT EXCEL-EKSPORT: KUN FOR AKTUELL MAST PÅ SKJERMEN
     function lastExcel() {
-        if(typeof XLSX === 'undefined') { alert("Vennligst vent et sekund på biblioteket."); return; }
+        if(typeof XLSX === 'undefined') return alert("Vennligst vent et sekund på biblioteket.");
+        
         let d = JSON.parse(localStorage.getItem("db") || "[]");
-        if(d.length === 0) return alert("Ingen data å laste ned.");
+        let aktuellMast = document.getElementById("mast").value;
+        
+        if(!aktuellMast) return alert("Du må fylle ut Mastnr for å eksportere.");
+
+        // Henter utelukkende rader som matcher gjeldende mast
+        let mastData = d.filter(r => r.mast === aktuellMast);
+        
+        if(mastData.length === 0) return alert("Ingen lagrede data funnet for mast " + aktuellMast + ". Husk å trykke 'Lagre Mast' først.");
         
         let wb = XLSX.utils.book_new();
-        let headers = ['Dato', 'Kontrollør', 'Netteier', 'Linje', 'Mast', 'Mast_type', 'Høyde_m', 'Nedgravd_m', 'Jordbånd_mm', 'Toppdiam_mm', 'Jordsmonn', 'Klima', 'Vertikallast', 'Temp', 'RF', 'Fukt', 'Skadetype', 'Stolpenr', 'Skadehøyde_m', 'Diam_skadested_mm', 'A', 'B', 'C', 'D', 'E', 'Start_over_bakken', 'Slutt_over_bakken'];
-        let hovedData = [headers];
         
-        d.forEach(r => {
-            hovedData.push([
+        // Ark 1: Spesifikk detaljoversikt over masta og dens skader
+        let headers = ['Dato', 'Kontrollør', 'Netteier', 'Linje', 'Mast', 'Mast_type', 'Høyde_m', 'Nedgravd_m', 'Jordbånd_mm', 'Toppdiam_mm', 'Jordsmonn', 'Klima', 'Vertikallast', 'Temp', 'RF', 'Fukt', 'Skadetype', 'Stolpenr', 'Skadehøyde_m', 'Diam_skadested_mm', 'A', 'B', 'C', 'D', 'E', 'Start_over_bakken', 'Slutt_over_bakken'];
+        let rader = [headers];
+        
+        mastData.forEach(r => {
+            rader.push([
                 r.dato, r.kontrollor, r.netteier, r.linje, r.mast, r.mast_type,
                 r.stolpehøyde_m, r.nedgravingsdybde_m, r.jordbånd_mm, r.toppdiam_mm,
                 r.jordsmonn, r.klima, r.vertikallast, r.temp, r.rf, r.fukt,
@@ -362,17 +373,22 @@
             ]);
         });
         
-        let ws_main = XLSX.utils.aoa_to_sheet(hovedData);
-        XLSX.utils.book_append_sheet(wb, ws_main, "Oversikt");
-        XLSX.writeFile(wb, "stolpekontroll_rapport.xlsx");
+        let ws_main = XLSX.utils.aoa_to_sheet(rader);
+        XLSX.utils.book_append_sheet(wb, ws_main, `Mast_${aktuellMast}`);
+        XLSX.writeFile(wb, `Stolpekontroll_Mast_${aktuellMast}.xlsx`);
     }
 
-    // Mobiloptimalisert utskrift og PDF-generering uten å miste applikasjonsvisningen
+    // NY FILTRERT MOBILUTSKRIFT: KUN FOR AKTUELL MAST PÅ SKJERMEN
     function visRapporter() {
         let d = JSON.parse(localStorage.getItem("db") || "[]");
-        let skader = d.filter(r => r.skadetype && r.skadetype !== "Ingen skade");
+        let aktuellMast = document.getElementById("mast").value;
         
-        if(skader.length === 0) return alert("Ingen registrerte skader å vise på råteskjemaet.");
+        if(!aktuellMast) return alert("Du må fylle ut Mastnr først.");
+
+        // Henter kun skader for den gitte masten (ekskluderer "Ingen skade" rader for ren utskrift)
+        let skader = d.filter(r => r.mast === aktuellMast && r.skadetype && r.skadetype !== "Ingen skade");
+        
+        if(skader.length === 0) return alert("Ingen skader registrert på Mast nr " + aktuellMast);
 
         let printSone = document.getElementById("printSone");
         let html = "";
@@ -410,7 +426,6 @@
 
         printSone.innerHTML = html;
 
-        // Kort tidsforsinkelse gjør at mobilgrensesnittet oppdateres feilfritt før print-dialogen tar over
         setTimeout(() => {
             window.print();
         }, 300);
