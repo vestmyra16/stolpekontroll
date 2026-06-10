@@ -343,7 +343,7 @@
         window.scrollTo(0,0);
     }
 
-    // NY FILTRERT EXCEL-EKSPORT: KUN FOR AKTUELL MAST PÅ SKJERMEN
+    // OPPDATERT EXCEL-EKSPORT MED STRENGE DATATYPER FOR Å LØSE FILTER-PROBLEMER I EXCEL
     function lastExcel() {
         if(typeof XLSX === 'undefined') return alert("Vennligst vent et sekund på biblioteket.");
         
@@ -352,24 +352,44 @@
         
         if(!aktuellMast) return alert("Du må fylle ut Mastnr for å eksportere.");
 
-        // Henter utelukkende rader som matcher gjeldende mast
         let mastData = d.filter(r => r.mast === aktuellMast);
-        
         if(mastData.length === 0) return alert("Ingen lagrede data funnet for mast " + aktuellMast + ". Husk å trykke 'Lagre Mast' først.");
         
         let wb = XLSX.utils.book_new();
         
-        // Ark 1: Spesifikk detaljoversikt over masta og dens skader
         let headers = ['Dato', 'Kontrollør', 'Netteier', 'Linje', 'Mast', 'Mast_type', 'Høyde_m', 'Nedgravd_m', 'Jordbånd_mm', 'Toppdiam_mm', 'Jordsmonn', 'Klima', 'Vertikallast', 'Temp', 'RF', 'Fukt', 'Skadetype', 'Stolpenr', 'Skadehøyde_m', 'Diam_skadested_mm', 'A', 'B', 'C', 'D', 'E', 'Start_over_bakken', 'Slutt_over_bakken'];
         let rader = [headers];
         
+        // Formaterings-oversetter: Sørger for at tall blir tall, og at tekst blir tekst i Excel
         mastData.forEach(r => {
             rader.push([
-                r.dato, r.kontrollor, r.netteier, r.linje, r.mast, r.mast_type,
-                r.stolpehøyde_m, r.nedgravingsdybde_m, r.jordbånd_mm, r.toppdiam_mm,
-                r.jordsmonn, r.klima, r.vertikallast, r.temp, r.rf, r.fukt,
-                r.skadetype, r.stolpenr, r.skadehoyde_m, r.diam_skadested_mm,
-                r.A, r.B, r.C, r.D, r.E, r['Start over bakken'], r['Slutt over bakken']
+                r.dato || "",
+                r.kontrollor || "",
+                r.netteier || "",
+                r.linje || "",
+                r.mast ? String(r.mast) : "", // Tvinger til tekst
+                r.mast_type || "",
+                r.stolpehøyde_m ? parseFloat(r.stolpehøyde_m.replace(',', '.')) : "",
+                r.nedgravingsdybde_m ? parseFloat(r.nedgravingsdybde_m.replace(',', '.')) : "",
+                r.jordbånd_mm ? parseFloat(r.jordbånd_mm) : "",
+                r.toppdiam_mm ? parseFloat(r.toppdiam_mm) : "",
+                r.jordsmonn || "",
+                r.klima || "",
+                r.vertikallast || "",
+                r.temp ? parseFloat(r.temp.replace(',', '.')) : "",
+                r.rf ? parseFloat(r.rf) : "",
+                r.fukt ? parseFloat(r.fukt) : "",
+                r.skadetype || "",
+                r.stolpenr ? String(r.stolpenr) : "", // Tvinger til tekst for å unngå blanding
+                r.skadehoyde_m ? parseFloat(r.skadehoyde_m.replace(',', '.')) : "",
+                r.diam_skadested_mm ? parseFloat(r.diam_skadested_mm) : "",
+                r.A ? parseFloat(r.A) : "",
+                r.B ? parseFloat(r.B) : "",
+                r.C ? parseFloat(r.C) : "",
+                r.D ? parseFloat(r.D) : "",
+                r.E ? parseFloat(r.E) : "",
+                r['Start over bakken'] ? parseFloat(r['Start over bakken'].replace(',', '.')) : "",
+                r['Slutt over bakken'] ? parseFloat(r['Slutt over bakken'].replace(',', '.')) : ""
             ]);
         });
         
